@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin Verification - FlyWay</title>
+<link rel="stylesheet" href="/assets/css/responsive.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#030810;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.bg{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,30,30,0.06) 0%,transparent 60%)}
+.corner{position:fixed;width:32px;height:32px;border-color:#ff3333;border-style:solid;opacity:0.3}
+.corner.tl{top:16px;left:16px;border-width:2px 0 0 2px}
+.corner.tr{top:16px;right:16px;border-width:2px 2px 0 0}
+.corner.bl{bottom:16px;left:16px;border-width:0 0 2px 2px}
+.corner.br{bottom:16px;right:16px;border-width:0 2px 2px 0}
+.card{position:relative;z-index:10;background:rgba(8,12,22,0.98);border:1px solid rgba(255,50,50,0.2);border-radius:6px;padding:48px 44px;max-width:440px;width:100%;box-shadow:0 0 40px rgba(255,0,0,0.08)}
+.logo{text-align:center;margin-bottom:32px}
+.logo-icon{width:52px;height:52px;background:linear-gradient(135deg,#ff3333,#cc0000);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px}
+.logo-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:3px}
+.logo-sub{font-size:11px;letter-spacing:3px;color:rgba(255,100,100,0.5);text-transform:uppercase;margin-top:4px}
+.form-group{margin-bottom:18px}
+.form-label{display:block;font-size:11px;font-weight:600;color:rgba(255,100,100,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px}
+.form-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,50,50,0.2);border-radius:6px;padding:13px 16px;color:#fff;font-family:'Space Mono',monospace;font-size:14px;outline:none;transition:all 0.2s}
+.form-input:focus{border-color:rgba(255,50,50,0.5);box-shadow:0 0 0 3px rgba(255,30,30,0.08)}
+.form-input::placeholder{color:rgba(255,255,255,0.2);font-family:'Plus Jakarta Sans',sans-serif}
+.btn-login{width:100%;padding:14px;background:linear-gradient(135deg,#cc0000,#990000);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;margin-top:8px}
+.btn-login:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(200,0,0,0.3)}
+.btn-login:disabled{opacity:0.5;cursor:not-allowed}
+.error-box{background:rgba(255,30,30,0.08);border:1px solid rgba(255,30,30,0.3);border-radius:6px;padding:12px 14px;font-size:13px;color:#ff6666;margin-bottom:16px;display:none;text-align:center}
+.lock-box{background:rgba(255,50,0,0.08);border:1px solid rgba(255,100,0,0.3);border-radius:6px;padding:16px;font-size:13px;color:#ff9944;text-align:center;display:none}
+.attempts-left{font-size:11px;color:rgba(255,100,100,0.5);text-align:center;margin-top:8px;letter-spacing:1px}
+.back-link{text-align:center;margin-top:24px;font-size:12px;color:rgba(255,255,255,0.3)}
+.back-link a{color:rgba(255,100,100,0.5);cursor:pointer;text-decoration:none}
+.back-link a:hover{color:rgba(255,100,100,0.8)}
+#timerCount{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;color:#ff4444;margin:8px 0}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="corner tl"></div><div class="corner tr"></div>
+<div class="corner bl"></div><div class="corner br"></div>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon glow3d">🔐</div>
+    <div class="logo-title">FLY<span style="color:#ff4444">WAY</span></div>
+    <div class="logo-sub">Admin Verification</div>
+  </div>
+
+  <div class="error-box" id="errBox"></div>
+  <div class="lock-box" id="lockBox">
+    <div style="font-size:28px;margin-bottom:8px">🔒</div>
+    <div style="font-weight:700;font-size:15px;margin-bottom:4px">Access Temporarily Locked</div>
+    <div style="color:rgba(255,200,100,0.8);font-size:12px;margin-bottom:10px">Too many failed attempts. Try again in:</div>
+    <div id="timerCount">30</div>
+    <div style="font-size:11px;color:rgba(255,200,100,0.5)">seconds</div>
+  </div>
+
+  <div id="loginForm">
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input class="form-input" type="text" id="username" placeholder="Enter admin username" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="password" placeholder="Enter password" autocomplete="off">
+    </div>
+    <div class="attempts-left" id="attemptsLeft"></div>
+    <button class="btn-login" id="loginBtn" onclick="doAdminLogin()">🔐 Verify Identity</button>
+  </div>
+
+  <div class="back-link">
+    <a href="/">← Return to Website</a>
+    &nbsp;·&nbsp;
+    <a href="/backdoor">⚠ Warning Page</a>
+  </div>
+</div>
+
+<script>
+// Security fix: Require explicit login - no auto-login
+// Clear any stored admin tokens on page load for security
+localStorage.removeItem('fw_token');
+localStorage.removeItem('fw_user');
+
+if (!sessionStorage.getItem('fw_admin_warned')) {
+  window.location.href = '/backdoor';
+}
+
+var failedAttempts = parseInt(sessionStorage.getItem('fw_admin_fails') || '0');
+var lockUntil = parseInt(sessionStorage.getItem('fw_admin_lock') || '0');
+
+function updateAttemptsDisplay() {
+  var remaining = 2 - failedAttempts;
+  var el = document.getElementById('attemptsLeft');
+  if (failedAttempts > 0 && remaining > 0) {
+    el.textContent = '⚠ ' + remaining + ' attempt' + (remaining > 1 ? 's' : '') + ' remaining before temporary lock';
+    el.style.color = 'rgba(255,150,50,0.7)';
+  } else {
+    el.textContent = '';
+  }
+}
+
+function checkLock() {
+  var now = Date.now();
+  if (lockUntil > now) {
+    showLock(Math.ceil((lockUntil - now) / 1000));
+    return true;
+  }
+  if (lockUntil > 0 && lockUntil <= now) {
+    failedAttempts = 0;
+    sessionStorage.setItem('fw_admin_fails', '0');
+    sessionStorage.removeItem('fw_admin_lock');
+    lockUntil = 0;
+  }
+  return false;
+}
+
+function showLock(seconds) {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('lockBox').style.display = 'block';
+  document.getElementById('errBox').style.display = 'none';
+  var remaining = seconds;
+  document.getElementById('timerCount').textContent = remaining;
+  var interval = setInterval(function() {
+    remaining--;
+    document.getElementById('timerCount').textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(interval);
+      failedAttempts = 0;
+      lockUntil = 0;
+      sessionStorage.setItem('fw_admin_fails', '0');
+      sessionStorage.removeItem('fw_admin_lock');
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('lockBox').style.display = 'none';
+      updateAttemptsDisplay();
+    }
+  }, 1000);
+}
+
+async function doAdminLogin() {
+  if (checkLock()) return;
+  var username = document.getElementById('username').value.trim();
+  var password = document.getElementById('password').value;
+  var btn = document.getElementById('loginBtn');
+  var errBox = document.getElementById('errBox');
+  errBox.style.display = 'none';
+  if (!username || !password) {
+    errBox.textContent = 'Please enter both username and password.';
+    errBox.style.display = 'block';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+  try {
+    var res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password })
+    });
+    var data = await res.json();
+    if (res.ok && data.token && data.user && data.user.role === 'admin') {
+      localStorage.setItem('fw_token', data.token);
+      localStorage.setItem('fw_user', JSON.stringify(data.user));
+      sessionStorage.setItem('fw_admin_fails', '0');
+      sessionStorage.setItem('fw_admin_auth', '1');
+      btn.textContent = '✅ Access Granted - Redirecting...';
+      btn.style.background = 'linear-gradient(135deg,#00aa44,#007733)';
+      setTimeout(function() { window.location.replace('/backdoor/dashboard'); }, 800);
+    } else {
+      failedAttempts++;
+      sessionStorage.setItem('fw_admin_fails', String(failedAttempts));
+      if (failedAttempts >= 2) {
+        var lockTime = Date.now() + 30000;
+        lockUntil = lockTime;
+        sessionStorage.setItem('fw_admin_lock', String(lockTime));
+        showLock(30);
+      } else {
+        var msg = '❌ Invalid credentials. Access denied.';
+        if (data.user && data.user.role !== 'admin') msg = '❌ Access Denied - Not an admin account.';
+        errBox.textContent = msg;
+        errBox.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '🔐 Verify Identity';
+        updateAttemptsDisplay();
+      }
+    }
+  } catch(err) {
+    errBox.textContent = '❌ Server error. Ensure the server is running.';
+    errBox.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '🔐 Verify Identity';
+  }
+}
+
+checkLock();
+updateAttemptsDisplay();
+document.getElementById('password').addEventListener('keydown', function(e) { if (e.key === 'Enter') doAdminLogin(); });
+document.getElementById('username').addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('password').focus(); });
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+
+</body>
+</html>

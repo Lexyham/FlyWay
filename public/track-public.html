@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Flight Tracker - FlyWay</title>
+<link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/assets/css/responsive.css">
+<style>
+.pub-hero{background:linear-gradient(135deg,#030810 0%,#0a1628 100%);padding:60px 0 40px;text-align:center;border-bottom:1px solid var(--border)}
+.progress-track{position:relative;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:visible;margin:18px 0 8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:3px;transition:width 0.8s linear}
+.progress-plane{position:absolute;top:-12px;transform:translateX(-50%);font-size:20px;transition:left 0.8s linear;filter:drop-shadow(0 0 6px rgba(0,212,255,0.7))}
+.stat-box{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.stat-val{font-family:var(--font-h);font-weight:700;font-size:16px}
+.airport-card{text-align:center;min-width:100px}
+.airport-big{font-family:var(--font-h);font-size:40px;font-weight:800;color:var(--cyan)}
+.live-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,50,50,0.12);border:1px solid rgba(255,50,50,0.3);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#ff6666;margin-bottom:16px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#ff4444;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.4)}}
+#globe3d-wrap{position:relative;width:100%;margin-top:20px;border-radius:16px;overflow:hidden;background:#020812;border:1px solid rgba(0,180,255,0.18)}
+#globe3d-wrap canvas{display:block;width:100%!important;border-radius:16px}
+#globe3d-header{position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,rgba(2,8,18,0.90) 0%,transparent 100%);z-index:20;pointer-events:none}
+#globe3d-footer{position:absolute;bottom:0;left:0;right:0;padding:10px 16px;background:linear-gradient(0deg,rgba(2,8,18,0.88) 0%,transparent 100%);z-index:20;pointer-events:none;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.g3d-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.25);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;color:#00d4ff;letter-spacing:.5px}
+.g3d-live-dot{width:6px;height:6px;border-radius:50%;background:#00e396;animation:g3dPulse 1.4s ease-in-out infinite}
+@keyframes g3dPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.4)}}
+.g3d-stat{display:flex;align-items:center;gap:7px;background:rgba(2,8,18,0.6);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:6px 11px;font-size:12px}
+.g3d-stat-val{font-family:monospace;font-weight:700;color:#00d4ff}
+#globe3d-controls{position:absolute;top:50%;right:14px;transform:translateY(-50%);display:flex;flex-direction:column;gap:7px;z-index:20}
+.g3d-ctrl{width:32px;height:32px;background:rgba(4,14,34,0.85);border:1px solid rgba(0,180,255,0.2);border-radius:8px;color:#e0f0ff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;pointer-events:auto}
+.g3d-ctrl:hover{background:rgba(0,212,255,0.2)}
+.review-scroll { display: flex; gap: 0; padding-bottom: 12px; overflow: hidden; position: relative; width: 100%; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; scrollbar-width: none; }
+.review-scroll::-webkit-scrollbar { display: none; }
+.review-scroll-inner { display: flex; gap: 20px; width: max-content; will-change: transform; }
+.review-scroll:hover .review-scroll-inner { animation-play-state: paused; }
+.review-card {
+  background: rgba(13,24,48,0.95); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px; padding: 24px;
+  min-width: 320px; max-width: 360px; flex-shrink: 0;
+  scroll-snap-align: start; transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.review-card:hover { border-color: rgba(0,212,255,0.15); }
+.review-stars { color: #f5c842; font-size: 14px; margin-bottom: 12px; }
+.review-text { font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.85); margin-bottom: 16px; }
+.review-author { display: flex; align-items: center; gap: 12px; }
+.review-avatar { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #00d4ff, #7c3aed); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #060d1f; }
+.review-name { font-weight: 700; font-size: 14px; }
+.review-route { font-size: 11px; color: #00d4ff; margin-top: 2px; }
+.flying-plane {
+  animation: fly 2s ease-in-out infinite;
+}
+@keyframes fly {
+  0%, 100% { transform: translateX(0px); }
+  25% { transform: translateX(-3px) rotate(-2deg); }
+  50% { transform: translateX(0px); }
+  75% { transform: translateX(3px) rotate(2deg); }
+}
+</style>
+</head>
+<body>
+<nav class="navbar" id="mainNav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><div class="nav-logo-icon">✈</div><span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span></a>
+    <div class="nav-actions">
+      <a href="/track" class="btn btn-ghost btn-sm">🔍 Track Another</a>
+      <a href="/booking" class="btn btn-primary btn-sm">✈ Book a Flight</a>
+    </div>
+  </div>
+</nav>
+
+<div class="pub-hero">
+  <div class="container" style="max-width:700px">
+    <div class="live-badge"><div class="live-dot"></div>LIVE TRACKING</div>
+    <h1 id="trackTitle" class="display-3" style="margin-bottom:8px">Loading Flight...</h1>
+    <p id="trackSub" style="color:var(--muted);font-size:15px">Fetching live data...</p>
+    <div id="liveClockDisplay" style="font-family:var(--font-m);font-size:13px;color:rgba(255,255,255,0.3);margin-top:8px"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container" style="max-width:700px">
+    <div id="trackCard" class="card" style="min-height:200px;display:flex;align-items:center;justify-content:center">
+      <div style="text-align:center;color:var(--muted)"><div style="font-size:32px;margin-bottom:12px">⏳</div>Loading flight data...</div>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="navigator.clipboard.writeText(window.location.href).then(()=>alert('Tracking link copied!'))">🔗 Copy This Link</button>
+      <a href="/booking" class="btn btn-primary">✈ Book a Flight</a>
+      <a href="/track" class="btn btn-ghost">🔍 Track Another Flight</a>
+    </div>
+    <div style="margin-top:32px" id="publicReviews"></div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// Live clock
+setInterval(function(){
+  var el=document.getElementById('liveClockDisplay');
+  if(el) el.textContent='Live: ' + new Date().toISOString().slice(11,19) + ' UTC';
+},1000);
+
+var FLIGHTS=[
+  {fn:'FW-001',airline:'Fly Way Express1',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 05m',isDemo:true,canRestart:true},
+  {fn:'FW-002',airline:'Fly Way Express2',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 10m',isDemo:true,canRestart:true},
+  {fn:'FW-003',airline:'Fly Way Express3',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 20m',isDemo:true,canRestart:true},
+  {fn:'FW-004',airline:'Fly Way Express4',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 30m',isDemo:true,canRestart:true},
+  {fn:'FW-101',airline:'Fly Way Airlines',ac:'Boeing 737-800',from:'JFK',to:'LAX',dep:'08:00',arr:'11:30',dur:'5h 30m'},
+  {fn:'FW-102',airline:'Fly Way Airlines',ac:'Airbus A320',from:'LAX',to:'JFK',dep:'14:00',arr:'22:30',dur:'5h 30m'},
+  {fn:'FW-201',airline:'Fly Way Airlines',ac:'Boeing 777-300ER',from:'JFK',to:'LHR',dep:'21:30',arr:'08:45',dur:'7h 15m'},
+  {fn:'FW-202',airline:'Fly Way Airlines',ac:'Boeing 777-300ER',from:'LHR',to:'JFK',dep:'11:00',arr:'14:15',dur:'8h 15m'},
+  {fn:'FW-301',airline:'Fly Way Airlines',ac:'Boeing 787',from:'LAX',to:'NRT',dep:'11:00',arr:'15:00',dur:'12h 00m'},
+  {fn:'FW-302',airline:'Fly Way Airlines',ac:'Boeing 787',from:'NRT',to:'LAX',dep:'18:00',arr:'14:00',dur:'11h 00m'},
+  {fn:'FW-401',airline:'Fly Way Airlines',ac:'Airbus A350-900',from:'DXB',to:'JFK',dep:'02:30',arr:'09:15',dur:'14h 45m'},
+  {fn:'FW-402',airline:'Fly Way Airlines',ac:'Airbus A350-900',from:'JFK',to:'DXB',dep:'22:00',arr:'18:00',dur:'12h 00m'},
+  {fn:'FW-501',airline:'Fly Way Airlines',ac:'Airbus A321',from:'SFO',to:'ORD',dep:'07:15',arr:'13:30',dur:'4h 15m'},
+  {fn:'FW-601',airline:'Fly Way Airlines',ac:'Boeing 737 MAX',from:'ATL',to:'MIA',dep:'09:00',arr:'10:30',dur:'1h 30m'},
+  {fn:'FW-701',airline:'Fly Way Airlines',ac:'Airbus A380',from:'LHR',to:'DXB',dep:'22:00',arr:'08:00',dur:'7h 00m'},
+  {fn:'FW-801',airline:'Fly Way Airlines',ac:'Boeing 787',from:'SIN',to:'LHR',dep:'00:30',arr:'06:45',dur:'13h 15m'},
+  {fn:'FW-1001',airline:'Fly Way Airlines',ac:'Boeing 777',from:'JFK',to:'CDG',dep:'19:00',arr:'08:30',dur:'7h 30m'},
+];
+
+var code = window.location.pathname.split('/track/').pop() || '';
+var currentFlight = null;
+var stableGate='', stableTerminal='', stableWxDep='', stableWxArr='';
+var WX=[{dep:'☀ 22°C Clear',arr:'⛅ 18°C Cloudy'},{dep:'🌤 26°C Sunny',arr:'🌧 14°C Rainy'},{dep:'⛅ 17°C Overcast',arr:'☀ 28°C Clear'},{dep:'🌧 13°C Rainy',arr:'🌤 22°C Sunny'}];
+
+function normalizeFlightCode(c){return String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
+function createSyntheticFlight(code){
+  var norm=normalizeFlightCode(code);
+  var m=norm.match(/^FW0*([1-9][0-9]{0,2})$/);
+  if(!m) return null;
+  var n=parseInt(m[1],10);
+  if(n<1||n>114) return null;
+  var airports=(FlyWay.airports||[]).filter(function(a){return a&&typeof a.code==='string'&&a.code.length===3;});
+  if(!airports.length) airports=[{code:'JFK',city:'New York'},{code:'LAX',city:'Los Angeles'},{code:'LHR',city:'London'},{code:'DXB',city:'Dubai'},{code:'NRT',city:'Tokyo'}];
+  var from=airports[n%airports.length];
+  var to=airports[(n+Math.floor(airports.length/3))%airports.length];
+  if(from.code===to.code) to=airports[(n+1)%airports.length];
+  var depMin=(n*7)%60;
+  var depHour=6 + (n % 12);
+  var arrHour=(depHour + 5 + (n % 5))%24;
+  var arrMin=(depMin+35)%60;
+  var durH=((arrHour - depHour + 24)%24)||5;
+  var durM=(arrMin - depMin + 60)%60;
+  var dur=durH+'h '+String(durM).padStart(2,'0')+'m';
+  var dep=String(depHour).padStart(2,'0')+':'+String(depMin).padStart(2,'0');
+  var arr=String(arrHour).padStart(2,'0')+':'+String(arrMin).padStart(2,'0');
+  var crafts=['Boeing 737','Airbus A320','Boeing 787','Airbus A350','Boeing 777'];
+  return {fn:'FW-'+String(n).padStart(3,'0'),airline:'Fly Way Airlines',ac:crafts[n%crafts.length],from:from.code,to:to.code,dep:dep,arr:arr,dur:dur};
+}
+
+async function init(){
+  if(!code){showNotFound('No tracking code provided.');return;}
+  // Try server lookup (booking references like FWIYQ9WT)
+  try{
+    var r=await fetch('/api/track/'+code.toUpperCase()).then(function(x){return x.json();}).catch(function(){return{found:false};});
+    if(r.found){
+      currentFlight={fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,bookingRef:r.bookingRef};
+      setupTracking();return;
+    }
+  }catch(e){}
+  // Try local flight list
+  var clean=code.toUpperCase().replace(/-/g,'');
+  var f=FLIGHTS.find(function(x){return x.fn===code.toUpperCase()||x.fn.replace('-','')===clean;});
+  if(f){currentFlight=f;setupTracking();return;}
+  var synthetic=createSyntheticFlight(code);
+  if(synthetic){currentFlight=synthetic;setupTracking();return;}
+  showNotFound('"'+code+'" - check your booking confirmation for the correct reference or flight number.');
+}
+
+function setupTracking(){
+  var w=WX[Math.floor(Math.random()*WX.length)];
+  stableGate=String.fromCharCode(65+Math.floor(Math.random()*4))+(Math.floor(Math.random()*20)+1);
+  stableTerminal='Terminal '+(Math.floor(Math.random()*3)+1);
+  stableWxDep=w.dep; stableWxArr=w.arr;
+  renderFull();
+  setInterval(renderLiveUpdate,1000);
+  Globe3D.attach(currentFlight,calcProg);
+}
+
+function calcProg(f){
+  if(f.isDemo){
+    var key='fw_pub_demo_start_'+String(f.fn||f.flightNumber||'demo').replace(/[^A-Z0-9]/gi,'');
+    var ds=parseInt(localStorage.getItem(key)||'0',10);
+    var durMs=60000;
+    if(!ds){ ds = Date.now(); localStorage.setItem(key, ds); }
+    var elapsed = Date.now() - ds;
+    if(f.canRestart && elapsed >= durMs){
+      ds = Date.now();
+      localStorage.setItem(key, ds);
+      elapsed = 0;
+    }
+    var prog = Math.min(100, (elapsed/durMs)*100);
+    var status = prog >= 100 ? 'Landed ✅' : prog > 85 ? 'Approaching' : prog > 5 ? 'In Flight ✈' : 'Boarding';
+    return {prog:parseFloat(prog.toFixed(2)), status:status, el:elapsed/60000, durMins:1};
+  }
+  var now=new Date();
+  var p=(f.dep||'08:00').split(':');
+  var dH=parseInt(p[0])||8,dM=parseInt(p[1])||0;
+  var dm=(f.dur||'4h').match(/(\d+)h\s*(\d+)?/);
+  var durMins=dm?parseInt(dm[1])*60+(parseInt(dm[2])||0):240;
+  var dt;
+  if(f.departureDate){
+    var pad=function(n){return String(n).padStart(2,'0');};
+    dt=new Date(f.departureDate+'T'+pad(dH)+':'+pad(dM)+':00');
+    if(dt>now) return{prog:0,status:'Scheduled',el:0,durMins:durMins};
+  } else {
+    dt=new Date(now); dt.setHours(dH,dM,0,0);
+    if(dt>now) return{prog:0,status:'Scheduled',el:0,durMins:durMins};
+    // Prevent "flight 12 hours ago with no date = Landed"
+    var hoursDiff=(now-dt)/3600000; if(hoursDiff > 24){
+      dt=new Date(now); dt.setHours(dH,dM,0,0);
+      if(dt<now) dt.setDate(dt.getDate()+1);
+      return{prog:0,status:'Scheduled',el:0,durMins:durMins};
+    }
+  }
+  var el=(now-dt)/60000;
+  if(el<0)  return{prog:0,  status:'Scheduled',  el:0,  durMins:durMins};
+  if(el<25) return{prog:parseFloat((el/durMins*4).toFixed(2)), status:'Boarding',  el:el,durMins:durMins};
+  if(el<55) return{prog:parseFloat((el/durMins*10).toFixed(2)),status:'Departed',  el:el,durMins:durMins};
+  var prog=parseFloat(Math.min(100,el/durMins*100).toFixed(2));
+  if(prog>=100) return{prog:100, status:'Landed ✅',  el:el,durMins:durMins};
+  if(prog>=88)  return{prog:prog,status:'Approaching',el:el,durMins:durMins};
+  return{prog:prog,status:'In Flight ✈',el:el,durMins:durMins};
+}
+
+function renderFull(){
+  var f=currentFlight;
+  var r=calcProg(f);
+  var fa=FlyWay.airports.find(function(a){return a.code===f.from;})||{city:f.from,flag:'🌍'};
+  var ta=FlyWay.airports.find(function(a){return a.code===f.to;})||{city:f.to,flag:'🌍'};
+  var isAir=r.status==='In Flight ✈'||r.status==='Departed'||r.status==='Approaching';
+  var alt=isAir?(28000+Math.floor(r.prog*80)).toLocaleString()+' ft':'On Ground';
+  var spd=isAir?(455+Math.floor(r.prog*0.5))+' mph':'0 mph';
+  var remMins=Math.max(0,r.durMins-r.el);
+  var remH=Math.floor(remMins/60),remM=Math.floor(remMins%60);
+  var remain=r.prog>=100?'Arrived':(remH>0?remH+'h '+String(remM).padStart(2,'0')+'m left':Math.floor(remMins)+'m left');
+  var isUpcoming = r.status==='Scheduled';
+  var upcomingNote = isUpcoming ? '<div style="margin-top:24px;padding:28px;border-radius:20px;background:linear-gradient(135deg,rgba(124,58,237,0.08),rgba(0,212,255,0.05));border:1px solid rgba(124,58,237,0.2);text-align:center">'+
+      '<div style="font-size:32px;margin-bottom:10px">✈</div>'+ 
+      '<div style="font-weight:700;font-size:16px;margin-bottom:6px">Flight '+(f.fn||code)+' has not yet started</div>'+ 
+      '<div style="color:var(--muted);font-size:13px;margin-bottom:16px">The runway is warming up — stay here for live updates, or jump into the cockpit simulator or game while you wait.</div>'+ 
+      '<div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">'+
+        '<button class="btn btn-ghost" onclick="stayOnTrackPublic()" style="min-width:170px;padding:12px 20px">Stay Here</button>'+ 
+        '<button class="btn btn-primary" onclick="launchFlightGame()" style="min-width:170px;padding:12px 20px">Have Fun</button>'+ 
+      '</div>'+ 
+    '</div>' : '';
+  document.getElementById('trackTitle').textContent=f.from+' → '+f.to+(f.bookingRef?' ('+f.bookingRef+')':'');
+  document.getElementById('trackSub').textContent=(f.fn||code)+' · '+(f.airline||'Fly Way Airlines')+' · '+r.status;
+  document.getElementById('trackCard').innerHTML=
+    '<div style="padding:24px 24px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'+
+      '<div><div style="font-family:var(--font-h);font-size:20px;font-weight:800">'+(f.fn||code)+'</div>'+
+      '<div style="color:var(--muted);font-size:13px">'+(f.airline||'Fly Way Airlines')+' · '+(f.ac||'Boeing 737')+' '+(f.bookingRef?'· Ref: '+f.bookingRef:'')+'</div></div>'+
+      '<div id="pubStatus" class="flight-status-badge" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3)"><div class="status-dot inflight" id="pubDot"></div><span id="pubStatusTxt">'+r.status+'</span></div>'+
+    '</div>'+
+    '<div style="padding:28px">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:8px">'+
+        '<div class="airport-card"><div class="airport-big">'+f.from+'</div><div style="color:var(--muted);font-size:13px">'+(fa.flag||'')+'  '+(fa.city||f.from)+'</div><div style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px">'+(f.dep||'-')+'</div></div>'+
+        '<div style="flex:1;min-width:140px;padding:0 16px">'+
+          '<div id="pubPlane" style="text-align:center;font-size:30px;transition:all 0.5s">✈</div>'+
+          '<div class="progress-track" id="pubProgTrack"><div class="progress-fill" id="pubFill" style="width:'+r.prog+'%"></div><div class="progress-plane" id="pubPlanePip" style="left:'+Math.min(95,r.prog)+'%">✈</div></div>'+
+          '<div id="pubDurLine" style="font-size:12px;color:var(--muted);text-align:center">'+(f.dur||'-')+' · '+r.prog.toFixed(1)+'% · '+remain+'</div>'+
+        '</div>'+
+        '<div class="airport-card" style="text-align:right"><div class="airport-big">'+f.to+'</div><div style="color:var(--muted);font-size:13px">'+(ta.flag||'')+'  '+(ta.city||f.to)+'</div><div style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px">'+(f.arr||'-')+'</div></div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:20px">'+
+        '<div class="stat-box"><div class="stat-lbl">🚪 GATE</div><div class="stat-val">'+stableGate+'</div></div>'+
+        '<div class="stat-box"><div class="stat-lbl">🏢 TERMINAL</div><div class="stat-val">'+stableTerminal+'</div></div>'+
+        '<div class="stat-box"><div class="stat-lbl">✈ AIRCRAFT</div><div class="stat-val" style="font-size:12px">'+(f.ac||'Boeing 737')+'</div></div>'+
+        '<div class="stat-box"><div class="stat-lbl">📊 PROGRESS</div><div class="stat-val" id="pubProgPct">'+r.prog.toFixed(1)+'%</div></div>'+
+        '<div class="stat-box"><div class="stat-lbl">🏔 ALTITUDE</div><div class="stat-val" id="pubAlt" style="font-size:12px">'+alt+'</div></div>'+
+        '<div class="stat-box"><div class="stat-lbl">💨 AIRSPEED</div><div class="stat-val" id="pubSpd" style="font-size:12px">'+spd+'</div></div>'+
+        '<div class="stat-box"><div class="stat-lbl">🌡 DEP WX</div><div class="stat-val" style="font-size:11px">'+stableWxDep+'</div></div>'+
+        '<div class="stat-box"><div class="stat-lbl">🌡 ARR WX</div><div class="stat-val" style="font-size:11px">'+stableWxArr+'</div></div>'+
+      '</div>'+
+      '<div id="globe3d-wrap" style="height:340px;margin-top:20px">'+
+        '<canvas id="globe3d-canvas"></canvas>'+
+        '<div id="globe3d-header">'+
+          '<div class="g3d-badge"><div class="g3d-live-dot"></div>3D LIVE MAP</div>'+
+          '<div style="display:flex;gap:8px;pointer-events:auto">'+
+            '<div class="g3d-badge" id="g3dFlightLabel" style="background:rgba(0,0,0,0.4)">'+(f.fn||code)+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div id="globe3d-controls">'+
+          '<button class="g3d-ctrl" id="g3dZoomIn" title="Zoom In">+</button>'+
+          '<button class="g3d-ctrl" id="g3dZoomOut" title="Zoom Out">-</button>'+
+          '<button class="g3d-ctrl" id="g3dReset" title="Reset">⌖</button>'+
+        '</div>'+
+        '<div id="globe3d-footer">'+
+          '<div class="g3d-stat"><span>📍</span><span class="g3d-stat-val" id="g3dProgress">0%</span><span style="color:var(--muted);font-size:10px">progress</span></div>'+
+          '<div class="g3d-stat"><span>🏔</span><span class="g3d-stat-val" id="g3dAlt">-</span><span style="color:var(--muted);font-size:10px">altitude</span></div>'+
+          '<div class="g3d-stat"><span>💨</span><span class="g3d-stat-val" id="g3dSpeed">-</span><span style="color:var(--muted);font-size:10px">airspeed</span></div>'+
+          '<div class="g3d-stat"><span>⏱</span><span class="g3d-stat-val" id="g3dETA">-</span><span style="color:var(--muted);font-size:10px">remaining</span></div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">'+
+        '<button onclick="launch3dSim()" style="flex:1;min-width:200px;padding:13px 20px;background:linear-gradient(135deg,rgba(0,68,204,0.9),rgba(0,212,255,0.8));border:1px solid rgba(0,212,255,0.4);border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform 0.15s,box-shadow 0.2s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 8px 24px rgba(0,212,255,0.3)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">'+
+          '<span style="font-size:20px">🌍</span> View Realistic 3D Live Simulation'+
+        '</button>'+
+        '<button onclick="launchFlightGame()" style="flex:1;min-width:200px;padding:13px 20px;background:linear-gradient(135deg,rgba(245,200,66,0.9),rgba(255,107,53,0.8));border:1px solid rgba(245,200,66,0.4);border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform 0.15s,box-shadow 0.2s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 8px 24px rgba(245,200,66,0.3)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">'+
+          '<span style="font-size:20px">🎮</span> Have Fun'+
+        '</button>'+
+        '<button onclick="launchCockpitSim()" style="flex:1;min-width:200px;padding:13px 20px;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform 0.15s,box-shadow 0.2s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 8px 24px rgba(124,58,237,0.3)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">'+
+          '<span style="font-size:20px" class="flying-plane">✈</span> Experience Cockpit Simulator'+
+        '</button>'+
+      '</div>'+
+      '<div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap">'+
+        '<button onclick="navigator.clipboard.writeText(window.location.href).then(()=>alert(\'Tracking link copied!\'))" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;padding:8px 16px;color:#00d4ff;font-weight:600">🔗 Copy Tracking Link</button>'+
+        '<button onclick="init()" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;padding:8px 16px;color:#00d4ff;font-weight:600">🔄 Refresh</button>'+
+        '<a href="/booking" class="btn btn-primary">✈ Book a Flight</a>'+
+      '</div>'+ 
+      upcomingNote +
+      '<div id="pubLastUpdate" style="text-align:center;font-size:11px;color:rgba(255,255,255,0.25);margin-top:16px">Live · '+new Date().toLocaleTimeString()+'</div>'+
+    '</div>';
+}
+
+function renderLiveUpdate(){
+  if(!currentFlight)return;
+  var r=calcProg(currentFlight);
+  var isAir=r.status==='In Flight ✈'||r.status==='Departed'||r.status==='Approaching';
+  
+  // Check for stops and update status accordingly
+  var stopInfo = checkFlightStops(currentFlight, r.prog);
+  if (stopInfo) {
+    r.status = stopInfo.status;
+    isAir = stopInfo.isAir;
+  }
+  
+  // Progress
+  var pf=document.getElementById('pubFill');if(pf)pf.style.width=r.prog+'%';
+  var pp=document.getElementById('pubPlanePip');if(pp)pp.style.left=Math.min(95,r.prog)+'%';
+  var pl=document.getElementById('pubPlane');if(pl)pl.style.animation=isAir?'float 2s ease-in-out infinite':'none';
+  // Status
+  var st=document.getElementById('pubStatusTxt');if(st)st.textContent=r.status;
+  // Remaining time
+  var remMins=Math.max(0,r.durMins-r.el);
+  var remH=Math.floor(remMins/60),remM=Math.floor(remMins%60);
+  var remain=r.prog>=100?'Arrived':(remH>0?remH+'h '+String(remM).padStart(2,'0')+'m left':Math.floor(remMins)+'m left');
+  var dl=document.getElementById('pubDurLine');if(dl)dl.textContent=(currentFlight.dur||'-')+' · '+r.prog.toFixed(1)+'% · '+remain;
+  var pc=document.getElementById('pubProgPct');if(pc)pc.textContent=r.prog.toFixed(1)+'%';
+  // Altitude and speed (vary slightly in flight to feel real)
+  var baseAlt=28000+Math.floor(r.prog*80);
+  var variance=isAir?Math.floor(Math.sin(Date.now()/15000)*200):0;
+  var alt=document.getElementById('pubAlt');if(alt)alt.textContent=isAir?(baseAlt+variance).toLocaleString()+' ft':'On Ground';
+  var baseSpd=455+Math.floor(r.prog*0.5);
+  var spdVar=isAir?Math.floor(Math.sin(Date.now()/12000)*8):0;
+  var spd=document.getElementById('pubSpd');if(spd)spd.textContent=isAir?(baseSpd+spdVar)+' mph':'0 mph';
+  // Clock
+  var upd=document.getElementById('pubLastUpdate');if(upd)upd.textContent='Live · '+new Date().toLocaleTimeString();
+  var sub=document.getElementById('trackSub');if(sub)sub.textContent=(currentFlight.fn||code)+' · '+(currentFlight.airline||'Fly Way Airlines')+' · '+r.status;
+}
+
+function checkFlightStops(flight, progress) {
+  if (!flight.stops || flight.stops.length === 0) return null;
+  
+  // For Direct flights - stop around 40-60% progress
+  if (flight.type === 'Direct') {
+    var stopProgress = 45 + Math.sin(Date.now() / 30000) * 10; // Varies between 35-55%
+    if (progress >= stopProgress - 2 && progress <= stopProgress + 8) {
+      var stop = flight.stops[0];
+      return {
+        status: '🛑 Stopped at ' + stop.airport + ' - ' + stop.reason,
+        isAir: false
+      };
+    }
+  }
+  
+  // For Connecting flights - layover around 50% progress
+  if (flight.type === 'Connecting') {
+    if (progress >= 48 && progress <= 65) {
+      var stop = flight.stops[0];
+      return {
+        status: '🔄 Layover at ' + stop.airport + ' - Connecting to ' + stop.connectingFlight,
+        isAir: false
+      };
+    }
+  }
+  
+  return null;
+}
+
+// Load reviews
+fetch('/api/reviews').then(function(r){return r.json();}).then(function(reviews){
+  var el=document.getElementById('publicReviews');if(!el||!reviews.length)return;
+  var cards=reviews.slice(0,4).map(function(r){var s='';for(var i=0;i<r.rating;i++)s+='★';return'<div class="review-card"><div class="review-stars">'+s+'</div><div class="review-text">"'+r.text+'"</div><div class="review-author"><div class="review-avatar">'+r.avatar+'</div><div><div class="review-name">'+r.name+'</div><div class="review-route">✈ '+r.route+'</div></div></div></div>';}).join('');
+  el.innerHTML='<h3 style="font-family:var(--font-h);font-weight:700;text-align:center;margin-bottom:16px">What Travellers Say ✈</h3><div class="review-scroll" id="reviewScroller"><div class="review-scroll-inner">'+cards+cards+'</div></div>';
+  // Add scrolling animation
+  var scroller=document.getElementById('reviewScroller');
+  var inner=scroller.querySelector('.review-scroll-inner');
+  var speed=1.5;
+  var pos=0;
+  var paused=false;
+  scroller.addEventListener('mouseenter',function(){paused=true;});
+  scroller.addEventListener('mouseleave',function(){paused=false;});
+  setInterval(function(){
+    if(paused)return;
+    pos-=speed;
+    if(pos<=-inner.offsetWidth/2)pos=0;
+    inner.style.transform='translateX('+pos+'px)';
+  },16);
+}).catch(function(){});
+
+function launch3dSim(){
+  var f=currentFlight;if(!f){alert('No flight tracked. Track a flight first.');return;}
+  // Use booking ref if available (direct unified lookup), otherwise use from/to params
+  var code=(f.bookingRef||f.fn||f.flightNumber||'').trim().toUpperCase();
+  if(code){
+    window.open('/flightmap?code='+encodeURIComponent(code),'_blank');
+  } else if(f.from&&f.to){
+    window.open('/flightmap?from='+encodeURIComponent(f.from)+'&to='+encodeURIComponent(f.to),'_blank');
+  } else {
+    alert('Cannot open 3D map. Missing flight route data.');
+  }
+}
+
+function launchFlightGame(){
+  var f=currentFlight;if(!f){alert('No flight tracked. Track a flight first.');return;}
+  // Open flight game with current flight data
+  var gameUrl='/flightgame';
+  if(f.from&&f.to){
+    gameUrl+='?from='+encodeURIComponent(f.from)+'&to='+encodeURIComponent(f.to)+'&flight='+encodeURIComponent(f.fn||f.flightNumber||'');
+  }
+  window.open(gameUrl,'_blank');
+}
+
+function stayOnTrackPublic(){
+  if(window.FlyWay && typeof FlyWay.toast==='function'){
+    FlyWay.toast('success','Staying here','Enjoy the live tracker while your flight prepares to depart');
+  } else {
+    alert('Staying here — enjoy the live tracker!');
+  }
+}
+
+function launchCockpitSim(){
+  var f=currentFlight;if(!f){alert('No flight tracked. Track a flight first.');return;}
+  // Open cockpit simulator with current flight data
+  var simUrl='/flightsim';
+  if(f.from&&f.to){
+    var r=calcProg(f);
+    var durMs=r.durMins*60000;
+    var sw=Date.now()-(r.el*60000);
+    simUrl+='?from='+encodeURIComponent(f.from)+'&to='+encodeURIComponent(f.to)+'&fn='+encodeURIComponent(f.fn||f.flightNumber||'')+'&sw='+sw+'&dm='+durMs;
+  }
+  window.open(simUrl,'_blank');
+}
+
+var Globe3D=(function(){
+'use strict';
+var APT={JFK:{lat:40.6413,lng:-73.778},LAX:{lat:33.9425,lng:-118.408},LHR:{lat:51.470,lng:-0.454},NRT:{lat:35.765,lng:140.386},DXB:{lat:25.253,lng:55.366},SIN:{lat:1.364,lng:103.991},CDG:{lat:49.010,lng:2.548},ORD:{lat:41.974,lng:-87.907},SFO:{lat:37.621,lng:-122.379},ATL:{lat:33.641,lng:-84.428},MIA:{lat:25.796,lng:-80.287},LOS:{lat:6.577,lng:3.321},JNB:{lat:-26.136,lng:28.241},GRU:{lat:-23.435,lng:-46.473},BOM:{lat:19.089,lng:72.865},DEL:{lat:28.556,lng:77.100},SYD:{lat:-33.939,lng:151.175},ICN:{lat:37.460,lng:126.440}};
+var R=1.0,scene,camera,renderer,globe,gridG,landG,flightG,cloudG;
+var planeMesh,glowMesh,trailLine,currentArc=null;
+var cZ=2.8,tZ=2.8,eX=0.25,eY=0,tX=0.25,tY=0;
+var drag=false,pm={x:0,y:0},initialized=false;
+
+function v3(lat,lng,r){var phi=(90-lat)*Math.PI/180,theta=(lng+180)*Math.PI/180;return new THREE.Vector3(-r*Math.sin(phi)*Math.cos(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta));}
+function save(k,d){try{localStorage.setItem('fw_fl_'+k,JSON.stringify(d));}catch(e){}}
+function load(k){try{var r=localStorage.getItem('fw_fl_'+k);return r?JSON.parse(r):null;}catch(e){return null;}}
+
+function build(){
+  var cv=document.getElementById('globe3d-canvas'),wp=document.getElementById('globe3d-wrap');
+  if(!cv||!wp)return false;
+  var W=wp.clientWidth||680,H=wp.clientHeight||360;
+  if(W<10)W=680;if(H<10)H=360;
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(W,H,false);
+  renderer.setClearColor(0x000000,0);
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(42,W/H,0.1,500);
+  camera.position.set(0,0,cZ);
+  scene.add(new THREE.AmbientLight(0x223355,1.0));
+  var sun=new THREE.DirectionalLight(0x7799dd,1.6);sun.position.set(5,3,5);scene.add(sun);
+  var gGeo=new THREE.SphereGeometry(R,56,56);
+  globe=new THREE.Mesh(gGeo,new THREE.MeshPhongMaterial({color:0x0c1e38,emissive:0x040d1a,specular:0x1a3366,shininess:14}));scene.add(globe);
+  var aGeo=new THREE.SphereGeometry(R*1.065,56,56);
+  scene.add(new THREE.Mesh(aGeo,new THREE.ShaderMaterial({transparent:true,side:THREE.FrontSide,vertexShader:'varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 vN;void main(){float i=pow(.68-dot(vN,vec3(0,0,1.)),2.8);gl_FragColor=vec4(0.,.38,.95,i*.7);}'})));
+  gridG=new THREE.Group();
+  var gm=new THREE.LineBasicMaterial({color:0x0d2244,transparent:true,opacity:0.5});
+  for(var lat=-75;lat<=75;lat+=15){var pp=[];for(var lg=0;lg<=360;lg+=4)pp.push(v3(lat,lg,R+0.001));gridG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pp),gm));}
+  for(var lg2=0;lg2<360;lg2+=15){var pp2=[];for(var lt=-90;lt<=90;lt+=3)pp2.push(v3(lt,lg2,R+0.001));gridG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pp2),gm));}
+  scene.add(gridG);
+  landG=new THREE.Group();
+  var ldM=new THREE.MeshBasicMaterial({color:0x1c4070}),ldG=new THREE.SphereGeometry(0.003,4,4);
+  [[45,-100,26,36,680],[-12,-55,26,30,500],[52,15,13,17,340],[5,22,36,36,580],[48,85,26,46,760]].forEach(function(reg){for(var i=0;i<reg[4];i++){var m=new THREE.Mesh(ldG,ldM);m.position.copy(v3(reg[0]+(Math.random()-.5)*reg[2]*2,reg[1]+(Math.random()-.5)*reg[3]*2,R+0.001));landG.add(m);}});
+  scene.add(landG);
+  var aptG=new THREE.Group(),adG=new THREE.SphereGeometry(0.006,6,6),adM=new THREE.MeshBasicMaterial({color:0x00d4ff});
+  Object.keys(APT).forEach(function(code){var m=new THREE.Mesh(adG,adM);m.position.copy(v3(APT[code].lat,APT[code].lng,R+0.009));aptG.add(m);});
+  scene.add(aptG);
+  flightG=new THREE.Group();scene.add(flightG);
+  cloudG=new THREE.Group();
+  for(var ci=0;ci<18;ci++){var cGeo=new THREE.SphereGeometry(0.028+Math.random()*0.034,5,4),cMt=new THREE.MeshPhongMaterial({color:0x8aadcc,transparent:true,opacity:0.06+Math.random()*0.09}),cM=new THREE.Mesh(cGeo,cMt),clat=(Math.random()-.5)*130,clng=Math.random()*360;cM.position.copy(v3(clat,clng,R+0.04));cM.userData={lat:clat,lng:clng,dLng:(Math.random()-.5)*0.035};cloudG.add(cM);}
+  scene.add(cloudG);
+  document.getElementById('g3dZoomIn').onclick=function(){tZ=Math.max(1.5,tZ-0.25);};
+  document.getElementById('g3dZoomOut').onclick=function(){tZ=Math.min(4.5,tZ+0.25);};
+  document.getElementById('g3dReset').onclick=function(){tX=0.25;tY=0;tZ=2.8;};
+  cv.addEventListener('mousedown',function(e){drag=true;pm={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mousemove',function(e){if(!drag)return;tY+=(e.clientX-pm.x)*0.005;tX+=(e.clientY-pm.y)*0.005;tX=Math.max(-1.2,Math.min(1.2,tX));pm={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mouseup',function(){drag=false;});
+  cv.addEventListener('touchstart',function(e){drag=true;pm={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  cv.addEventListener('touchmove',function(e){if(!drag)return;tY+=(e.touches[0].clientX-pm.x)*0.007;tX+=(e.touches[0].clientY-pm.y)*0.007;tX=Math.max(-1.2,Math.min(1.2,tX));pm={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  cv.addEventListener('touchend',function(){drag=false;});
+  cv.addEventListener('wheel',function(e){e.preventDefault();tZ=Math.max(1.5,Math.min(4.5,tZ+e.deltaY*0.003));},{passive:false});
+  window.addEventListener('resize',function(){var W2=wp.clientWidth||680,H2=wp.clientHeight||360;camera.aspect=W2/H2;camera.updateProjectionMatrix();renderer.setSize(W2,H2,false);});
+  initialized=true;return true;
+}
+
+function buildArc(fc,tc){
+  while(flightG.children.length)flightG.remove(flightG.children[0]);
+  planeMesh=null;glowMesh=null;trailLine=null;currentArc=null;
+  var fr=APT[fc]||{lat:0,lng:0},to=APT[tc]||{lat:0,lng:0};
+  var fv=v3(fr.lat,fr.lng,R),tv=v3(to.lat,to.lng,R);
+  var mid=new THREE.Vector3().addVectors(fv,tv).multiplyScalar(0.5);
+  mid.normalize().multiplyScalar(R+0.15+fv.distanceTo(tv)*0.15);
+  var curve=new THREE.QuadraticBezierCurve3(fv,mid,tv);
+  currentArc={curve:curve,fc:fc,tc:tc};
+  flightG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(80)),new THREE.LineBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.14})));
+  var od=new THREE.Mesh(new THREE.SphereGeometry(0.011,8,8),new THREE.MeshBasicMaterial({color:0x00e396}));od.position.copy(fv);flightG.add(od);
+  var td=new THREE.Mesh(new THREE.SphereGeometry(0.011,8,8),new THREE.MeshBasicMaterial({color:0xff6b6b}));td.position.copy(tv);flightG.add(td);
+  trailLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([fv,fv]),new THREE.LineBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.9}));flightG.add(trailLine);
+  planeMesh=new THREE.Mesh(new THREE.SphereGeometry(0.014,8,8),new THREE.MeshBasicMaterial({color:0xffffff}));flightG.add(planeMesh);
+  glowMesh=new THREE.Mesh(new THREE.SphereGeometry(0.026,8,8),new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.22}));flightG.add(glowMesh);
+}
+
+function updateTrail(t){
+  if(!currentArc||!trailLine)return;
+  var t0=Math.max(0,t-0.18),pts=[];
+  for(var i=0;i<=24;i++)pts.push(currentArc.curve.getPoint(t0+(t-t0)*(i/24)));
+  trailLine.geometry.setFromPoints(pts);trailLine.geometry.computeBoundingSphere();
+}
+
+var _raf=null,_sw=0,_dm=0,_sp=520;
+
+function runLoop(sw,dm){
+  if(_raf)cancelAnimationFrame(_raf);
+  _sw=sw;_dm=dm;
+  (function loop(ts){
+    _raf=requestAnimationFrame(loop);
+    var t3=ts*0.001;
+    eX+=(tX-eX)*0.055;eY+=(tY-eY)*0.055;cZ+=(tZ-cZ)*0.065;
+    camera.position.z=cZ;
+    globe.rotation.x=eX;globe.rotation.y=eY;
+    gridG.rotation.x=eX;gridG.rotation.y=eY;
+    landG.rotation.x=eX;landG.rotation.y=eY;
+    flightG.rotation.x=eX;flightG.rotation.y=eY;
+    cloudG.rotation.x=eX;cloudG.rotation.y=eY;
+    cloudG.children.forEach(function(c){c.userData.lng+=c.userData.dLng;c.position.copy(v3(c.userData.lat,c.userData.lng,R+0.04));});
+    if(glowMesh){var gp=0.85+0.15*Math.sin(t3*3.5);glowMesh.scale.setScalar(gp);glowMesh.material.opacity=0.14+0.1*gp;}
+    var el2=Date.now()-_sw,t2=Math.max(0,Math.min(1,el2/_dm));
+    if(currentArc&&planeMesh){var pos=currentArc.curve.getPoint(t2);planeMesh.position.copy(pos);glowMesh.position.copy(pos);updateTrail(t2);}
+    var pct=Math.round(t2*100),isAir=t2>0.06&&t2<0.99;
+    var alt=isAir?(28000+Math.round(Math.sin(t2*Math.PI)*2200)):0;
+    var spd=isAir?Math.round(_sp+Math.sin(t2*Math.PI)*28):0;
+    var remMs=Math.max(0,_dm-el2),remH=Math.floor(remMs/3600000),remM=Math.floor((remMs%3600000)/60000);
+    var eta=t2>=0.99?'Arrived':(remH>0?remH+'h '+String(remM).padStart(2,'0')+'m':remM+'m');
+    var ep=document.getElementById('g3dProgress');if(ep)ep.textContent=pct+'%';
+    var ea=document.getElementById('g3dAlt');if(ea)ea.textContent=isAir?alt.toLocaleString()+' ft':'Ground';
+    var es=document.getElementById('g3dSpeed');if(es)es.textContent=isAir?spd+' mph':'0 mph';
+    var ee=document.getElementById('g3dETA');if(ee)ee.textContent=eta;
+    renderer.render(scene,camera);
+  })(0);
+}
+
+return{
+  attach:function(flight,calcProgFn){
+    if(!initialized){if(!build())return;}
+    var fc=flight.from,tc=flight.to;
+    var fn=(flight.fn||flight.flightNumber||'').replace(/[^A-Z0-9]/gi,'');
+    var r=calcProgFn(flight),durMs=r.durMins*60000;
+    var sw=Date.now()-(r.el*60000);
+    var stored=load(fn);
+    if(stored&&Math.abs(stored.sw-sw)<180000){sw=stored.sw;durMs=stored.dm||durMs;}
+    else{save(fn,{sw:sw,dm:durMs,fc:fc,tc:tc});}
+    buildArc(fc,tc);
+    tX=((APT[fc]&&APT[tc])?((APT[fc].lat+APT[tc].lat)/2)*Math.PI/180*0.45:0.25);
+    tY=-(APT[fc]&&APT[tc]?(APT[fc].lng+APT[tc].lng)/2*Math.PI/180:0);
+    tZ=2.5;
+    var lbl=document.getElementById('g3dFlightLabel');if(lbl)lbl.textContent=(flight.fn||'-')+'  '+fc+' → '+tc;
+    _sp=520+Math.floor(Math.random()*40);
+    runLoop(sw,durMs);
+  },
+  destroy:function(){if(_raf)cancelAnimationFrame(_raf);}
+};
+})();
+
+init();
+</script>
+</body>
+</html>

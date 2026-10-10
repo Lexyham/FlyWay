@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FlyWay - Premium Global Flight Booking Website. Book one-way, round-trip, family flights worldwide with real-time tracking.">
+  <title>FlyWay - Premium Flight Booking</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/glow3d.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈</text></svg>">
+  <link rel="stylesheet" href="/assets/css/responsive.css">
+<link rel="stylesheet" href="/css/landingFix.css"><meta name="robots" content="noindex,nofollow">
+  <meta name="copyright" content="FlyWay © 2025. All rights reserved. Unauthorized reproduction prohibited.">
+  <meta http-equiv="Cache-Control" content="no-store">
+  </head>
+<body>
+<script>
+(function(){
+var _c=console,_l=_c.log,_w=_c.warn,_e=_c.error,_i=_c.info,_d=_c.debug;
+function _b(){_l=_w=_e=_i=_d=function(){};}
+try{Object.defineProperty(_c,'log',{get:function(){_b();return function(){};}});
+Object.defineProperty(_c,'warn',{get:function(){_b();return function(){};}});
+Object.defineProperty(_c,'error',{get:function(){_b();return function(){};}});}catch(e){}
+var _dt=false;
+var _thresh=160;
+(function _chk(){
+  var w=window.outerWidth-window.innerWidth;
+  var h=window.outerHeight-window.innerHeight;
+  if(w>_thresh||h>_thresh){
+    if(!_dt){_dt=true;document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#020812;color:#e0f0ff;font-family:sans-serif;flex-direction:column;gap:20px"><div style="font-size:48px">🔒</div><div style="font-size:24px;font-weight:700">Access Restricted</div><div style="color:#4a6080;text-align:center;max-width:400px">Developer tools detected. This application is protected.</div></div>';}
+  }else{_dt=false;}
+  setTimeout(_chk,800);
+})();
+document.addEventListener('keydown',function(e){
+  if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C','U'].includes(e.key))||(e.ctrlKey&&e.key==='U')){e.preventDefault();e.stopPropagation();return false;}
+},true);
+document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
+(function _debug(){
+  var s=new Date();var _=debugger;
+  if(new Date()-s>100){document.location.reload();}
+  setTimeout(_debug,3000);
+})();
+})();
+</script>
+
+
+<nav class="navbar" id="mainNav">
+  <div class="nav-inner">
+    <div class="hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </div>
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon glow3d">✈</div>
+      <span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-link active">Home</a>
+      <a href="/booking" class="nav-link">Book Flight</a>
+      <a href="/track" class="nav-link">Track Flight</a>
+      <a href="/flightmap" class="nav-link">3D Map</a>
+      <a href="/flightgame" class="nav-link">Have Fun</a>
+      <a href="/contact" class="nav-link">Contact</a>
+      <a href="/dashboard" class="nav-link hidden" id="navDashBtn">My Account</a>
+    </div>
+    <div class="nav-actions">
+      <a href="/login" class="btn btn-secondary btn-sm" id="navLoginBtn">Sign In</a>
+      <a href="/register" class="btn btn-primary btn-sm" id="navGetStarted">Get Started</a>
+      <a href="/dashboard" class="btn btn-primary btn-sm hidden" id="navMyAccount">My Account</a>
+      <span id="navUserChip" class="badge badge-cyan hidden"></span>
+      <button class="btn btn-ghost btn-sm hidden" id="navLogoutBtn" onclick="FlyWay.logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/" class="nav-link">Home</a>
+    <a href="/booking" class="nav-link">Book Flight</a>
+    <a href="/track" class="nav-link">Track Flight</a>
+    <a href="/flightmap" class="nav-link">3D Map</a>
+    <a href="/contact" class="nav-link">Contact</a>
+    <a href="/dashboard" class="nav-link">My Account</a>
+    <a href="/login" class="nav-link">Sign In</a>
+  </div>
+</nav>
+
+
+<section class="hero" id="hero">
+  <div class="hero-bg-plane" style="top:20%;animation-delay:0s">✈</div>
+  <div class="hero-bg-plane" style="top:60%;animation-delay:12s;font-size:40px">✈</div>
+  <div class="hero-glow" style="top:-10%;left:-10%"></div>
+  <div class="hero-glow" style="bottom:-10%;right:-10%;background:radial-gradient(circle,rgba(124,58,237,0.06) 0%,transparent 70%)"></div>
+  <div class="container hero-content">
+    <div class="hero-layout">
+      <div class="animate-in">
+        <div class="hero-tagline glow3d-section-label">
+          <span style="background:var(--cyan);width:8px;height:8px;border-radius:50%;display:inline-block"></span>
+          20+ Global Airports · 8 Major Airlines
+        </div>
+        <h1 class="display-1 hero-headline">
+          <span class="fw-anime-label fw-hero-word" id="heroWordFly">Fly</span>
+          <span class="fw-anime-label fw-hero-word text-gradient" id="heroWordAnywhere">Anywhere,</span><br>
+          <span class="fw-anime-label fw-hero-word" id="heroWordAnytime">Anytime.</span>
+        </h1>
+        <p style="color:var(--muted);margin-top:20px;line-height:1.8;max-width:480px;font-size:clamp(14px,2.2vw,18px);">
+          Premium flight booking with real-time tracking, family group discounts, AI-powered assistance, and instant confirmation.
+        </p>
+        <div class="hero-btns">
+          <a href="/booking" class="btn btn-primary btn-xl">✈ Book a Flight</a>
+          <a href="/track" class="btn btn-secondary btn-xl">📡 Track Flight</a>
+        </div>
+        <div id="heroAuthBtns" style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap"></div>
+        <div class="hero-stats" style="display:flex;gap:clamp(12px,3vw,24px);flex-wrap:wrap">
+          <div>
+            <div class="stat-glow-num">2.4M+</div>
+            <div class="hero-stat-label">Flights Booked</div>
+          </div>
+          <div>
+            <div class="stat-glow-num">180+</div>
+            <div class="hero-stat-label">Destinations</div>
+          </div>
+          <div>
+            <div class="stat-glow-num">4.9★</div>
+            <div class="hero-stat-label">Average Rating</div>
+          </div>
+          <div>
+            <div class="stat-glow-num">98%</div>
+            <div class="hero-stat-label">On-Time Record</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="hero-search-preview animate-in" style="animation-delay:0.2s">
+        <div style="font-family:var(--font-h);font-weight:700;font-size:18px;margin-bottom:20px">Quick Flight Search</div>
+        <div style="display:flex;gap:8px;margin-bottom:20px;">
+          <button class="trip-tab active" id="htOneWay" onclick="setTripType('one-way')">→ One-Way</button>
+          <button class="trip-tab" id="htRound" onclick="setTripType('round-trip')">⇄ Round-Trip</button>
+        </div>
+        <div class="form-group autocomplete-wrap">
+          <label class="form-label">From</label>
+          <input class="form-input" id="htFrom" placeholder="Departure city or airport" autocomplete="off">
+        </div>
+        <div class="form-group autocomplete-wrap">
+          <label class="form-label">To</label>
+          <input class="form-input" id="htTo" placeholder="Destination city or airport" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Departure</label>
+            <input class="form-input" type="date" id="htDate">
+          </div>
+          <div class="form-group" id="htReturnGroup" style="display:none">
+            <label class="form-label">Return</label>
+            <input class="form-input" type="date" id="htReturn">
+          </div>
+          <div class="form-group" id="htPassGroup">
+            <label class="form-label">Passengers</label>
+            <select class="form-input" id="htPass">
+              <option value="1">1 Passenger</option>
+              <option value="2">2 Passengers</option>
+              <option value="3">3 Passengers</option>
+              <option value="4">4 Passengers</option>
+              <option value="5">5+ Passengers</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full btn-lg" onclick="heroSearch()">🔍 Search Flights</button>
+        <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted)">
+          ✓ No booking fees &nbsp;·&nbsp; ✓ Best price guarantee &nbsp;·&nbsp; ✓ 24/7 support
+        </div>
+        
+        <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px"><span class="fw-anime-label" id="hotRoutesLabel">🔥 Hot Routes</span></div>
+          <div id="hotRoutesBar" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section style="background:var(--navy2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:28px 0;">
+  <div class="container">
+    <div class="trust-badge-3d-row" style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap;align-items:center;">
+      <div class="trust-badge-3d"><span style="font-size:20px">⭐</span><div><div style="font-weight:700;font-size:13px">Trustpilot</div><div style="font-size:11px;color:var(--muted)">4.9/5 · 48K reviews</div></div></div>
+      <div class="trust-badge-3d"><span style="font-size:20px">🏆</span><div><div style="font-weight:700;font-size:13px">TripAdvisor</div><div style="font-size:11px;color:var(--muted)">Certificate of Excellence</div></div></div>
+      <div class="trust-badge-3d"><span style="font-size:20px">✅</span><div><div style="font-weight:700;font-size:13px">TrustScore</div><div style="font-size:11px;color:var(--muted)">Verified · 99% satisfaction</div></div></div>
+      <div class="trust-badge-3d"><span style="font-size:20px">🔒</span><div><div style="font-weight:700;font-size:13px">SSL Secured</div><div style="font-size:11px;color:var(--muted)">256-bit encryption</div></div></div>
+      <div class="trust-badge-3d"><span style="font-size:20px">💳</span><div><div style="font-weight:700;font-size:13px">PCI DSS</div><div style="font-size:11px;color:var(--muted)">Payment certified</div></div></div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container">
+    <div class="text-center mb-32">
+      <div class="badge badge-cyan badge-lg mb-16 glow3d-section-label">✨ Why FlyWay</div>
+      <h2 class="display-3">Everything You Need<br>for <span class="text-gradient fw-anime-label fw-section-phrase" id="phraseTravel">Perfect Travel</span></h2>
+      <p style="color:var(--muted);margin-top:12px;font-size:16px;max-width:540px;margin-left:auto;margin-right:auto;">From booking to landing, FlyWay handles every detail of your journey with precision and care.</p>
+    </div>
+    <div class="features-grid" id="featuresGrid">
+      <div class="feature-card-3d animate-in" style="animation-delay:0.1s">
+        <div class="feature-icon" style="background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,212,255,0.05))">✈</div>
+        <div class="feature-title">Global Routes</div>
+        <div class="feature-desc">Access 30+ airports across 6 continents. One-way or round-trip with seamless connection options.</div>
+      </div>
+      <div class="feature-card-3d animate-in" style="animation-delay:0.15s">
+        <div class="feature-icon" style="background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(124,58,237,0.05))">👨‍👩‍👧‍👦</div>
+        <div class="feature-title">Family Bookings</div>
+        <div class="feature-desc">Book for the whole family with auto-discounts for children, seniors, and infants in one easy process.</div>
+      </div>
+      <div class="feature-card-3d animate-in" style="animation-delay:0.2s">
+        <div class="feature-icon" style="background:linear-gradient(135deg,rgba(0,227,150,0.15),rgba(0,227,150,0.05))">🪑</div>
+        <div class="feature-title">Seat Selection</div>
+        <div class="feature-desc">Interactive seat maps for Economy, Business, and First Class. Choose window, aisle, or extra legroom.</div>
+      </div>
+      <div class="feature-card-3d animate-in" style="animation-delay:0.25s">
+        <div class="feature-icon" style="background:linear-gradient(135deg,rgba(245,200,66,0.15),rgba(245,200,66,0.05))">📡</div>
+        <div class="feature-title">Live Tracking</div>
+        <div class="feature-desc">Real-time flight tracking with gate info, status updates, and a shareable tracking link for family.</div>
+      </div>
+      <div class="feature-card-3d animate-in" style="animation-delay:0.3s">
+        <div class="feature-icon" style="background:linear-gradient(135deg,rgba(255,87,87,0.15),rgba(255,87,87,0.05))">🎟</div>
+        <div class="feature-title">Promo Codes</div>
+        <div class="feature-desc">Exclusive discount codes for loyalty members. Up to 100% off with special voucher codes.</div>
+      </div>
+      <div class="feature-card-3d animate-in" style="animation-delay:0.35s">
+        <div class="feature-icon" style="background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(124,58,237,0.1))">🤖</div>
+        <div class="feature-title">AI Assistant</div>
+        <div class="feature-desc">Zephyr, our AI chat assistant, answers your questions 24/7 and escalates complex issues to our support team.</div>
+      </div>
+      <div class="feature-card-3d animate-in" style="animation-delay:0.4s">
+        <div class="feature-icon" style="background:linear-gradient(135deg,rgba(0,227,150,0.15),rgba(0,212,255,0.05))">📄</div>
+        <div class="feature-title">Digital Receipts</div>
+        <div class="feature-desc">Download your boarding pass as PDF or image. Includes QR code for airport check-in.</div>
+      </div>
+      <div class="feature-card-3d animate-in" style="animation-delay:0.45s">
+        <div class="feature-icon" style="background:linear-gradient(135deg,rgba(245,200,66,0.15),rgba(255,87,87,0.05))">⭐</div>
+        <div class="feature-title">Loyalty Points</div>
+        <div class="feature-desc">Earn points on every booking. Redeem for upgrades, free flights, and exclusive travel perks.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section" style="background:var(--navy2);border-top:1px solid var(--border);">
+  <div class="container">
+    <div class="text-center mb-32">
+      <div class="badge badge-green badge-lg mb-16 glow3d-section-label">🔴 Live Activity</div>
+      <h2 class="display-3">Real Bookings,<br><span class="text-gradient fw-anime-label fw-section-phrase" id="phraseHappening">Happening Now</span></h2>
+    </div>
+    <div class="split-grid">
+      
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <div style="font-family:var(--font-h);font-weight:700;font-size:16px">🔴 Live Bookings</div>
+          <span class="badge badge-green animate-pulse">● Live</span>
+        </div>
+        <div id="liveFeed" style="display:flex;flex-direction:column;gap:10px">
+          
+        </div>
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card" style="display:flex;align-items:center;gap:16px;">
+          <div style="width:52px;height:52px;background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,212,255,0.05));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">✈</div>
+          <div>
+            <div id="liveFlights" style="font-family:var(--font-h);font-size:28px;font-weight:800;color:var(--cyan)">2,847</div>
+            <div style="font-size:13px;color:var(--muted)">Flights booked today</div>
+          </div>
+        </div>
+        <div class="card" style="display:flex;align-items:center;gap:16px;">
+          <div style="width:52px;height:52px;background:linear-gradient(135deg,rgba(0,227,150,0.15),rgba(0,227,150,0.05));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🌍</div>
+          <div>
+            <div id="liveCountries" style="font-family:var(--font-h);font-size:28px;font-weight:800;color:var(--emerald)">134</div>
+            <div style="font-size:13px;color:var(--muted)">Countries reached today</div>
+          </div>
+        </div>
+        <div class="card" style="display:flex;align-items:center;gap:16px;">
+          <div style="width:52px;height:52px;background:linear-gradient(135deg,rgba(245,200,66,0.15),rgba(245,200,66,0.05));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">👥</div>
+          <div>
+            <div id="livePassengers" style="font-family:var(--font-h);font-size:28px;font-weight:800;color:var(--gold)">14,219</div>
+            <div style="font-size:13px;color:var(--muted)">Passengers flying this week</div>
+          </div>
+        </div>
+        <a href="/booking" class="btn btn-primary btn-lg btn-full" style="margin-top:8px">Book Your Flight Now →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container">
+    <div class="text-center mb-32">
+      <div class="badge badge-gold badge-lg mb-16 glow3d-section-label">⭐ Trusted by Travelers</div>
+      <h2 class="display-3">What Our Passengers<br><span class="text-gradient fw-anime-label fw-section-phrase" id="phraseSaying">Are Saying</span></h2>
+      <div class="trust-badge-3d-row" style="display:flex;justify-content:center;gap:16px;margin-top:16px;flex-wrap:wrap;">
+        <div class="trust-badge-3d"><span>⭐</span> Trustpilot 4.9/5</div>
+        <div class="trust-badge-3d"><span>🏆</span> TripAdvisor Excellent</div>
+        <div class="trust-badge-3d"><span>✅</span> TrustScore Verified</div>
+      </div>
+    </div>
+    <div class="review-scroll" id="reviewsContainer">
+      
+    </div>
+  </div>
+</section>
+
+
+<section style="background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(124,58,237,0.06));border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:60px 0;">
+  <div class="container text-center">
+    <div class="badge badge-cyan badge-lg mb-16 glow3d-section-label">🎟 Exclusive Offer</div>
+    <h2 class="display-3 glow3d-section-label" style="margin-bottom:12px;display:inline-block">Ready to Fly?</h2>
+    <p style="color:var(--muted);font-size:16px;margin-bottom:28px;max-width:500px;margin-left:auto;margin-right:auto;">Create your account today and get access to exclusive promo codes, loyalty rewards, and member-only pricing.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+      <a href="/register" class="btn btn-gold btn-xl glow3d glow3d-gold">🚀 Create Free Account</a>
+      <a href="/contact" class="btn btn-secondary btn-xl glow3d">💬 Talk to Us</a>
+    </div>
+  </div>
+</section>
+
+
+<footer style="background:var(--navy2);border-top:1px solid var(--border);padding:48px 0 24px;">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="nav-logo" style="margin-bottom:16px;">
+          <div class="nav-logo-icon glow3d">✈</div>
+          <span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span>
+        </div>
+        <p style="color:var(--muted);font-size:14px;line-height:1.8;max-width:280px;">Your premium global flight booking partner. Trusted by millions of travelers worldwide since 2020.</p>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <a href="mailto:platinumtrack.noreply@gmail.com" style="background:var(--glass);border:1px solid var(--border);padding:8px 12px;border-radius:8px;font-size:12px;color:var(--muted);">✉ Email</a>
+          <a href="https://wa.me/15550000000" style="background:var(--glass);border:1px solid var(--border);padding:8px 12px;border-radius:8px;font-size:12px;color:var(--muted);">💬 WhatsApp</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:700;margin-bottom:14px;font-size:14px;">Book</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--muted);">
+          <a href="/booking" style="color:var(--muted)">Book a Flight</a>
+          <a href="/booking?type=round-trip" style="color:var(--muted)">Round Trips</a>
+          <a href="/booking?class=business" style="color:var(--muted)">Business Class</a>
+          <a href="/booking?class=first" style="color:var(--muted)">First Class</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:700;margin-bottom:14px;font-size:14px;">Account</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--muted);">
+          <a href="/login" style="color:var(--muted)">Sign In</a>
+          <a href="/register" style="color:var(--muted)">Register</a>
+          <a href="/dashboard" style="color:var(--muted)">Dashboard</a>
+          <a href="/bookings" style="color:var(--muted)">My Bookings</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:700;margin-bottom:14px;font-size:14px;">Help</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--muted);">
+          <a href="/track" style="color:var(--muted)">Track Flight</a>
+          <a href="/contact" style="color:var(--muted)">Contact Us</a>
+          <a href="/contact" style="color:var(--muted)">Customer Service</a>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);">
+      <div>© 2025 FlyWay. All rights reserved.</div>
+      <div style="display:flex;gap:20px;">
+        <a href="/legalprivacy" style="color:var(--muted)">Privacy Policy</a>
+        <a href="/legalterms" style="color:var(--muted)">Terms of Service</a>
+        <a href="/legalcookies" style="color:var(--muted)">Cookie Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+<button class="chat-fab" id="chatFab" title="Chat with Zephyr">
+  <div class="chat-fab-inner">
+    <div class="chat-fab-ring"></div>
+    <div class="chat-fab-ring2"></div>
+    <span class="chat-fab-icon">🤖</span>
+    <span class="badge-dot" id="chatDot">1</span>
+  </div>
+</button>
+<div class="chat-window" id="chatWindow" style="display:none">
+  <div class="chat-header">
+    <div class="chat-avatar">🤖</div>
+    <div>
+      <div style="font-weight:700;font-size:14px">Zephyr</div>
+      <div style="font-size:12px;color:var(--muted)">AI Travel Assistant · Online</div>
+    </div>
+    <button id="chatClose" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">×</button>
+  </div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div class="chat-input-row">
+    <textarea id="chatInput" class="chat-input" placeholder="Ask about flights, bookings, tracking..." rows="1"></textarea>
+    <button id="chatSend" class="chat-send">Send</button>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script src="/js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+  (function() {
+    var tok = localStorage.getItem('fw_token');
+    var usr = localStorage.getItem('fw_user');
+    if (tok && usr) {
+      try {
+        var u = JSON.parse(usr);
+        document.getElementById('navGetStarted') && document.getElementById('navGetStarted').classList.add('hidden');
+        document.getElementById('navMyAccount')  && document.getElementById('navMyAccount').classList.remove('hidden');
+        var hb = document.getElementById('heroAuthBtns');
+        if (hb) {
+          hb.innerHTML = '<a href="/dashboard" class="btn btn-ghost" style="font-size:14px">🏠 Dashboard →</a>'
+                       + '<a href="/bookings"  class="btn btn-ghost" style="font-size:14px">📋 My Bookings</a>';
+        }
+      } catch(e) {}
+    }
+  })();
+
+  document.getElementById('htDate').min   = FlyWay.today();
+  document.getElementById('htDate').value = FlyWay.today();
+
+
+  FlyWay.initAirportInput(document.getElementById('htFrom'), function(a) {
+    document.getElementById('htFrom').dataset.code = a.code;
+  });
+  FlyWay.initAirportInput(document.getElementById('htTo'), function(a) {
+    document.getElementById('htTo').dataset.code = a.code;
+  });
+
+  var HOT_ROUTES = [
+    {from:'JFK', to:'LHR', label:'New York → London',       flag:'🇺🇸→🇬🇧', price:'from $449'},
+    {from:'LAX', to:'NRT', label:'Los Angeles → Tokyo',     flag:'🇺🇸→🇯🇵', price:'from $699'},
+    {from:'DXB', to:'JFK', label:'Dubai → New York',        flag:'🇦🇪→🇺🇸', price:'from $599'},
+    {from:'LHR', to:'DXB', label:'London → Dubai',          flag:'🇬🇧→🇦🇪', price:'from $349'},
+    {from:'SIN', to:'LHR', label:'Singapore → London',      flag:'🇸🇬→🇬🇧', price:'from $749'},
+    {from:'JFK', to:'CDG', label:'New York → Paris',        flag:'🇺🇸→🇫🇷', price:'from $499'},
+    {from:'ATL', to:'MIA', label:'Atlanta → Miami',         flag:'🇺🇸→🇺🇸', price:'from $129'},
+    {from:'SFO', to:'ORD', label:'San Francisco → Chicago', flag:'🇺🇸→🇺🇸', price:'from $189'},
+  ];
+
+  var hotBar = document.getElementById('hotRoutesBar');
+  if (hotBar) {
+    hotBar.innerHTML = HOT_ROUTES.map(function(r) {
+      return '<button class="route-pill" onclick="fillRoute(\'' + r.from + '\',\'' + r.to + '\')">'
+           + '<span style="font-size:14px">' + r.flag + '</span>'
+           + '<span style="font-weight:600">' + r.label + '</span>'
+           + '<span style="font-size:11px;color:var(--emerald)">' + r.price + '</span>'
+           + '</button>';
+    }).join('');
+  }
+
+  window.setTripType = function(t) {
+    window._heroTripType = t;
+    document.getElementById('htOneWay').classList.toggle('active', t==='one-way');
+    document.getElementById('htRound').classList.toggle('active', t==='round-trip');
+    var rg = document.getElementById('htReturnGroup');
+    var pg = document.getElementById('htPassGroup');
+    if (t==='round-trip') { rg.style.display=''; pg.style.display='none'; }
+    else                  { rg.style.display='none'; pg.style.display=''; }
+  };
+  window._heroTripType = 'one-way';
+
+  window.fillRoute = function(from, to) {
+    var fa = FlyWay.airports.find(function(a){ return a.code===from; });
+    var ta = FlyWay.airports.find(function(a){ return a.code===to; });
+    var fromEl = document.getElementById('htFrom');
+    var toEl   = document.getElementById('htTo');
+    if (fa) { fromEl.value = fa.city + ' (' + from + ')'; fromEl.dataset.code = from; }
+    if (ta) { toEl.value   = ta.city + ' (' + to   + ')'; toEl.dataset.code   = to;   }
+    FlyWay.toast('info', from + ' → ' + to, 'Route filled! Press Search to see flights.');
+  };
+
+  window.heroSearch = function() {
+    var from = document.getElementById('htFrom').dataset.code;
+    var to   = document.getElementById('htTo').dataset.code;
+    var date = document.getElementById('htDate').value;
+    var pass = document.getElementById('htPass').value;
+    if (!from) { FlyWay.toast('error','Choose departure','Type a city and pick from the dropdown'); return; }
+    if (!to)   { FlyWay.toast('error','Choose destination','Type a city and pick from the dropdown'); return; }
+    if (!date) { FlyWay.toast('error','Select a date','Pick your departure date'); return; }
+    var params = 'from='+from+'&to='+to+'&date='+date+'&passengers='+pass+'&tripType='+(window._heroTripType||'one-way');
+    if (window._heroTripType==='round-trip') {
+      var ret = document.getElementById('htReturn').value;
+      if (ret) params += '&returnDate='+ret;
+    }
+    window.location.href = '/booking?' + params;
+  };
+
+  var feedRoutes = [
+    ['JFK','LHR'],['LAX','NRT'],['DXB','JFK'],['SIN','LHR'],['ORD','CDG'],
+    ['ATL','MIA'],['SFO','HND'],['LHR','DXB'],['NRT','SIN'],['BOS','LAX'],
+    ['JNB','LHR'],['DOH','JFK'],['DEL','LHR'],['BKK','SIN'],['ICN','LAX'],
+  ];
+  var feedNames = ['Amara O.','James K.','Sofia L.','David M.','Fatima H.','Chen W.','Maria G.','Ahmed R.','Sarah T.','Luke P.','Priya N.','Carlos M.'];
+  var feedClasses = ['Economy','Business','First Class'];
+
+  function addLiveFeed() {
+    var feed = document.getElementById('liveFeed');
+    if (!feed) return;
+    var r = feedRoutes[Math.floor(Math.random()*feedRoutes.length)];
+    var name  = feedNames[Math.floor(Math.random()*feedNames.length)];
+    var cls   = feedClasses[Math.floor(Math.random()*feedClasses.length)];
+    var price = (Math.random()*800+120).toFixed(0);
+    var item  = document.createElement('div');
+    item.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--navy3);border-radius:10px;border:1px solid var(--border);animation:fadeUp 0.4s ease;font-size:13px;';
+    item.innerHTML = '<span style="font-size:18px">✈</span>'
+      + '<div style="flex:1"><div style="font-weight:600">' + name + '</div>'
+      + '<div style="color:var(--muted);font-size:12px">' + r[0] + ' → ' + r[1] + ' · ' + cls + '</div></div>'
+      + '<div style="text-align:right"><div style="font-family:var(--font-h);font-weight:700;color:var(--cyan)">$' + price + '</div>'
+      + '<div style="font-size:10px;color:var(--muted)">just now</div></div>';
+    feed.insertBefore(item, feed.firstChild);
+    while (feed.children.length > 6) feed.removeChild(feed.lastChild);
+  }
+  addLiveFeed();
+  setInterval(addLiveFeed, 3500);
+
+  var liveBookings   = 2847 + Math.floor(Math.random()*300);
+  var livePassengers = 14219 + Math.floor(Math.random()*400);
+
+  function animateCounter(el, target) {
+    if (!el) return;
+    var start = 0, step = target / 80;
+    var t = setInterval(function() {
+      start += step;
+      if (start >= target) { el.textContent = target.toLocaleString(); clearInterval(t); return; }
+      el.textContent = Math.floor(start).toLocaleString();
+    }, 14);
+  }
+  var liveCountries = 134 + Math.floor(Math.random()*10);
+  animateCounter(document.getElementById('liveFlights'), liveBookings);
+  animateCounter(document.getElementById('liveCountries'), liveCountries);
+  animateCounter(document.getElementById('livePassengers'), livePassengers);
+
+  setInterval(function() {
+    liveBookings   += Math.floor(Math.random()*3)+1;
+    livePassengers += Math.floor(Math.random()*5)+2;
+    liveCountries += Math.random()>0.6 ? 1 : 0;
+    var el = document.getElementById('liveFlights');
+    if (el) el.textContent = liveBookings.toLocaleString();
+    el = document.getElementById('livePassengers'); if (el) el.textContent = livePassengers.toLocaleString();
+    el = document.getElementById('liveCountries'); if (el) el.textContent = liveCountries.toLocaleString();
+  }, 4000);
+
+
+
+}); // end DOMContentLoaded
+</script>
+
+<script>
+(function(){
+  function attachGlowTracking(){
+    document.querySelectorAll('.glow3d').forEach(function(el){
+      if(el.dataset.glowAttached) return;
+      el.dataset.glowAttached='1';
+      el.addEventListener('mousemove',function(e){
+        var r=el.getBoundingClientRect();
+        var mx=((e.clientX-r.left)/r.width*100).toFixed(1)+'%';
+        var my=((e.clientY-r.top)/r.height*100).toFixed(1)+'%';
+        el.style.setProperty('--mx',mx);
+        el.style.setProperty('--my',my);
+      });
+    });
+  }
+  attachGlowTracking();
+  var obs=new MutationObserver(attachGlowTracking);
+  obs.observe(document.body,{childList:true,subtree:true});
+})();
+</script>
+
+
+<script>
+(function(){
+  var NAMES=['James K.','Sofia L.','Amara O.','David M.','Fatima H.','Chen W.','Maria G.','Ahmed R.','Sarah T.','Luke P.','Priya N.','Carlos M.','Yuki T.','Olga S.','Mohammed A.','Emma J.','Kwame B.','Lena R.'];
+  var ROUTES=['JFK→LHR','DXB→NRT','LAX→CDG','SIN→LHR','ORD→MIA','ATL→LOS','YYZ→LHR','DEL→DXB','SYD→SIN','GRU→LIS','ICN→JFK','BOM→LHR'];
+  var TEXTS=[
+    'Absolutely seamless booking experience! The real-time tracking was spot on and the seat map was incredibly intuitive.',
+    'Best flight booking platform I have ever used. The AI assistant Zephyr answered all my questions instantly.',
+    'Booked my family vacation in under 5 minutes. The group discount was a pleasant surprise!',
+    'The live tracking feature gave our whole family peace of mind. We tracked every update.',
+    'Premium experience from start to finish. Business class booking was effortless.',
+    'Incredible platform! The 3D flight map is stunning. Never seen anything like it for a booking site.',
+    'Gift card payment was quick and easy. Got my confirmation within seconds.',
+    'Customer support via the chatbot was brilliant. Sorted my rebooking in minutes.',
+    'Loved the seat selection interface. Got the perfect window seat every time.',
+    'The loyalty points system is genuinely rewarding. Already earned a free upgrade!',
+    'Tracking link shared with my mum - she watched my flight the whole way. Amazing feature.',
+    'Smooth, fast, beautiful. FlyWay has completely replaced my old travel agency.',
+  ];
+  var SOURCES=['Trustpilot','Google Reviews','TripAdvisor','App Store','Play Store'];
+  var AVATARS=['👨‍💼','👩‍💼','🧑‍✈️','👨‍💻','👩‍🔬','🧑‍🎨','👨','👩','🧔','👱‍♀️','🧕','👳'];
+
+  function genReview(i){
+    var stars='★★★★★'.slice(0,4+Math.round(Math.random()));
+    var name=NAMES[i%NAMES.length];
+    var route=ROUTES[i%ROUTES.length];
+    var text=TEXTS[i%TEXTS.length];
+    var src=SOURCES[i%SOURCES.length];
+    var av=AVATARS[i%AVATARS.length];
+    var daysAgo=Math.floor(Math.random()*28)+1;
+    return '<div class="review-card glow3d" style="min-width:300px;max-width:340px;flex-shrink:0">'
+      +'<div class="review-stars" style="color:#f5c842;font-size:16px;margin-bottom:8px">'+stars+'</div>'
+      +'<div class="review-text" style="font-size:13px;line-height:1.7;color:rgba(224,240,255,0.85);margin-bottom:14px">"'+text+'"</div>'
+      +'<div class="review-author" style="display:flex;align-items:center;gap:10px">'
+      +'<div class="review-avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(124,58,237,0.2));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+av+'</div>'
+      +'<div><div class="review-name" style="font-weight:700;font-size:13px">'+name+'</div>'
+      +'<div style="font-size:11px;color:var(--muted)">'+src+' · '+daysAgo+'d ago</div>'
+      +'<div style="font-size:11px;color:var(--cyan);margin-top:1px">✈ '+route+'</div>'
+      +'</div></div></div>';
+  }
+
+  function buildScroller(containerId){
+    var el=document.getElementById(containerId);
+    if(!el)return;
+    var cards='';
+    for(var i=0;i<18;i++) cards+=genReview(i);
+    el.innerHTML='<div class="review-scroll-inner">'+cards+cards+'</div>';
+
+    var inner=el.querySelector('.review-scroll-inner');
+    if(!inner)return;
+    var speed=0.5;
+    var pos=0;
+    var paused=false;
+    el.addEventListener('mouseenter',function(){paused=true;});
+    el.addEventListener('mouseleave',function(){paused=false;});
+
+    var addNew=setInterval(function(){
+      var idx=Math.floor(Math.random()*100);
+      var newCard=document.createElement('div');
+      newCard.innerHTML=genReview(idx);
+      var card=newCard.firstChild;
+      card.style.opacity='0';card.style.transform='scale(0.9)';card.style.transition='opacity 0.5s,transform 0.5s';
+      inner.appendChild(card);
+      requestAnimationFrame(function(){card.style.opacity='1';card.style.transform='scale(1)';});
+    },6000);
+
+    (function scroll(){
+      requestAnimationFrame(scroll);
+      if(paused)return;
+      pos+=speed;
+      var half=inner.scrollWidth/2;
+      if(pos>=half) pos=0;
+      inner.style.transform='translateX(-'+pos+'px)';
+    })();
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    buildScroller('reviewsContainer');
+    var trackRC=document.getElementById('trackReviews');
+    if(trackRC) buildScroller('trackReviews');
+  });
+
+  window._buildReviewScroller=buildScroller;
+})();
+</script>
+
+
+<script>
+(function(){
+  function attach3DGlow(){
+    document.querySelectorAll('.trust-badge-3d,.feature-card-3d').forEach(function(el){
+      if(el.dataset.g3) return; el.dataset.g3='1';
+      el.addEventListener('mousemove',function(e){
+        var r=el.getBoundingClientRect();
+        el.style.setProperty('--mx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');
+        el.style.setProperty('--my',((e.clientY-r.top)/r.height*100).toFixed(1)+'%');
+      });
+    });
+  }
+  document.addEventListener('DOMContentLoaded',attach3DGlow);
+  var obs=new MutationObserver(attach3DGlow);
+  if(document.body) obs.observe(document.body,{childList:true,subtree:true});
+  else document.addEventListener('DOMContentLoaded',function(){obs.observe(document.body,{childList:true,subtree:true});});
+})();
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+<script src="/js/anime-labels.js"></script>
+<script src="/js/landingFix.js"></script>
+</body>
+</html>

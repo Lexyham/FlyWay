@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Book a Flight - FlyWay</title>
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="/assets/css/responsive.css">
+<link rel="stylesheet" href="/css/ticket-system.css">
+<link rel="stylesheet" href="/css/license-system.css">
+<style>
+
+.pay-overlay{position:fixed;inset:0;background:rgba(6,13,31,0.97);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+.pay-spinner{width:64px;height:64px;border:4px solid rgba(0,212,255,0.2);border-top:4px solid var(--cyan);border-radius:50%;animation:spin 0.8s linear infinite}
+.pay-msg{font-family:var(--font-h);font-size:18px;font-weight:700;color:var(--white)}
+.pay-sub{font-size:13px;color:var(--muted);text-align:center}
+.pay-fail-card{background:var(--navy2);border:1px solid rgba(255,87,87,0.3);border-radius:20px;padding:36px 32px;text-align:center;max-width:420px;animation:fadeUp 0.4s ease}
+.pay-alt-btns{display:flex;flex-direction:column;gap:10px;margin-top:20px;width:100%}
+.pay-alt-btn{padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid;transition:all 0.2s;background:transparent}
+.maintenance-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,87,87,0.1);border:1px solid rgba(255,87,87,0.3);border-radius:10px;padding:10px 16px;font-size:13px;color:var(--coral);margin:12px 0}
+
+.ticket-wrap{background:linear-gradient(135deg,#0a1628,#152040);border-radius:20px;overflow:hidden;border:1px solid var(--border);max-width:640px;margin:24px auto}
+.ticket-top{padding:28px;background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(124,58,237,0.05));border-bottom:2px dashed rgba(255,255,255,0.08)}
+.ticket-mid{padding:24px}
+.ticket-bot{padding:20px;text-align:center;border-top:2px dashed rgba(255,255,255,0.08);background:rgba(0,0,0,0.2)}
+.t-city{font-family:var(--font-h);font-size:44px;font-weight:800;line-height:1}
+.t-time{font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px}
+.t-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.t-val{font-size:13px;font-weight:600}
+.barcode-strip{font-family:monospace;font-size:11px;letter-spacing:8px;color:rgba(255,255,255,0.3)}
+
+.dl-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.chat-fab{position:fixed;bottom:28px;right:28px;z-index:999;width:64px;height:64px;border:none;cursor:pointer;background:transparent;padding:0;}
+.chat-fab-inner{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#0044cc,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;position:relative;overflow:visible;box-shadow:0 8px 32px rgba(0,212,255,0.45);animation:chatFabFloat 3s ease-in-out infinite,chatFabPulse 2s ease infinite;}
+@keyframes chatFabFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}
+@keyframes chatFabPulse{0%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 0 rgba(0,212,255,.4)}70%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 16px rgba(0,212,255,0)}100%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 0 rgba(0,212,255,0)}}
+.chat-fab-ring{position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(0,212,255,.45);animation:chatRing 2.5s linear infinite;}
+.chat-fab-ring2{position:absolute;inset:-12px;border-radius:50%;border:1.5px solid rgba(124,58,237,.3);animation:chatRing 4s linear infinite reverse;}
+@keyframes chatRing{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.chat-fab-icon{font-size:28px;z-index:2;position:relative;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
+.badge-dot{position:absolute;top:0;right:0;width:15px;height:15px;border-radius:50%;background:#ff4757;border:2px solid #020812;font-size:8px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;z-index:3;}
+</style>
+<meta name="robots" content="noindex,nofollow">
+  <meta name="copyright" content="FlyWay © 2025. All rights reserved. Unauthorized reproduction prohibited.">
+  <meta http-equiv="Cache-Control" content="no-store">
+  </head>
+<body>
+<script>
+(function(){
+var _c=console,_l=_c.log,_w=_c.warn,_e=_c.error,_i=_c.info,_d=_c.debug;
+function _b(){_l=_w=_e=_i=_d=function(){};}
+try{Object.defineProperty(_c,'log',{get:function(){_b();return function(){};}});
+Object.defineProperty(_c,'warn',{get:function(){_b();return function(){};}});
+Object.defineProperty(_c,'error',{get:function(){_b();return function(){};}});}catch(e){}
+var _dt=false;
+var _thresh=160;
+(function _chk(){
+  var w=window.outerWidth-window.innerWidth;
+  var h=window.outerHeight-window.innerHeight;
+  if(w>_thresh||h>_thresh){
+    if(!_dt){_dt=true;document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#020812;color:#e0f0ff;font-family:sans-serif;flex-direction:column;gap:20px"><div style="font-size:48px">🔒</div><div style="font-size:24px;font-weight:700">Access Restricted</div><div style="color:#4a6080;text-align:center;max-width:400px">Developer tools detected. This application is protected.</div></div>';}
+  }else{_dt=false;}
+  setTimeout(_chk,800);
+})();
+document.addEventListener('keydown',function(e){
+  if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C','U'].includes(e.key))||(e.ctrlKey&&e.key==='U')){e.preventDefault();e.stopPropagation();return false;}
+},true);
+document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
+(function _debug(){
+  var s=new Date();
+  if(new Date()-s>100){document.location.reload();}
+  setTimeout(_debug,3000);
+})();
+})();
+</script>
+<nav class="navbar" id="mainNav">
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+      <a href="/" class="nav-logo"><div class="nav-logo-icon glow3d">✈</div><span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span></a>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/booking" class="nav-link active">Book Flight</a>
+      <a href="/track" class="nav-link">Track Flight</a>
+      <a href="/flightmap" class="nav-link">3D Map</a>
+      <a href="/flightgame" class="nav-link">Have Fun</a>
+      <a href="/contact" class="nav-link">Contact</a>
+      <a href="/dashboard" class="nav-link hidden" id="navDashBtn">My Account</a>
+    </div>
+    <div class="nav-actions">
+      <div id="fw_currency_selector" style="display:inline-block;margin-right:6px;"></div>
+      <span id="navUserChip" class="badge badge-cyan hidden"></span>
+      <a href="/login" class="btn btn-secondary btn-sm" id="navLoginBtn">Sign In</a>
+      <button class="btn btn-ghost btn-sm hidden" id="navLogoutBtn" onclick="FlyWay.logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/" class="nav-link">Home</a>
+    <a href="/booking" class="nav-link">Book Flight</a>
+    <a href="/track" class="nav-link">Track Flight</a>
+    <a href="/flightmap" class="nav-link">3D Map</a>
+    <a href="/flightgame" class="nav-link">Have Fun</a>
+    <a href="/contact" class="nav-link">Contact</a>
+    <a href="/dashboard" class="nav-link">My Account</a>
+    <a href="/bookings" class="nav-link">My Bookings</a>
+    <a href="/login" class="nav-link">Sign In</a>
+  </div>
+</nav>
+
+
+<div class="pay-overlay hidden" id="payOverlay">
+  <div id="payOverlayContent">
+    <div class="pay-spinner" id="paySpinner"></div>
+    <div class="pay-msg" id="payMsg">Processing Payment...</div>
+    <div class="pay-sub" id="paySub">Please wait, do not close this page</div>
+  </div>
+</div>
+
+<div style="margin-top:70px;padding:32px 0 60px;min-height:calc(100vh - 70px)">
+  <div class="container" style="max-width:1100px">
+
+    
+    <div class="booking-steps mb-32" id="stepsBar">
+      <div class="booking-step"><div class="step-num active" id="sn1" data-n="1">1</div><span class="step-label-text active" id="sl1">Search</span></div>
+      <div class="step-line-connector" id="sc1"></div>
+      <div class="booking-step"><div class="step-num" id="sn2" data-n="2">2</div><span class="step-label-text" id="sl2">Flights</span></div>
+      <div class="step-line-connector" id="sc2"></div>
+      <div class="booking-step"><div class="step-num" id="sn3" data-n="3">3</div><span class="step-label-text" id="sl3">Passengers</span></div>
+      <div class="step-line-connector" id="sc3"></div>
+      <div class="booking-step"><div class="step-num" id="sn4" data-n="4">4</div><span class="step-label-text" id="sl4">Seats</span></div>
+      <div class="step-line-connector" id="sc4"></div>
+      <div class="booking-step"><div class="step-num" id="sn5" data-n="5">5</div><span class="step-label-text" id="sl5">Extras</span></div>
+      <div class="step-line-connector" id="sc5"></div>
+      <div class="booking-step"><div class="step-num" id="sn6" data-n="6">6</div><span class="step-label-text" id="sl6">Payment</span></div>
+      <div class="step-line-connector" id="sc6"></div>
+      <div class="booking-step"><div class="step-num" id="sn7" data-n="7">7</div><span class="step-label-text" id="sl7">Done</span></div>
+    </div>
+
+    
+    <div id="step1">
+      <div class="search-box">
+        <h2 style="font-family:var(--font-h);font-size:22px;font-weight:800;margin-bottom:6px">✈ Find Your Perfect Flight</h2>
+        <p style="color:var(--muted);font-size:14px;margin-bottom:24px">30+ global airports · All travel purposes · Instant booking</p>
+        <div class="trip-type-tabs">
+          <button class="trip-tab active" id="tabOneWay" onclick="setTrip('one-way')">→ One-Way</button>
+          <button class="trip-tab" id="tabRound" onclick="setTrip('round-trip')">⇄ Round-Trip</button>
+        </div>
+        <div class="route-builder">
+          <div class="form-group autocomplete-wrap">
+            <label class="form-label">🛫 From - Departure Airport</label>
+            <input class="form-input" id="fromInput" placeholder="Type city or airport code..." autocomplete="off">
+          </div>
+          <button class="swap-btn" onclick="swapRoutes()">⇄</button>
+          <div class="form-group autocomplete-wrap">
+            <label class="form-label">🛬 To - Destination Airport</label>
+            <input class="form-input" id="toInput" placeholder="Type city or airport code..." autocomplete="off">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
+          <div class="form-group"><label class="form-label">📅 Departure Date</label><input class="form-input" type="date" id="depDate"></div>
+          <div class="form-group hidden" id="retDateGroup"><label class="form-label">📅 Return Date</label><input class="form-input" type="date" id="retDate"></div>
+          <div class="form-group"><label class="form-label">👥 Passengers</label>
+            <select class="form-input" id="passCount">
+              <option value="1">1 Passenger</option><option value="2">2 Passengers</option><option value="3">3 Passengers</option>
+              <option value="4">4 Passengers</option><option value="5">5 Passengers</option><option value="6">6 Passengers</option>
+              <option value="7">7 Passengers</option><option value="8">8 Passengers</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">💺 Travel Class</label>
+            <select class="form-input" id="travelClass">
+              <option value="economy">✈ Economy</option><option value="business">💺 Business</option><option value="first">👑 First Class</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">✈ Flight Type</label>
+            <select class="form-input" id="flightType">
+              <option value="any">Any</option>
+              <option value="nonstop">Non-stop</option>
+              <option value="direct">Direct</option>
+              <option value="connecting">Connecting</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary btn-lg" onclick="searchFlights()">🔍 Search Available Flights</button>
+          <span style="font-size:12px;color:var(--muted)">✓ No booking fees · ✓ All routes available · ✓ Instant confirmation</span>
+        </div>
+      </div>
+      
+      <div style="margin-top:20px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600"><span class="fw-anime-label" id="popularRoutesLabel">⚡ Popular Routes:</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="popularRoutesBar"></div>
+      </div>
+      <div style="margin-top:24px;padding:22px;border:1px solid var(--border);border-radius:20px;background:rgba(255,255,255,0.04);">
+        <div style="font-size:15px;font-weight:700;margin-bottom:12px">Flight type guide</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+          <div style="padding:16px;border-radius:16px;background:rgba(4,14,34,0.9);">
+            <div style="font-weight:700;margin-bottom:8px">Non-stop Flight</div>
+            <div style="color:var(--muted);font-size:13px">The fastest option, with no stops. The plane takes off, lands once, and arrives at the destination.</div>
+          </div>
+          <div style="padding:16px;border-radius:16px;background:rgba(4,14,34,0.9);">
+            <div style="font-weight:700;margin-bottom:8px">Direct Flight</div>
+            <div style="color:var(--muted);font-size:13px">A single flight number that may stop for passengers or refuel, but you usually stay on the same plane.</div>
+          </div>
+          <div style="padding:16px;border-radius:16px;background:rgba(4,14,34,0.9);">
+            <div style="font-weight:700;margin-bottom:8px">Connecting Flight</div>
+            <div style="color:var(--muted);font-size:13px">At least two separate planes and flight numbers. You change planes during a layover.</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;color:var(--muted);font-size:13px;line-height:1.6;">
+          <strong>Fastest:</strong> Non-stop.<br>
+          <strong>Convenience:</strong> Non-stop &gt; Direct &gt; Connecting.<br>
+          <strong>Cheaper:</strong> Connecting flights are usually the cheapest, while non-stop are the most expensive.
+        </div>
+        <div style="margin-top:16px;color:var(--muted);font-size:13px;line-height:1.6;">
+          If you want to make sure your trip goes smoothly, I can also help you find out average delay times for a specific airline, explain minimum layover time for a connecting flight, or give tips for what to do if you miss a connection.
+        </div>
+      </div>
+    </div>
+
+    
+    <div id="step2" class="hidden">
+      <div id="flightResults"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px">
+        <button class="btn btn-ghost" onclick="goStep(1)">← Modify Search</button>
+        <button class="btn btn-primary btn-lg" onclick="confirmFlightSelection()">Continue →</button>
+      </div>
+    </div>
+
+    
+    <div id="step3" class="hidden">
+      <div class="grid-2" style="align-items:start;gap:24px">
+        <div>
+          <div class="card mb-20">
+            <div style="font-family:var(--font-h);font-weight:700;font-size:18px;margin-bottom:8px">👤 Passenger Details</div>
+            <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:10px;padding:12px 14px;font-size:13px;margin-bottom:20px">
+              💡 Discounts applied automatically: <strong>Infant &lt;2 (90% off)</strong> · <strong>Child &lt;12 (25% off)</strong> · <strong>Senior 60+ (15% off)</strong>
+            </div>
+            <div id="passengerForms"></div>
+          </div>
+          <div class="card">
+            <div style="font-weight:700;margin-bottom:14px">📋 Contact Details</div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="contactEmail" type="email" placeholder="email@example.com"></div>
+              <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="contactPhone" type="tel" placeholder="+1 555 0000"></div>
+            </div>
+          </div>
+        </div>
+        <div class="price-summary" id="pax3Summary"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px">
+        <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+        <button class="btn btn-primary btn-lg" onclick="validatePassengers()">Continue to Seats →</button>
+      </div>
+    </div>
+
+    
+    <div id="step4" class="hidden">
+      <div class="grid-2" style="align-items:start;gap:24px">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+            <div style="font-family:var(--font-h);font-weight:700;font-size:17px">🪑 Seat Selection</div>
+            <div style="font-size:12px;color:var(--muted)" id="seatCounter">0/1 selected</div>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Click to select. Window seats +$10, Extra Legroom +$50.</div>
+          <div id="seatMapContainer"></div>
+        </div>
+        <div class="price-summary" id="seatPriceSummary"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px">
+        <button class="btn btn-ghost" onclick="goStep(3)">← Back</button>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-ghost" onclick="skipSeats()">Skip (Auto-assign)</button>
+          <button class="btn btn-primary btn-lg" onclick="goStep(5)">Continue →</button>
+        </div>
+      </div>
+    </div>
+
+    
+    <div id="step5" class="hidden">
+      <div class="grid-2" style="align-items:start;gap:24px">
+        <div>
+          <div class="card mb-20">
+            <div style="font-family:var(--font-h);font-weight:700;font-size:17px;margin-bottom:14px">🧳 Baggage</div>
+            <div style="font-size:13px;color:var(--emerald);background:rgba(0,227,150,0.08);padding:10px 14px;border-radius:10px;margin-bottom:14px;border:1px solid rgba(0,227,150,0.2)" id="baggageIncluded">✅ Economy: 1 carry-on + 1 checked bag included free</div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Carry-on Bags</label>
+                <select class="form-input" id="carryOn" onchange="updatePricing()">
+                  <option value="1">1 (included)</option><option value="2">2 (+$30)</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Checked Bags</label>
+                <select class="form-input" id="checkedBags" onchange="updatePricing()">
+                  <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                </select>
+              </div>
+            </div>
+            <div id="baggageFeeNote" style="font-size:12px;color:var(--muted)"></div>
+          </div>
+          <div class="card">
+            <div style="font-family:var(--font-h);font-weight:700;font-size:17px;margin-bottom:14px">🎟 Promo Code</div>
+            <div id="promoApplied" class="hidden">
+              <div style="background:rgba(0,227,150,0.1);border:1px solid rgba(0,227,150,0.3);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px">
+                <span style="font-size:18px">✅</span>
+                <div style="flex:1"><div style="font-weight:700;font-size:14px" id="promoCodeDisplay">-</div><div style="font-size:12px;color:var(--muted)" id="promoDescDisplay">-</div></div>
+                <button class="btn btn-ghost btn-sm" onclick="removePromo()">Remove</button>
+              </div>
+            </div>
+            <div id="promoInputRow">
+              <div style="display:flex;gap:8px">
+                <input class="form-input" id="promoInput" placeholder="Enter promo code" style="text-transform:uppercase;font-family:var(--font-m)" onkeydown="if(event.key==='Enter')applyPromo()">
+                <button class="btn btn-ghost" onclick="applyPromo()">Apply</button>
+              </div>
+              <div id="promoMsg" style="font-size:12px;margin-top:6px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="price-summary" id="extrasPriceSummary"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px">
+        <button class="btn btn-ghost" onclick="goStep(4)">← Back</button>
+        <button class="btn btn-primary btn-lg" onclick="goStep(6)">Continue to Payment →</button>
+      </div>
+    </div>
+
+    
+    <div id="step6" class="hidden">
+      <div class="grid-2" style="align-items:start;gap:24px">
+        <div>
+          <div class="card mb-20">
+            <div style="font-family:var(--font-h);font-weight:700;font-size:17px;margin-bottom:16px">💳 Select Payment Method</div>
+            <div class="payment-methods-grid">
+              <div class="payment-option selected" data-method="card" onclick="selectPayment('card')"><div class="payment-opt-icon">💳</div><div class="payment-opt-name">Card</div><div class="payment-opt-desc">Fill details</div></div>
+              <div class="payment-option" data-method="bank" onclick="selectPayment('bank')"><div class="payment-opt-icon">🏦</div><div class="payment-opt-name">Bank Transfer</div><div class="payment-opt-desc">Upload proof</div></div>
+              <div class="payment-option" data-method="crypto" onclick="selectPayment('crypto')"><div class="payment-opt-icon">₿</div><div class="payment-opt-name">Crypto</div><div class="payment-opt-desc">BTC/ETH/USDT</div></div>
+              <div class="payment-option" data-method="wallet" onclick="selectPayment('wallet')"><div class="payment-opt-icon">📱</div><div class="payment-opt-name">Mobile Wallet</div><div class="payment-opt-desc">PayPal/Paystack</div></div>
+              <div class="payment-option" data-method="giftcard" onclick="selectPayment('giftcard')"><div class="payment-opt-icon">🎁</div><div class="payment-opt-name">Gift Card</div><div class="payment-opt-desc">Any brand</div></div>
+              <div class="payment-option" data-method="cashapp" onclick="selectPayment('cashapp')"><div class="payment-opt-icon">💚</div><div class="payment-opt-name">CashApp</div><div class="payment-opt-desc">$CashTag</div></div>
+            </div>
+          </div>
+
+          
+          <div class="card mb-20" id="cardDetails">
+            <div style="font-weight:700;margin-bottom:16px">💳 Card Details</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:8px 12px;background:rgba(0,227,150,0.07);border:1px solid rgba(0,227,150,0.2);border-radius:8px;font-size:12px;color:var(--emerald)"><span>🔒</span><span>Secured connection</span></div>
+            <div class="form-group"><label class="form-label">Cardholder Name</label><input class="form-input" id="cardName" placeholder="Full name on card" autocomplete="cc-name" name="ccname"></div>
+            <div class="form-group"><label class="form-label">Card Number</label><input class="form-input" id="cardNum" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number" name="cardnumber" oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{4})/g,'$1 ').trim()"></div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Expiry (MM/YY)</label><input class="form-input" id="cardExp" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" name="cc-exp"></div>
+              <div class="form-group"><label class="form-label">CVV</label><input class="form-input" type="password" id="cardCvv" placeholder="•••" maxlength="4"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Card PIN (for verification)</label><input class="form-input" type="password" id="cardPin" placeholder="•••• (4-6 digits)" maxlength="6"></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">🔒 Your details are encrypted and stored securely for admin verification only.</div>
+          </div>
+
+          
+          <div class="card mb-20 hidden" id="bankDetails">
+            <div style="font-weight:700;margin-bottom:14px">🏦 Bank Transfer</div>
+            <div style="text-align:center;padding:24px">
+              <div style="font-size:40px;margin-bottom:12px">🔧</div>
+              <div style="font-weight:700;font-size:16px;margin-bottom:8px">Bank Transfer Unavailable</div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.7">Our bank accounts are temporarily offline due to network maintenance. Please try <strong style="color:var(--cyan)">Gift Card</strong> or <strong style="color:var(--cyan)">Crypto</strong> payment instead.</div>
+              <div class="maintenance-badge" style="display:inline-flex;margin-top:12px"><span>🔴</span> Network failure - Expected back online in ~2 hours</div>
+            </div>
+          </div>
+
+          
+          <div class="card mb-20 hidden" id="cryptoDetails">
+            <div style="font-weight:700;margin-bottom:14px">₿ Crypto Payment</div>
+            <div style="background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--gold);margin-bottom:12px">⚠ Send the exact USD equivalent. Screenshot upload is required before you can confirm.</div>
+            <div id="cryptoInfoBox" style="background:var(--navy3);border-radius:10px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
+              <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Send to one of these wallets (click to copy):</div>
+              <div id="cryptoContent" style="font-size:12px;line-height:2.4">Loading...</div>
+            </div>
+            <div class="form-group"><label class="form-label">Transaction ID / Hash</label><input class="form-input" id="cryptoTxId" placeholder="0x... or transaction hash (optional but recommended)"></div>
+            <div style="font-weight:600;margin-bottom:8px;font-size:13px">📸 Upload Screenshot <span style="color:var(--coral)">*Required</span></div>
+            <div id="cryptoProofMissing" class="hidden" style="color:var(--coral);font-size:12px;margin-bottom:8px">⚠ Please upload a transaction screenshot to proceed.</div>
+            <div class="upload-zone" id="cryptoProofZone"><input type="file" accept="image/*,.pdf" id="cryptoProofFile"><div class="upload-icon">📸</div><div style="font-weight:600">Drop or click to upload proof</div><div style="font-size:12px;color:var(--muted)">JPG PNG PDF · Max 10MB · Required</div></div>
+            <div id="cryptoProofPreview" class="mt-16"></div>
+          </div>
+
+          
+          <div class="card mb-20 hidden" id="walletDetails">
+            <div style="font-weight:700;margin-bottom:14px">📱 Mobile Wallet</div>
+            <div style="text-align:center;padding:24px">
+              <div style="font-size:40px;margin-bottom:12px">⚙️</div>
+              <div style="font-weight:700;font-size:16px;margin-bottom:8px">Wallet Services Under Maintenance</div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.7">Paystack, Flutterwave, and PayPal integrations are currently undergoing scheduled maintenance. Please use <strong style="color:var(--cyan)">Gift Card</strong> or <strong style="color:var(--cyan)">Crypto</strong> instead.</div>
+              <div class="maintenance-badge" style="display:inline-flex;margin-top:12px"><span>🟡</span> Maintenance in progress - Back online soon</div>
+            </div>
+          </div>
+
+          
+          <div class="card mb-20 hidden" id="giftcardDetails">
+            <div style="font-weight:700;margin-bottom:16px;font-size:16px">🎁 Gift Card Payment</div>
+
+            <!-- Accepted brands -->
+            <div style="background:rgba(245,200,66,0.05);border-radius:12px;padding:14px;border:1px solid rgba(245,200,66,0.15);margin-bottom:18px">
+              <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">✅ Choose Or Type</div>
+              <div id="giftCardTypes" style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Gift Card Type / Brand</label>
+              <input class="form-input" id="gcType" placeholder="e.g. Amazon, iTunes, Google Play, Steam...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Gift Card Code(s)</label>
+              <textarea class="form-input" id="gcCode" rows="3" placeholder="Enter full code(s) here. Multiple cards: one per line."></textarea>
+            </div>
+
+            <!-- Premium multi-image upload -->
+            <div style="margin-top:8px">
+              <div style="font-weight:700;font-size:13px;margin-bottom:10px">📷 Upload GiftCard Image(s)
+                <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">PNG · JPG · JPEG · WEBP · up to 20 images</span>
+              </div>
+
+              <div class="fw-gc-upload-zone" id="gcUploadZone">
+                <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" id="gcImageFile" multiple>
+                <span class="fw-gc-upload-icon">🎁</span>
+                <div class="fw-gc-upload-title">Drag & drop gift card images</div>
+                <div class="fw-gc-upload-sub">or <span>click to browse</span> · PNG, JPG, WEBP supported</div>
+                <div id="gcFileCounter" class="fw-gc-file-counter" style="display:none">
+                  <span id="gcFileCount">0</span> image(s) selected
+                </div>
+              </div>
+
+              <!-- Progress bar -->
+              <div class="fw-gc-progress" id="gcUploadProgress" style="display:none;margin-top:8px">
+                <div class="fw-gc-progress-fill" id="gcProgressFill" style="width:0%"></div>
+              </div>
+
+              <!-- Stats row -->
+              <div class="fw-gc-stats" id="gcUploadStats" style="display:none">
+                <span class="fw-gc-stat-item">📎 <span id="gcStatCount">0</span> files</span>
+                <span class="fw-gc-stat-item">💾 <span id="gcStatSize">0</span> KB total</span>
+                <span class="fw-gc-stat-item" id="gcStatError" style="display:none;color:#ff5757"></span>
+              </div>
+
+              <!-- Preview grid -->
+              <div class="fw-gc-preview-grid" id="gcImgPreview"></div>
+            </div>
+          </div>
+
+          
+          <div class="card mb-20 hidden" id="cashappDetails">
+            <div style="font-weight:700;margin-bottom:14px">💚 CashApp</div>
+            <div style="text-align:center;padding:24px">
+              <div style="font-size:40px;margin-bottom:12px">🔧</div>
+              <div style="font-weight:700;font-size:16px;margin-bottom:8px">CashApp Temporarily Unavailable</div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.7">CashApp payments are temporarily suspended. Please use <strong style="color:var(--cyan)">Gift Card</strong> or <strong style="color:var(--cyan)">Crypto</strong> payment instead.</div>
+              <div class="maintenance-badge" style="display:inline-flex;margin-top:12px"><span>🔴</span> Service suspended - Try gift card or crypto</div>
+            </div>
+          </div>
+        </div>
+
+        
+        <div class="price-summary" id="payPriceSummary"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px">
+        <button class="btn btn-ghost" onclick="goStep(5)">← Back</button>
+        <button class="btn btn-gold btn-lg" id="payBtn" onclick="submitBooking()">🔒 Confirm & Pay</button>
+      </div>
+    </div>
+
+    
+    <div id="step7" class="hidden">
+
+      <!-- ── Premium Confirmation Hero ── -->
+      <div class="fw-confirm-hero" id="confirmCard">
+        <div class="fw-confirm-icon-wrap">
+          <div class="fw-confirm-icon-ring"></div>
+          <div class="fw-confirm-icon-ring2"></div>
+          <div class="fw-confirm-icon-inner" id="confirmIconInner">✅</div>
+        </div>
+        <div class="fw-confirm-title" id="confirmTitle">Booking Submitted!</div>
+        <div class="fw-confirm-sub" id="confirmSubtitle">Your flight has been booked successfully</div>
+        <div class="fw-confirm-ref" id="confirmRefCode">—</div>
+      </div>
+
+      <!-- ── Loyalty Banner ── -->
+      <div id="loyaltyEarnedBanner" class="fw-loyalty-banner" style="display:none">
+        <span class="fw-loyalty-icon">✨</span>
+        <span id="loyaltyBannerText"></span>
+      </div>
+
+      <!-- ── Premium Ticket (rendered by FWTicket.buildWebTicketHTML) ── -->
+      <div id="ticketEl"></div>
+
+      <!-- ── Action Strip ── -->
+      <div class="fw-action-strip">
+        <button class="fw-action-btn fw-action-btn-primary" onclick="openFlightMap()" id="btn3DTrack">🌍 Track in 3D</button>
+        <button class="fw-action-btn fw-action-btn-ghost" onclick="openTrackPage()">📡 Live Status</button>
+        <button class="fw-action-btn fw-action-btn-ghost" onclick="fwDownloadPNG()">🖼 Save PNG</button>
+        <button class="fw-action-btn fw-action-btn-ghost" onclick="fwDownloadTicket()">📄 Ticket PDF</button>
+        <button class="fw-action-btn fw-action-btn-ghost" onclick="fwDownloadReceipt()">🧾 Receipt PDF</button>
+        <button class="fw-action-btn fw-action-btn-ghost" onclick="copyTrackLink()">🔗 Share</button>
+        <a href="/bookings" class="fw-action-btn fw-action-btn-ghost">📋 All Bookings</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<button class="chat-fab" id="chatFab" title="Chat with Zephyr">
+  <div class="chat-fab-inner">
+    <div class="chat-fab-ring"></div>
+    <div class="chat-fab-ring2"></div>
+    <span class="chat-fab-icon">🤖</span>
+    <span class="badge-dot" id="chatDot">1</span>
+  </div>
+</button>
+<div class="chat-window" id="chatWindow" style="display:none">
+  <div class="chat-header"><div class="chat-avatar">🤖</div><div><div style="font-weight:700;font-size:14px">Zephyr</div><div style="font-size:12px;color:var(--muted)">AI Assistant</div></div><button id="chatClose" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">×</button></div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div class="chat-input-row"><textarea id="chatInput" class="chat-input" placeholder="Ask about booking..." rows="1"></textarea><button id="chatSend" class="chat-send">Send</button></div>
+</div>
+<div id="toastContainer"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="/js/main.js"></script>
+<script src="/js/ticket-system.js"></script>
+<script src="/js/barcode-gen.js"></script>
+<script src="/js/license-system.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ── Gift Card Multi-Image Upload System ──────────────────────────────────────
+(function() {
+  var MAX_FILES  = 20;
+  var MAX_SIZE   = 8 * 1024 * 1024; // 8MB per file
+  var VALID_TYPES = ['image/png','image/jpeg','image/jpg','image/webp'];
+  var _files = [];
+
+  function initGCUpload() {
+    var zone   = document.getElementById('gcUploadZone');
+    var input  = document.getElementById('gcImageFile');
+    if (!zone || !input) return;
+
+    // Drag events
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', function() { zone.classList.remove('drag-over'); });
+    zone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      addFiles(Array.from(e.dataTransfer.files));
+    });
+
+    input.addEventListener('change', function() {
+      addFiles(Array.from(this.files));
+      this.value = ''; // reset so same files can be re-added
+    });
+  }
+
+  function addFiles(newFiles) {
+    var errorEl = document.getElementById('gcStatError');
+    var errors = [];
+
+    newFiles.forEach(function(file) {
+      if (_files.length >= MAX_FILES) { errors.push('Max ' + MAX_FILES + ' images allowed'); return; }
+      if (!VALID_TYPES.includes(file.type)) { errors.push(file.name + ': unsupported type'); return; }
+      if (file.size > MAX_SIZE) { errors.push(file.name + ': too large (max 8MB)'); return; }
+      // Duplicate check by name+size
+      var dup = _files.some(function(f) { return f.name === file.name && f.size === file.size; });
+      if (dup) { errors.push(file.name + ': already added'); return; }
+      _files.push(file);
+    });
+
+    if (errorEl) {
+      if (errors.length) { errorEl.textContent = '⚠ ' + errors[0]; errorEl.style.display = 'flex'; }
+      else { errorEl.style.display = 'none'; }
+    }
+
+    // Sync to S.gcImageFiles
+    if (typeof gcImageFiles !== 'undefined') { gcImageFiles.length = 0; _files.forEach(function(f){ gcImageFiles.push(f); }); }
+    if (typeof S !== 'undefined') S.gcImageFiles = _files.slice();
+
+    renderPreviews();
+    updateStats();
+  }
+
+  function removeFile(idx) {
+    _files.splice(idx, 1);
+    if (typeof S !== 'undefined') S.gcImageFiles = _files.slice();
+    renderPreviews();
+    updateStats();
+  }
+
+  function renderPreviews() {
+    var container = document.getElementById('gcImgPreview');
+    var counter   = document.getElementById('gcFileCounter');
+    var countEl   = document.getElementById('gcFileCount');
+    if (!container) return;
+
+    if (_files.length === 0) {
+      container.innerHTML = '';
+      if (counter) counter.style.display = 'none';
+      return;
+    }
+
+    if (counter) { counter.style.display = 'inline-flex'; }
+    if (countEl) { countEl.textContent = _files.length; }
+
+    container.innerHTML = '';
+    _files.forEach(function(file, idx) {
+      var item = document.createElement('div');
+      item.className = 'fw-gc-preview-item';
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        item.innerHTML =
+          '<img src="' + e.target.result + '" alt="' + file.name + '">' +
+          '<button class="fw-gc-remove" onclick="window._gcRemove(' + idx + ')" title="Remove">×</button>' +
+          '<div class="fw-gc-label">' + file.name + '</div>';
+      };
+      reader.readAsDataURL(file);
+      container.appendChild(item);
+    });
+  }
+
+  function updateStats() {
+    var statsEl = document.getElementById('gcUploadStats');
+    var cntEl   = document.getElementById('gcStatCount');
+    var sizeEl  = document.getElementById('gcStatSize');
+    var progEl  = document.getElementById('gcUploadProgress');
+    var fillEl  = document.getElementById('gcProgressFill');
+
+    if (!statsEl) return;
+    if (_files.length === 0) {
+      statsEl.style.display = 'none';
+      if (progEl) progEl.style.display = 'none';
+      return;
+    }
+
+    statsEl.style.display = 'flex';
+    if (cntEl) cntEl.textContent = _files.length;
+
+    var totalKB = _files.reduce(function(s,f){ return s + f.size; }, 0) / 1024;
+    if (sizeEl) sizeEl.textContent = totalKB.toFixed(0);
+
+    // Progress bar shows fill percentage of max
+    if (progEl && fillEl) {
+      progEl.style.display = 'block';
+      fillEl.style.width = Math.min(100, (_files.length / MAX_FILES) * 100) + '%';
+    }
+  }
+
+  // Expose remove globally
+  window._gcRemove = function(idx) { removeFile(idx); };
+
+  // Init on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGCUpload);
+  } else {
+    initGCUpload();
+  }
+})();
+
+// ── FWLicense booking page guard ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof FWLicense !== 'undefined') {
+    FWLicense.guardBookingPage();
+  }
+});
+
+// ── Socket for real-time license updates ─────────────────────────────────────
+(function() {
+  if (typeof io === 'undefined') return;
+  var user = null;
+  try { user = JSON.parse(localStorage.getItem('fw_user') || '{}'); } catch(e){}
+  if (!user || !user.id) return;
+  var socket = io();
+  socket.on('connect', function(){ socket.emit('join_user', user.id); });
+  socket.emit('join_user', user.id);
+  if (typeof FWLicense !== 'undefined') FWLicense.connectSocket(socket);
+})();
+</script>
+<script>
+
+const FLIGHTS = [
+
+  {fn:'FW-101',airline:'Fly Way Airlines',ac:'Boeing 737-800',  from:'JFK',to:'LAX',dep:'06:00',arr:'09:30',dur:'5h 30m',price:269,cls:['economy','business','first'],type:'Non-stop'},
+  {fn:'FW-103',airline:'Fly Way Airlines',ac:'Airbus A320neo',  from:'JFK',to:'LAX',dep:'11:30',arr:'15:00',dur:'5h 30m',price:299,cls:['economy','business','first'],type:'Direct'},
+  {fn:'FW-105',airline:'Fly Way Airlines',ac:'Boeing 777',       from:'JFK',to:'LAX',dep:'17:00',arr:'20:30',dur:'5h 30m',price:349,cls:['economy','business','first'],type:'Connecting',stops:'1 stop'},
+
+  {fn:'FW-102',airline:'Fly Way Airlines',ac:'Airbus A320',     from:'LAX',to:'JFK',dep:'07:00',arr:'15:30',dur:'5h 30m',price:279,cls:['economy','business'],type:'Non-stop'},
+  {fn:'FW-104',airline:'Fly Way Airlines',ac:'Boeing 737-800',  from:'LAX',to:'JFK',dep:'13:00',arr:'21:30',dur:'5h 30m',price:319,cls:['economy','business'],type:'Direct'},
+  {fn:'FW-106',airline:'Fly Way Airlines',ac:'Airbus A321',     from:'LAX',to:'JFK',dep:'19:30',arr:'04:00',dur:'5h 30m',price:289,cls:['economy','business'],type:'Connecting',stops:'1 stop'},
+
+  {fn:'FW-1501',airline:'Fly Way Airlines',ac:'Boeing 737 MAX', from:'JFK',to:'MIA',dep:'07:45',arr:'11:45',dur:'3h 00m',price:219,cls:['economy','business'],type:'Non-stop'},
+  {fn:'FW-1503',airline:'Fly Way Airlines',ac:'Airbus A321',    from:'JFK',to:'MIA',dep:'15:10',arr:'19:10',dur:'3h 00m',price:239,cls:['economy','business'],type:'Direct'},
+  {fn:'FW-1505',airline:'Fly Way Airlines',ac:'Boeing 737',      from:'JFK',to:'MIA',dep:'09:30',arr:'14:00',dur:'4h 30m',price:189,cls:['economy'],type:'Connecting',stops:'1 stop'},
+  {fn:'FW-1601',airline:'Fly Way Airlines',ac:'Airbus A320neo', from:'LAX',to:'SFO',dep:'08:00',arr:'09:20',dur:'1h 20m',price:129,cls:['economy','business'],type:'Non-stop'},
+  {fn:'FW-1603',airline:'Fly Way Airlines',ac:'Boeing 737',     from:'LAX',to:'SFO',dep:'12:30',arr:'13:50',dur:'1h 20m',price:149,cls:['economy','business'],type:'Direct'},
+  {fn:'FW-1605',airline:'Fly Way Airlines',ac:'Embraer 175',    from:'LAX',to:'SFO',dep:'17:00',arr:'18:25',dur:'1h 25m',price:139,cls:['economy'],type:'Connecting',stops:'1 stop'},
+
+  {fn:'FW-201',airline:'Fly Way Airlines',ac:'Boeing 777-300ER',from:'JFK',to:'LHR',dep:'18:30',arr:'06:45',dur:'7h 15m',price:599,cls:['economy','business','first']},
+  {fn:'FW-203',airline:'Fly Way Airlines',ac:'Airbus A380',     from:'JFK',to:'LHR',dep:'22:00',arr:'10:15',dur:'7h 15m',price:649,cls:['economy','business','first']},
+
+  {fn:'FW-202',airline:'Fly Way Airlines',ac:'Boeing 777-300ER',from:'LHR',to:'JFK',dep:'09:00',arr:'12:15',dur:'8h 15m',price:619,cls:['economy','business','first']},
+  {fn:'FW-204',airline:'Fly Way Airlines',ac:'Airbus A350-900', from:'LHR',to:'JFK',dep:'13:30',arr:'16:45',dur:'8h 15m',price:669,cls:['economy','business','first']},
+
+  {fn:'FW-301',airline:'Fly Way Airlines',ac:'Boeing 787',      from:'LAX',to:'NRT',dep:'11:00',arr:'15:00',dur:'12h 00m',price:899,cls:['economy','business'],type:'Non-stop'},
+  {fn:'FW-303',airline:'Fly Way Airlines',ac:'Boeing 777',      from:'LAX',to:'NRT',dep:'22:30',arr:'03:30',dur:'11h 00m',price:849,cls:['economy','business','first'],type:'Direct'},
+
+  {fn:'FW-302',airline:'Fly Way Airlines',ac:'Boeing 787',      from:'NRT',to:'LAX',dep:'18:00',arr:'14:00',dur:'11h 00m',price:879,cls:['economy','business'],type:'Non-stop'},
+
+  {fn:'FW-401',airline:'Fly Way Airlines',ac:'Airbus A350-900', from:'DXB',to:'JFK',dep:'02:30',arr:'09:15',dur:'14h 45m',price:799,cls:['economy','business','first']},
+  {fn:'FW-403',airline:'Fly Way Airlines',ac:'Boeing 777',      from:'DXB',to:'JFK',dep:'14:00',arr:'20:45',dur:'14h 45m',price:849,cls:['economy','business','first']},
+
+  {fn:'FW-402',airline:'Fly Way Airlines',ac:'Airbus A350-900', from:'JFK',to:'DXB',dep:'22:00',arr:'18:00',dur:'12h 00m',price:749,cls:['economy','business','first']},
+  {fn:'FW-404',airline:'Fly Way Airlines',ac:'Boeing 777-300ER',from:'JFK',to:'DXB',dep:'08:30',arr:'04:30',dur:'12h 00m',price:779,cls:['economy','business','first']},
+
+  {fn:'FW-501',airline:'Fly Way Airlines',ac:'Airbus A321',     from:'SFO',to:'ORD',dep:'07:15',arr:'13:30',dur:'4h 15m',price:249,cls:['economy','business']},
+  {fn:'FW-503',airline:'Fly Way Airlines',ac:'Boeing 737 MAX',  from:'SFO',to:'ORD',dep:'14:00',arr:'20:15',dur:'4h 15m',price:279,cls:['economy','business']},
+
+  {fn:'FW-502',airline:'Fly Way Airlines',ac:'Airbus A321',     from:'ORD',to:'SFO',dep:'15:00',arr:'17:30',dur:'4h 30m',price:259,cls:['economy','business']},
+
+  {fn:'FW-601',airline:'Fly Way Airlines',ac:'Boeing 737 MAX',  from:'ATL',to:'MIA',dep:'07:00',arr:'08:30',dur:'1h 30m',price:129,cls:['economy','business']},
+  {fn:'FW-603',airline:'Fly Way Airlines',ac:'Airbus A320neo',  from:'ATL',to:'MIA',dep:'14:30',arr:'16:00',dur:'1h 30m',price:149,cls:['economy','business']},
+  {fn:'FW-605',airline:'Fly Way Airlines',ac:'Boeing 737-800',  from:'ATL',to:'MIA',dep:'19:00',arr:'20:30',dur:'1h 30m',price:169,cls:['economy','business']},
+
+  {fn:'FW-602',airline:'Fly Way Airlines',ac:'Boeing 737 MAX',  from:'MIA',to:'ATL',dep:'09:30',arr:'11:00',dur:'1h 30m',price:139,cls:['economy','business']},
+  {fn:'FW-604',airline:'Fly Way Airlines',ac:'Airbus A320',     from:'MIA',to:'ATL',dep:'17:00',arr:'18:30',dur:'1h 30m',price:159,cls:['economy','business']},
+
+  {fn:'FW-701',airline:'Fly Way Airlines',ac:'Airbus A380',     from:'LHR',to:'DXB',dep:'09:00',arr:'19:00',dur:'7h 00m',price:519,cls:['economy','business','first']},
+  {fn:'FW-703',airline:'Fly Way Airlines',ac:'Boeing 777',      from:'LHR',to:'DXB',dep:'22:00',arr:'08:00',dur:'7h 00m',price:549,cls:['economy','business','first']},
+
+  {fn:'FW-702',airline:'Fly Way Airlines',ac:'Airbus A380',     from:'DXB',to:'LHR',dep:'09:00',arr:'13:00',dur:'7h 00m',price:539,cls:['economy','business','first']},
+
+  {fn:'FW-801',airline:'Fly Way Airlines',ac:'Boeing 787',      from:'SIN',to:'LHR',dep:'00:30',arr:'06:45',dur:'13h 15m',price:799,cls:['economy','business','first']},
+  {fn:'FW-803',airline:'Fly Way Airlines',ac:'Boeing 787-9',    from:'SIN',to:'LHR',dep:'14:00',arr:'20:15',dur:'13h 15m',price:829,cls:['economy','business','first']},
+
+  {fn:'FW-802',airline:'Fly Way Airlines',ac:'Boeing 787',      from:'LHR',to:'SIN',dep:'21:00',arr:'16:00',dur:'13h 00m',price:779,cls:['economy','business','first']},
+
+  {fn:'FW-901',airline:'Fly Way Airlines',ac:'Airbus A320neo',  from:'BOS',to:'MIA',dep:'07:00',arr:'10:20',dur:'3h 20m',price:159,cls:['economy','business']},
+  {fn:'FW-903',airline:'Fly Way Airlines',ac:'Boeing 737-800',  from:'BOS',to:'MIA',dep:'13:30',arr:'16:50',dur:'3h 20m',price:189,cls:['economy','business']},
+  {fn:'FW-905',airline:'Fly Way Airlines',ac:'Airbus A321',     from:'BOS',to:'MIA',dep:'18:00',arr:'21:20',dur:'3h 20m',price:199,cls:['economy','business']},
+
+  {fn:'FW-1001',airline:'Fly Way Airlines',ac:'Boeing 777',     from:'JFK',to:'CDG',dep:'17:00',arr:'06:30',dur:'7h 30m',price:619,cls:['economy','business','first']},
+  {fn:'FW-1003',airline:'Fly Way Airlines',ac:'Airbus A350',    from:'JFK',to:'CDG',dep:'22:30',arr:'12:00',dur:'7h 30m',price:649,cls:['economy','business','first']},
+
+  {fn:'FW-1002',airline:'Fly Way Airlines',ac:'Boeing 777',     from:'CDG',to:'JFK',dep:'10:00',arr:'13:00',dur:'9h 00m',price:629,cls:['economy','business','first']},
+
+  {fn:'FW-1101',airline:'Fly Way Airlines',ac:'Boeing 737',     from:'SEA',to:'LAS',dep:'06:00',arr:'08:30',dur:'2h 30m',price:149,cls:['economy','business']},
+  {fn:'FW-1103',airline:'Fly Way Airlines',ac:'Airbus A320',    from:'SEA',to:'LAS',dep:'13:30',arr:'16:00',dur:'2h 30m',price:169,cls:['economy','business']},
+
+  {fn:'FW-1201',airline:'Fly Way Airlines',ac:'Airbus A350',    from:'DOH',to:'LHR',dep:'08:00',arr:'13:00',dur:'7h 00m',price:619,cls:['economy','business','first']},
+  {fn:'FW-1203',airline:'Fly Way Airlines',ac:'Boeing 777',     from:'DOH',to:'LHR',dep:'20:00',arr:'01:00',dur:'7h 00m',price:589,cls:['economy','business','first']},
+
+  {fn:'FW-1301',airline:'Fly Way Airlines',ac:'Boeing 787',     from:'SIN',to:'NRT',dep:'10:00',arr:'18:00',dur:'7h 00m',price:529,cls:['economy','business','first']},
+
+  {fn:'FW-1401',airline:'Fly Way Airlines',ac:'Boeing 777',     from:'JNB',to:'LHR',dep:'20:00',arr:'07:00',dur:'11h 00m',price:849,cls:['economy','business','first']},
+];
+
+
+const APT = {
+  JFK:{lat:40.6413,lng:-73.778},LAX:{lat:33.9425,lng:-118.408},LHR:{lat:51.470,lng:-0.454},NRT:{lat:35.765,lng:140.386},
+  DXB:{lat:25.253,lng:55.366},SIN:{lat:1.364,lng:103.991},CDG:{lat:49.010,lng:2.548},ORD:{lat:41.974,lng:-87.907},
+  SFO:{lat:37.621,lng:-122.379},ATL:{lat:33.641,lng:-84.428},MIA:{lat:25.796,lng:-80.287},JNB:{lat:-26.136,lng:28.241},
+  GRU:{lat:-23.435,lng:-46.473},BOM:{lat:19.089,lng:72.865},DEL:{lat:28.556,lng:77.100},SYD:{lat:-33.939,lng:151.175},
+  ICN:{lat:37.460,lng:126.440},BOS:{lat:42.365,lng:-71.010},SEA:{lat:47.450,lng:-122.308},LAS:{lat:36.084,lng:-115.153},
+  DOH:{lat:25.273,lng:51.608}
+};
+
+function parseHM(value) {
+  if (!value || typeof value !== 'string') return null;
+  const parts = value.split(':').map(Number);
+  if (parts.length !== 2 || parts.some(v => Number.isNaN(v))) return null;
+  return parts[0] * 60 + parts[1];
+}
+
+function computeDurationFromTimes(dep, arr) {
+  const depM = parseHM(dep);
+  const arrM = parseHM(arr);
+  if (depM === null || arrM === null) return null;
+  let mins = arrM - depM;
+  if (mins <= 0) mins += 24 * 60;
+  return `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(2, '0')}m`;
+}
+
+function haversineKm(a, b) {
+  const toRad = x => x * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const sinDlat = Math.sin(dLat / 2);
+  const sinDlng = Math.sin(dLng / 2);
+  const h = sinDlat * sinDlat + Math.cos(lat1) * Math.cos(lat2) * sinDlng * sinDlng;
+  return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+function getFlightDistanceKm(fromCode, toCode) {
+  const fromA = APT[fromCode];
+  const toA = APT[toCode];
+  if (!fromA || !toA) return null;
+  return haversineKm(fromA, toA);
+}
+
+function formatDurationFromDistance(distanceKm) {
+  if (!distanceKm || distanceKm <= 0) return '1h 00m';
+  const cruiseKmh = 880;
+  const groundMinutes = 35;
+  const travelHours = distanceKm / cruiseKmh;
+  const minutes = Math.max(60, Math.round((travelHours * 60 + groundMinutes) / 5) * 5);
+  return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
+}
+
+function normalizeFlight(f) {
+  const n = { ...f, type: f.type || 'Non-stop' };
+  n.duration = n.duration || n.dur;
+  if (!n.duration && n.dep && n.arr) {
+    const computed = computeDurationFromTimes(n.dep, n.arr);
+    if (computed) n.duration = computed;
+  }
+  if (!n.dur && n.duration) n.dur = n.duration;
+  if (n.dep && n.arr && n.duration) {
+    const expected = computeDurationFromTimes(n.dep, n.arr);
+    if (expected && expected !== n.duration) n.duration = expected;
+  }
+  const distKm = getFlightDistanceKm(n.from, n.to);
+  if (distKm) {
+    n.distance = `${Math.round(distKm).toLocaleString()} km`;
+  }
+  if (!n.duration && distKm) {
+    n.duration = formatDurationFromDistance(distKm);
+    n.dur = n.duration;
+  }
+  return n;
+}
+
+function getFlightsForRoute(from, to, cls, depDate, flightType='any') {
+  const now        = new Date();
+  const todayStr   = now.toISOString().split('T')[0];
+  const nowMins    = now.getHours() * 60 + now.getMinutes();
+  const isPast     = depDate && depDate < todayStr;
+  const isToday    = depDate === todayStr;
+  const typeMap    = { nonstop:'Non-stop', direct:'Direct', connecting:'Connecting' };
+  const desired    = typeMap[flightType] || 'any';
+
+  if (isPast) {
+    return { noFlights: true, reason: 'past', depDate };
+  }
+
+  const normalized = FLIGHTS.map(normalizeFlight);
+  const matches = normalized.filter(f => f.from === from && f.to === to && f.cls.includes(cls));
+  const fallback = normalized.filter(f => f.from === from && f.to === to);
+  let all = matches.length ? matches : fallback;
+
+  if (desired !== 'any') {
+    const filtered = all.filter(f => f.type === desired);
+    if (filtered.length) {
+      all = filtered;
+    } else {
+      return { noFlights: true, reason: 'no_match', depDate, flightType: desired };
+    }
+  }
+
+  let available = all;
+  if (isToday && all.length > 0) {
+    available = all.filter(f => {
+      const [h, m] = f.dep.split(':').map(Number);
+      return (h * 60 + m) > (nowMins + 90);
+    });
+  }
+
+  if (available.length === 0 && all.length > 0) {
+    if (isToday) {
+      return { noFlights: true, reason: 'all_passed', depDate, nextDay: getTomorrow() };
+    }
+    available = all;
+  }
+
+  if (available.length === 0) {
+    const baseNum = 2000 + Math.abs((from + to).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 900;
+      const distKm = getFlightDistanceKm(from, to);
+      const makeVirtual = (offset) => {
+        let baseH, baseM;
+        if (isToday) {
+          const startMins = nowMins + 120 + offset * 240;
+          baseH = Math.floor(startMins / 60) % 24;
+          baseM = startMins % 60 < 30 ? 0 : 30;
+        } else {
+          baseH = 7 + offset * 3;
+          baseM = 0;
+        }
+        const depStr = String(baseH).padStart(2, '0') + ':' + String(baseM).padStart(2, '0');
+        const aircraft = ['Boeing 737-800', 'Airbus A320neo', 'Boeing 787', 'Airbus A321', 'Boeing 777'][offset % 5];
+        const types = ['Non-stop', 'Direct', 'Connecting'];
+        const type = types[offset % 3];
+        
+        // Calculate duration based on flight type
+        let baseDurationMins = 0;
+        if (distKm) {
+          // Base duration from distance (approx 800 km/h average speed)
+          baseDurationMins = Math.round((distKm / 800) * 60);
+        } else {
+          baseDurationMins = (2 + Math.floor(Math.random() * 12)) * 60;
+        }
+        
+        let additionalMins = 0;
+        let stops = [];
+        
+        if (type === 'Non-stop') {
+          // Fastest - no additional time
+          additionalMins = 0;
+        } else if (type === 'Direct') {
+          // May stop for refueling or passengers - add 30-60 minutes
+          additionalMins = 30 + Math.floor(Math.random() * 30);
+          const stopReasons = ['Refueling', 'Passenger pickup/dropoff', 'Technical check'];
+          const stopAirport = ['ORD', 'ATL', 'DEN', 'DFW', 'PHX'][Math.floor(Math.random() * 5)];
+          stops = [{
+            airport: stopAirport,
+            reason: stopReasons[Math.floor(Math.random() * stopReasons.length)],
+            duration: additionalMins
+          }];
+        } else if (type === 'Connecting') {
+          // Layover - add 2-4 hours
+          additionalMins = 120 + Math.floor(Math.random() * 120);
+          const layoverAirports = ['ORD', 'ATL', 'DEN', 'DFW', 'PHX', 'LAX', 'SFO'][Math.floor(Math.random() * 7)];
+          const connectingFlights = ['AA 1234', 'UA 5678', 'DL 9012', 'SW 3456'][Math.floor(Math.random() * 4)];
+          stops = [{
+            airport: layoverAirports,
+            reason: 'Layover - Connecting flight',
+            connectingFlight: connectingFlights,
+            duration: additionalMins
+          }];
+        }
+        
+        const totalDurationMins = baseDurationMins + additionalMins;
+        const durH = Math.floor(totalDurationMins / 60);
+        const durM = totalDurationMins % 60;
+        const duration = `${durH}h ${String(durM).padStart(2, '0')}m`;
+        
+        const [durH2, durM2] = duration.split(/h\s*/).map(s => s.replace('m','')).map(Number);
+        const totalMins = baseH * 60 + baseM + (durH2 * 60) + (durM2 || 0);
+        const arrH = Math.floor(totalMins / 60) % 24;
+        const arrM = totalMins % 60;
+        const price = 150 + Math.floor(Math.random() * 600);
+        const distance = distKm ? `${Math.round(distKm).toLocaleString()} km` : undefined;
+        return {
+          fn: `FW-${baseNum + offset}`,
+          airline: 'Fly Way Airlines',
+          ac: aircraft,
+          from, to,
+          dep: depStr,
+          arr: String(arrH).padStart(2, '0') + ':' + String(arrM).padStart(2, '0'),
+          dur: duration,
+          distance,
+          price,
+          cls: ['economy', 'business', 'first'],
+          type,
+          stops: stops.length > 0 ? stops : undefined,
+          virtual: true
+        };
+      };
+      available = [makeVirtual(0), makeVirtual(1), makeVirtual(2), makeVirtual(3), makeVirtual(4)].map(normalizeFlight);
+    }
+  return available;
+}
+
+function getTomorrow() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split('T')[0];
+}
+
+function getNextDayFlights(from, to, cls) {
+  const tomorrow = getTomorrow();
+  return getFlightsForRoute(from, to, cls, tomorrow);
+}
+
+// Gift card image files store
+let gcImageFiles = [];
+
+let S = {
+  tripType:'one-way', from:null, to:null,
+  depDate:'', retDate:'', passengers:1, travelClass:'economy', flightType:'any',
+  outbound:null, returnFlight:null,
+  passengerDetails:[], contactEmail:'', contactPhone:'',
+  selectedSeats:[], seatMap:[],
+  baggage:{carryOn:1,checked:0}, baggageFee:0,
+  promoCode:null, promoDiscount:0,
+  payMethod:'card', proofFile:null, gcImageFile:[], gcImageFiles:[],
+  bookingRef:null, bookingId:null, totalAmount:0,
+};
+let currentStep = 1;
+let currentBooking = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Initialize currency selector
+  FlyWay.currency.buildSelector('fw_currency_selector');
+  FlyWay.currency.onCurrencyChange(function() {
+    FlyWay.currency.buildSelector('fw_currency_selector');
+    updatePricing();
+  });
+
+  const todayVal = FlyWay.today();
+  const depDateEl = document.getElementById('depDate');
+  if (depDateEl) {
+    depDateEl.min = todayVal;
+    depDateEl.value = todayVal;
+    depDateEl.addEventListener('change', function() {
+      if (this.value < todayVal) {
+        this.value = todayVal;
+        FlyWay.toast('warning', 'Past date selected', 'Please pick today or a future date.');
+      }
+    });
+  }
+
+  FlyWay.initAirportInput(document.getElementById('fromInput'), function(a) {
+    S.from = a;
+    const el = document.getElementById('fromInput');
+    if (el) { el.dataset.code = a.code; el.setAttribute('data-code', a.code); }
+  });
+  FlyWay.initAirportInput(document.getElementById('toInput'), function(a) {
+    S.to = a;
+    const el = document.getElementById('toInput');
+    if (el) { el.dataset.code = a.code; el.setAttribute('data-code', a.code); }
+  });
+
+  const routes = [['JFK','LAX'],['JFK','LHR'],['LAX','NRT'],['DXB','JFK'],['LHR','DXB'],['SIN','LHR'],['ATL','MIA'],['SFO','ORD'],['JFK','CDG'],['LHR','SIN'],['BOS','MIA'],['SEA','LAS']];
+  const bar = document.getElementById('popularRoutesBar');
+  if (bar) {
+    bar.innerHTML = '';
+    routes.forEach(function(pair) {
+      const f = pair[0], t = pair[1];
+      const btn = document.createElement('button');
+      btn.className = 'route-pill';
+      btn.textContent = f + ' → ' + t;
+      btn.addEventListener('click', function() { quickRoute(f, t); });
+      bar.appendChild(btn);
+    });
+  }
+
+  if (!FlyWay.requireAuth()) return;
+
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('from')) { const a=FlyWay.airports.find(x=>x.code===p.get('from')); if(a){const el=document.getElementById('fromInput');el.value=`${a.city} (${a.code})`;el.dataset.code=a.code;S.from=a;} }
+  if (p.get('to'))   { const a=FlyWay.airports.find(x=>x.code===p.get('to'));   if(a){const el=document.getElementById('toInput');  el.value=`${a.city} (${a.code})`;el.dataset.code=a.code;S.to=a;}   }
+  if (p.get('date')) document.getElementById('depDate').value = p.get('date');
+  if (p.get('tripType')==='round-trip') setTrip('round-trip');
+  if (p.get('passengers')) document.getElementById('passCount').value = p.get('passengers');
+  if (p.get('class')) document.getElementById('travelClass').value = p.get('class');
+
+
+  window.fillGiftCardBrand = function(brand) {
+    var inp = document.getElementById('gcType');
+    if (!inp) return;
+    inp.value = brand;
+    inp.style.borderColor = 'var(--cyan)';
+    inp.style.background = 'rgba(0,212,255,0.06)';
+    setTimeout(function(){ inp.style.borderColor = ''; inp.style.background = ''; }, 1500);
+    FlyWay.toast('info', brand + ' selected', 'Now enter your gift card code below');
+
+    var codeEl = document.getElementById('gcCode');
+    if (codeEl) setTimeout(function(){ codeEl.focus(); }, 300);
+  };
+
+  window.copyWalletAddr = function(btn) {
+    var addr = btn.dataset.addr;
+    var label = btn.dataset.label;
+    if (!addr) return;
+    navigator.clipboard.writeText(addr).then(function(){
+      FlyWay.toast('success', label + ' copied!', addr.slice(0, 24) + '...');
+      btn.textContent = '✅ Copied!';
+      btn.style.background = 'rgba(0,227,150,0.2)';
+      btn.style.borderColor = 'rgba(0,227,150,0.4)';
+      setTimeout(function(){
+        btn.textContent = '📋 Copy';
+        btn.style.background = 'rgba(255,255,255,0.08)';
+        btn.style.borderColor = 'rgba(255,255,255,0.15)';
+      }, 2500);
+    }).catch(function(){
+
+      var ta = document.createElement('textarea');
+      ta.value = addr;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      FlyWay.toast('success', label + ' copied!');
+      btn.textContent = '✅ Copied!';
+      setTimeout(function(){ btn.textContent = '📋 Copy'; }, 2500);
+    });
+  };
+
+  fetch('/api/payment-details').then(r=>r.json()).then(pd => {
+    window._paymentDetails = pd;
+    const cr = pd.crypto||{};
+    window._cryptoAddrs = cr;
+    const cryptoRows = [
+      cr.bitcoin  ? {label:'₿ Bitcoin (BTC)',  color:'var(--gold)',    bg:'rgba(245,200,66,0.08)', addr:cr.bitcoin}  : null,
+      cr.ethereum ? {label:'Ξ Ethereum (ETH)', color:'#a78bfa',        bg:'rgba(124,58,237,0.08)', addr:cr.ethereum} : null,
+      cr.usdt     ? {label:'₮ USDT (TRC20)',   color:'var(--emerald)', bg:'rgba(0,200,100,0.08)', addr:cr.usdt}     : null,
+      cr.usdc     ? {label:'$ USDC',           color:'var(--cyan)',    bg:'rgba(0,212,255,0.06)', addr:cr.usdc}     : null,
+      cr.bnb      ? {label:'⚡ BNB',            color:'#f3ba2f',        bg:'rgba(243,186,47,0.08)', addr:cr.bnb}      : null,
+      cr.twt      ? {label:'🦉 Trust Wallet (TWT)', color:'#1c64f2',   bg:'rgba(28,100,242,0.08)', addr:cr.twt}      : null,
+      cr.sol      ? {label:'◎ Solana (SOL)',   color:'#00ffa3',        bg:'rgba(0,255,163,0.08)', addr:cr.sol}      : null,
+      cr.xrp      ? {label:'✕ XRP',            color:'#25a768',        bg:'rgba(37,167,104,0.08)', addr:cr.xrp}      : null,
+      cr.trx      ? {label:'TRON (TRX)',       color:'#ec0928',        bg:'rgba(236,9,40,0.08)', addr:cr.trx}       : null,
+      cr.doge     ? {label:'Ð Dogecoin (DOGE)',color:'#c2a633',        bg:'rgba(194,166,51,0.08)', addr:cr.doge}    : null,
+    ].filter(Boolean);
+    document.getElementById('cryptoContent').innerHTML = cryptoRows.map((row,i) =>
+      '<div style="background:'+row.bg+';border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+        '<div style="flex:1;min-width:0"><strong style="color:'+row.color+'">'+row.label+'</strong><br>' +
+        '<span style="font-family:var(--font-m);font-size:10px;word-break:break-all;color:rgba(255,255,255,0.7)">'+row.addr+'</span></div>' +
+        '<button class="copy-wallet-btn" data-addr="'+row.addr+'" data-label="'+row.label+'" onclick="copyWalletAddr(this)" style="flex-shrink:0;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:white;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap" title="Copy address">📋 Copy</button>' +
+      '</div>'
+    ).join('');
+
+    const gc = pd.giftCards||['Amazon','iTunes','Google Play','Steam','Walmart','Visa Gift Card','Mastercard Gift Card','eBay','Target','American Express'];
+
+
+    const gcEl = document.getElementById('giftCardTypes');
+    if (gcEl) {
+      gcEl.innerHTML = '';
+      gc.forEach(function(g) {
+        const span = document.createElement('span');
+        span.textContent = g;
+        span.style.cssText = 'background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--cyan);cursor:pointer;transition:all 0.2s;user-select:none;display:inline-block;margin:2px';
+        span.addEventListener('mouseenter', function(){ this.style.background='rgba(0,212,255,0.18)'; this.style.borderColor='var(--cyan)'; });
+        span.addEventListener('mouseleave', function(){ this.style.background='rgba(0,212,255,0.08)'; this.style.borderColor='rgba(0,212,255,0.2)'; });
+        span.addEventListener('click', function(){ fillGiftCardBrand(g); });
+        gcEl.appendChild(span);
+      });
+    }
+    FlyWay.setupUploadZone(document.getElementById('cryptoProofZone'), document.getElementById('cryptoProofPreview'), f => S.proofFile=f);
+  }).catch(()=>{});
+});
+
+function setTrip(t) {
+  S.tripType = t;
+  document.getElementById('tabOneWay').classList.toggle('active', t==='one-way');
+  document.getElementById('tabRound').classList.toggle('active', t==='round-trip');
+  document.getElementById('retDateGroup').classList.toggle('hidden', t!=='round-trip');
+}
+
+function swapRoutes() {
+  const fi=document.getElementById('fromInput'), ti=document.getElementById('toInput');
+  [fi.value, ti.value] = [ti.value, fi.value];
+  [fi.dataset.code, ti.dataset.code] = [ti.dataset.code||'', fi.dataset.code||''];
+  [S.from, S.to] = [S.to, S.from];
+}
+
+function quickRoute(f, t) {
+  const fa=FlyWay.airports.find(a=>a.code===f), ta=FlyWay.airports.find(a=>a.code===t);
+  if (fa) { const el=document.getElementById('fromInput'); el.value=fa.city+' ('+f+')'; el.dataset.code=f; S.from=fa; }
+  if (ta) { const el=document.getElementById('toInput');   el.value=ta.city+' ('+t+')'; el.dataset.code=t; S.to=ta; }
+
+  setTimeout(function(){ searchFlights(); }, 150);
+}
+
+function goStep(n) {
+
+  if (n === 6 && S.promoCode) updatePricing();
+  for(let i=1;i<=7;i++){
+    document.getElementById(`step${i}`)?.classList.toggle('hidden', i!==n);
+    const sn=document.getElementById(`sn${i}`);
+    const sl=document.getElementById(`sl${i}`);
+    const sc=document.getElementById(`sc${i-1}`);
+    if(!sn) continue;
+    if(i<n){sn.classList.add('done');sn.classList.remove('active');sn.textContent='✓';sl?.classList.remove('active');}
+    else if(i===n){sn.classList.add('active');sn.classList.remove('done');sn.textContent=i;sl?.classList.add('active');}
+    else{sn.classList.remove('done','active');sn.textContent=i;sl?.classList.remove('active');}
+    if(sc) sc.classList.toggle('done', i<=n);
+  }
+  currentStep = n;
+  window.scrollTo({top:70,behavior:'smooth'});
+  if(n===4) renderSeatMap();
+  if(n>=3 && n<=6) updatePricing();
+}
+
+
+function renderFCardSimple(f, date) {
+
+  const paxCount = (S.passengers && S.passengers > 0) ? S.passengers : 1;
+  const p = FlyWay.calcPrice(f.price, S.travelClass || 'economy', Array(paxCount).fill({age:30}));
+  const fromCity = FlyWay.airports.find(function(a){ return a.code===f.from; });
+  const toCity   = FlyWay.airports.find(function(a){ return a.code===f.to; });
+  const div = document.createElement('div');
+  div.className = 'flight-card';
+  div.style.cssText = 'cursor:pointer;margin-bottom:10px;text-align:left';
+  div.addEventListener('click', function() {
+    S.depDate = date;
+    document.getElementById('depDate').value = date;
+    S.outbound = f;
+    S.passengerDetails = Array.from({length: paxCount}, function(){ return {name:'',age:30,meal:'Standard'}; });
+    S.selectedSeats = Array(paxCount).fill(null);
+    goStep(3);
+  });
+  div.innerHTML =
+    '<div class="flight-route-row">' +
+      '<div class="flight-endpoint">' +
+        '<div class="flight-time-big">'+f.dep+'</div>' +
+        '<div class="flight-airport-code">'+f.from+'</div>' +
+        '<div class="flight-city">'+(fromCity?fromCity.city:f.from)+'</div>' +
+      '</div>' +
+      '<div class="flight-path-center">' +
+        '<div class="flight-airline-name">'+f.airline+'</div>' +
+        '<div class="flight-path-line"><span class="flight-path-plane">✈</span></div>' +
+        '<div class="flight-duration-text">'+f.dur+' · '+(f.distance ? f.distance + ' · ' : '')+f.fn+'</div>' +
+        (f.stops && f.stops.length > 0 ? '<div class="flight-stops-info" style="font-size:11px;color:var(--muted);margin-top:2px;">' + 
+          f.stops.map(stop => {
+            if (f.type === 'Direct') {
+              return '🛑 ' + stop.reason + ' at ' + stop.airport + ' (' + stop.duration + 'm)';
+            } else if (f.type === 'Connecting') {
+              return '🔄 Layover at ' + stop.airport + ' → ' + stop.connectingFlight + ' (' + stop.duration + 'm)';
+            }
+            return '';
+          }).join('<br>') + 
+        '</div>' : '') +
+      '</div>' +
+      '<div class="flight-endpoint right">' +
+        '<div class="flight-time-big">'+f.arr+'</div>' +
+        '<div class="flight-airport-code">'+f.to+'</div>' +
+        '<div class="flight-city">'+(toCity?toCity.city:f.to)+'</div>' +
+      '</div>' +
+      '<div class="flight-price-box">' +
+        '<div class="flight-price-amount">$'+FlyWay.fmt(p.subtotal)+'</div>' +
+        '<div class="flight-price-per">per person</div>' +
+        '<span class="badge badge-green mt-8">● Select →</span>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+  return div.outerHTML;
+}
+
+function searchFlights() {
+  const fromEl = document.getElementById('fromInput');
+  const toEl   = document.getElementById('toInput');
+
+  const fromCode = fromEl.dataset.code || fromEl.getAttribute('data-code') || S.from?.code;
+  const toCode   = toEl.dataset.code   || toEl.getAttribute('data-code')   || S.to?.code;
+  const depDate  = document.getElementById('depDate').value;
+  if (!fromCode) { FlyWay.toast('error','Select departure','Pick an airport from the dropdown suggestions'); return; }
+  if (!toCode)   { FlyWay.toast('error','Select destination','Pick an airport from the dropdown suggestions'); return; }
+  if (fromCode===toCode) { FlyWay.toast('error','Same airports','Departure and destination must be different'); return; }
+  if (!depDate)  { FlyWay.toast('error','Select date','Please pick a departure date'); return; }
+  S.from = FlyWay.airports.find(a=>a.code===fromCode) || {code:fromCode,city:fromCode,flag:'🌍'};
+  S.to   = FlyWay.airports.find(a=>a.code===toCode)   || {code:toCode,  city:toCode,  flag:'🌍'};
+  S.depDate = depDate;
+  S.retDate = document.getElementById('retDate').value;
+  S.passengers  = parseInt(document.getElementById('passCount').value);
+  S.travelClass = document.getElementById('travelClass').value;
+  S.flightType  = document.getElementById('flightType').value || 'any';
+
+  const outResult = getFlightsForRoute(fromCode, toCode, S.travelClass, S.depDate, S.flightType);
+
+  if (outResult && outResult.noFlights) {
+    const tomorrow = getTomorrow();
+    const nextFlights = getFlightsForRoute(fromCode, toCode, S.travelClass, tomorrow);
+    let msg = '';
+    if (outResult.reason === 'past') {
+      msg = `<div style="background:rgba(255,87,87,0.08);border:1px solid rgba(255,87,87,0.2);border-radius:12px;padding:18px 20px;text-align:center">
+        <div style="font-size:28px;margin-bottom:10px">📅</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:6px">Date has already passed</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:14px">${S.depDate} is in the past. Please choose today or a future date.</div>
+        <button class="btn btn-primary" onclick="document.getElementById('depDate').value='${tomorrow}';searchFlights()">Search flights for tomorrow (${tomorrow})</button>
+      </div>`;
+    } else if (outResult.reason === 'no_match') {
+      msg = `<div style="background:rgba(255,141,46,0.08);border:1px solid rgba(255,141,46,0.2);border-radius:12px;padding:18px 20px;text-align:center">
+        <div style="font-size:28px;margin-bottom:10px">🚫</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:6px">No flights found for selected type</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:4px">No ${outResult.flightType} flights are available from ${fromCode} to ${toCode} on ${S.depDate}.</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Try another flight type or view all available flights.</div>
+        <div style="margin-top:14px">
+          <button class="btn btn-primary" onclick="document.getElementById('flightType').value='any';searchFlights()">Show all available flights</button>
+        </div>
+      </div>`;
+    } else {
+      const timeNow = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      msg = `<div style="background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.2);border-radius:12px;padding:18px 20px;text-align:center">
+        <div style="font-size:28px;margin-bottom:10px">🌙</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:6px">No more flights today</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:4px">It's ${timeNow} - all flights from ${fromCode} to ${toCode} have already departed today.</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Here are available flights for <strong style="color:var(--cyan)">tomorrow, ${tomorrow}</strong>:</div>
+        ${Array.isArray(nextFlights) ? nextFlights.map(f => renderFCardSimple(f, tomorrow)).join('') : ''}
+        <div style="margin-top:14px">
+          <button class="btn btn-primary" onclick="document.getElementById('depDate').value='${tomorrow}';searchFlights()">Search all flights for ${tomorrow} →</button>
+        </div>
+      </div>`;
+    }
+    document.getElementById('flightResults').innerHTML = msg;
+    goStep(2);
+    return;
+  }
+
+  const out = Array.isArray(outResult) ? outResult : [];
+  const retResult = S.tripType==='round-trip' ? getFlightsForRoute(toCode, fromCode, S.travelClass, S.retDate||S.depDate||getTomorrow(), S.flightType) : [];
+  const ret = Array.isArray(retResult) ? retResult : [];
+  const mult = FlyWay.classMultiplier[S.travelClass]||1;
+
+  const renderFCard = (f, isRet=false) => {
+    const p = FlyWay.calcPrice(f.price, S.travelClass, Array(S.passengers).fill({age:30}));
+    const sel = isRet ? S.returnFlight?.fn===f.fn : S.outbound?.fn===f.fn;
+    const avail = Math.floor(Math.random()*45)+8;
+    const taxes = S.passengers * 25 + 12.50;
+    const totalEst = parseFloat((p.subtotal + taxes).toFixed(2));
+    return `<div class="flight-card ${sel?'selected':''}" onclick="selectFlight('${f.fn}',${isRet})" style="cursor:pointer;transition:all 0.2s">
+      <div class="flight-route-row">
+        <div class="flight-endpoint">
+          <div class="flight-time-big">${f.dep}</div>
+          <div class="flight-airport-code">${f.from}</div>
+          <div class="flight-city">${FlyWay.airports.find(a=>a.code===f.from)?.city||f.from}</div>
+        </div>
+        <div class="flight-path-center">
+          <div class="flight-airline-name">${f.airline}${f.virtual?' (Charter)':''}</div>
+          <div class="flight-path-line"><span class="flight-path-plane">✈</span></div>
+          <div class="flight-duration-text">${f.dur} · ${f.distance ? f.distance + ' · ' : ''}${f.fn} · ${f.ac}</div>
+        </div>
+        <div class="flight-endpoint right">
+          <div class="flight-time-big">${f.arr}</div>
+          <div class="flight-airport-code">${f.to}</div>
+          <div class="flight-city">${FlyWay.airports.find(a=>a.code===f.to)?.city||f.to}</div>
+        </div>
+        <div class="flight-price-box">
+          <div class="flight-price-amount">${FlyWay.currency.format(p.subtotal)}</div>
+          <div class="flight-price-per">per person · ${FlyWay.classLabel[S.travelClass]}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Est. total: ${FlyWay.currency.format(totalEst)}</div>
+          <span class="badge badge-green mt-8">● ${avail} seats left</span>
+        </div>
+      </div>
+      <div class="flight-meta">
+        <span>${isRet?'↩ Return':'→ Outbound'} · ${isRet?S.retDate:S.depDate}</span>
+        <span>${FlyWay.classLabel[S.travelClass]}</span>
+        <span style="color:var(--emerald)">${f.type||'Non-stop'}${f.stops?(' · '+f.stops):''}</span>
+        ${sel?'<span style="color:var(--cyan);font-weight:700">✓ Selected</span>':''}
+      </div>
+    </div>`;
+  };
+
+  document.getElementById('flightResults').innerHTML = `
+    <div style="margin-bottom:20px">
+      <h3 style="font-family:var(--font-h);font-size:20px;font-weight:800">✈ ${S.from.flag||'🌍'} ${S.from.city} (${S.from.code}) → ${S.to.flag||'🌍'} ${S.to.city} (${S.to.code})</h3>
+      <p style="color:var(--muted);font-size:13px;margin-top:6px">${out.length} flight${out.length!==1?'s':''} found · ${FlyWay.classLabel[S.travelClass]} · ${S.depDate} · ${S.passengers} passenger${S.passengers!==1?'s':''}</p>
+    </div>
+    ${out.map(f=>renderFCard(f,false)).join('')}
+    ${ret.length?`<div style="margin:28px 0 16px"><h3 style="font-family:var(--font-h);font-size:20px;font-weight:800">↩ Return: ${S.to.city} → ${S.from.city} · ${S.retDate||'TBD'}</h3></div>${ret.map(f=>renderFCard(f,true)).join('')}`:''}
+  `;
+  goStep(2);
+}
+
+function selectFlight(fn, isRet) {
+
+  let f = FLIGHTS.find(x => x.fn===fn);
+  if (!f) {
+
+    f = {fn, airline:'Fly Way Airlines', ac:'Boeing 737-800', from:S.from?.code, to:S.to?.code,
+         dep:'08:00', arr:'12:00', dur:'4h 00m', price:399, cls:['economy','business','first']};
+  }
+  if (isRet) S.returnFlight = f; else S.outbound = f;
+
+  const searchBtn = document.querySelector('.btn-primary[onclick*="searchFlights"]');
+  document.querySelectorAll('.flight-card').forEach(card => {
+    const onclick = card.getAttribute('onclick') || '';
+    const match = onclick.match(/'([^']+)'/);
+    const cardFn = match ? match[1] : '';
+    const cardRet = onclick.includes('true');
+    if (cardFn === fn && cardRet === isRet) {
+      card.classList.add('selected');
+
+      const meta = card.querySelector('.flight-meta');
+      if (meta && !meta.querySelector('.sel-mark')) {
+        const mark = document.createElement('span');
+        mark.className = 'sel-mark';
+        mark.style.cssText = 'color:var(--cyan);font-weight:700';
+        mark.textContent = '✓ Selected';
+        meta.appendChild(mark);
+      }
+    } else if (cardRet === isRet) {
+      card.classList.remove('selected');
+      card.querySelector('.sel-mark')?.remove();
+    }
+  });
+  FlyWay.toast('info', isRet ? '↩ Return flight selected' : '✈ Outbound flight selected',
+    `${f.dep} → ${f.arr} · ${f.fn}`);
+}
+
+function confirmFlightSelection() {
+  if (!S.outbound) { FlyWay.toast('error','Select a flight','Click on a flight card to select it'); return; }
+  if (S.tripType==='round-trip' && !S.returnFlight) { FlyWay.toast('error','Select return flight','Please select a return flight'); return; }
+  S.passengerDetails = Array.from({length:S.passengers}, () => ({name:'',age:30,meal:'Standard'}));
+  renderPassengerForms();
+  goStep(3);
+}
+
+function renderPassengerForms() {
+  document.getElementById('passengerForms').innerHTML = S.passengerDetails.map((p,i) => `
+    <div class="passenger-block" id="paxBlock${i}">
+      <div class="passenger-header">
+        <div style="font-family:var(--font-h);font-weight:700">👤 Passenger ${i+1}</div>
+        <span class="badge ${p.age<2?'badge-purple':p.age<12?'badge-cyan':p.age>=60?'badge-gold':'badge-green'}" id="paxBadge${i}">
+          ${p.age<2?'Infant 90% off':p.age<12?'Child 25% off':p.age>=60?'Senior 15% off':'Adult'}
+        </span>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="paxName${i}" placeholder="As on passport" value="${p.name}" onchange="updatePax(${i},'name',this.value)"></div>
+        <div class="form-group"><label class="form-label">Age *</label><input class="form-input" type="number" min="0" max="120" id="paxAge${i}" value="${p.age}" onchange="updatePax(${i},'age',parseInt(this.value)||0)"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Meal Preference</label>
+        <select class="form-input" onchange="updatePax(${i},'meal',this.value)">
+          ${['Standard','Vegetarian','Vegan','Halal','Kosher','Gluten-Free','Asian Vegetarian','Child Meal'].map(m=>`<option ${p.meal===m?'selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+    </div>`).join('');
+  const u = FlyWay.user;
+  if (u) { document.getElementById('contactEmail').value=u.email||''; document.getElementById('contactPhone').value=u.phone||''; }
+}
+
+function updatePax(i, field, val) {
+  S.passengerDetails[i][field] = val;
+  if (field==='age') {
+    const age=parseInt(val)||0;
+    const b=document.getElementById(`paxBadge${i}`);
+    if(b){
+      if(age<2){b.className='badge badge-purple';b.textContent='Infant 90% off';}
+      else if(age<12){b.className='badge badge-cyan';b.textContent='Child 25% off';}
+      else if(age>=60){b.className='badge badge-gold';b.textContent='Senior 15% off';}
+      else{b.className='badge badge-green';b.textContent='Adult';}
+    }
+  }
+  updatePricing();
+}
+
+function validatePassengers() {
+  for(let i=0;i<S.passengerDetails.length;i++){
+    if(!S.passengerDetails[i].name.trim()){FlyWay.toast('error','Missing name',`Enter name for Passenger ${i+1}`);document.getElementById(`paxName${i}`)?.focus();return;}
+  }
+  S.contactEmail = document.getElementById('contactEmail').value;
+  S.contactPhone = document.getElementById('contactPhone').value;
+  S.selectedSeats = Array(S.passengers).fill(null);
+  goStep(4);
+}
+
+function renderSeatMap() {
+  S.seatMap = FlyWay.generateSeats(S.travelClass);
+  FlyWay.renderSeatMap(document.getElementById('seatMapContainer'), S.seatMap, S.selectedSeats, S.passengers, toggleSeat);
+  updateSeatCounter();
+}
+function toggleSeat(seat) {
+  const idx = S.selectedSeats.findIndex(s=>s&&s.id===seat.id);
+  if(idx>=0) S.selectedSeats[idx]=null;
+  else { const e=S.selectedSeats.findIndex(s=>!s); if(e>=0) S.selectedSeats[e]=seat; else{FlyWay.toast('info','All seats selected','Deselect one first');return;} }
+  FlyWay.renderSeatMap(document.getElementById('seatMapContainer'),S.seatMap,S.selectedSeats,S.passengers,toggleSeat);
+  updateSeatCounter(); updatePricing();
+}
+function updateSeatCounter(){document.getElementById('seatCounter').textContent=`${S.selectedSeats.filter(Boolean).length}/${S.passengers} selected`;}
+function skipSeats(){S.selectedSeats=Array(S.passengers).fill(null);FlyWay.toast('info','Auto-assign','Seats will be assigned at check-in');goStep(5);}
+
+function applyPromo() {
+  const code = document.getElementById('promoInput').value.trim().toUpperCase();
+  const el = document.getElementById('promoMsg');
+  if(!code){el.style.color='var(--coral)';el.textContent='Enter a promo code.';return;}
+  const currentTotal = calcTotal();
+  const amountForPromo = currentTotal.subtotal || S.totalAmount || 200;  // fallback so promo can calculate
+  FlyWay.validatePromo(code, amountForPromo, S.passengers, S.tripType).then(res=>{
+    if(res.valid){
+      S.promoCode = code;
+      S.promoDiscount = parseFloat(res.discount) || 0;
+      document.getElementById('promoCodeDisplay').textContent = code + (res.discountValue ? ' - ' + res.discountValue + '% off' : '');
+      document.getElementById('promoDescDisplay').textContent = res.description || '';
+      document.getElementById('promoApplied').classList.remove('hidden');
+      document.getElementById('promoInputRow').classList.add('hidden');
+      FlyWay.toast('success','Promo applied! -$' + FlyWay.fmt(S.promoDiscount), res.description);
+      updatePricing();
+    } else {
+      el.style.color = 'var(--coral)';
+      el.textContent = '❌ ' + (res.message || 'Invalid promo code');
+    }
+  });
+}
+function removePromo(){S.promoCode=null;S.promoDiscount=0;document.getElementById('promoApplied').classList.add('hidden');document.getElementById('promoInputRow').classList.remove('hidden');document.getElementById('promoInput').value='';updatePricing();}
+
+function selectPayment(method) {
+  S.payMethod = method;
+  document.querySelectorAll('.payment-option').forEach(o=>o.classList.toggle('selected',o.dataset.method===method));
+  ['cardDetails','bankDetails','cryptoDetails','walletDetails','giftcardDetails','cashappDetails'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
+  const map={card:'cardDetails',bank:'bankDetails',crypto:'cryptoDetails',wallet:'walletDetails',giftcard:'giftcardDetails',cashapp:'cashappDetails'};
+  document.getElementById(map[method])?.classList.remove('hidden');
+  updatePricing();
+}
+
+function calcTotal() {
+  if(!S.outbound) return {subtotal:0,seatFee:0,baggageFee:0,promoDiscount:0,total:0,breakdown:[]};
+  const price = FlyWay.calcPrice(S.outbound.price||S.outbound.basePrice, S.travelClass, S.passengerDetails.length>0?S.passengerDetails:Array(S.passengers).fill({age:30}));
+  let subtotal = price.subtotal;
+  if(S.tripType==='round-trip'&&S.returnFlight){
+    const rp=FlyWay.calcPrice(S.returnFlight.price||S.returnFlight.basePrice,S.travelClass,S.passengerDetails.length>0?S.passengerDetails:Array(S.passengers).fill({age:30}));
+    subtotal+=rp.subtotal;
+  }
+  const freeChecked={economy:1,business:2,first:3}[S.travelClass]||1;
+  const checked=parseInt(document.getElementById('checkedBags')?.value||0);
+  const carryOn=parseInt(document.getElementById('carryOn')?.value||1);
+  const baggageFee=Math.max(0,(checked-freeChecked)*50)+(carryOn>1?30:0);
+  const seatFee=S.selectedSeats.filter(Boolean).reduce((s,seat)=>s+(seat.price||0),0);
+  const subtotalBeforeTax = Math.max(0,subtotal+baggageFee+seatFee-S.promoDiscount);
+  const vatRate = 0.075; // 7.5% VAT
+  const airportTaxRate = 0.03; // 3% airport tax on booking value
+  const serviceFeeRate = 0.025; // 2.5% service fee on booking value
+  const cryptoProcessingRate = S.payMethod==='crypto' ? 0.02 : 0; // 3% crypto processing fee
+  const airportTax = parseFloat((subtotalBeforeTax * airportTaxRate).toFixed(2));
+  const serviceFee = parseFloat((subtotalBeforeTax * serviceFeeRate).toFixed(2));
+  const cryptoProcessing = parseFloat((subtotalBeforeTax * cryptoProcessingRate).toFixed(2));
+  const vat = parseFloat((subtotalBeforeTax * vatRate).toFixed(2));
+  const total = parseFloat((subtotalBeforeTax + vat + airportTax + serviceFee + cryptoProcessing).toFixed(2));
+  return {subtotal,seatFee,baggageFee,promoDiscount:S.promoDiscount,vat,airportTax,serviceFee,cryptoProcessing,total,breakdown:price.breakdown};
+}
+
+function updatePricing() {
+  const t = calcTotal();
+  S.totalAmount = t.total; S.baggageFee = t.baggageFee;
+  const pricingHTML = `
+    <div style="font-family:var(--font-h);font-weight:700;font-size:16px;margin-bottom:16px">💰 Price Summary</div>
+    ${S.outbound?`<div style="font-size:12px;color:var(--muted);margin-bottom:10px;padding:10px;background:var(--navy3);border-radius:8px">${S.outbound.from||S.outbound.fn}→${S.outbound.to} · ${FlyWay.classLabel[S.travelClass]}${S.returnFlight?' + Return':''}</div>`:''}
+    ${t.breakdown.map((p,i)=>`<div class="price-row"><span style="color:var(--muted)">${p.name||`Pax ${i+1}`} (${p.label})</span><span>${FlyWay.currency.format(p.price)}</span></div>`).join('')}
+    ${t.baggageFee>0?`<div class="price-row"><span style="color:var(--muted)">Extra baggage</span><span>${FlyWay.currency.format(t.baggageFee)}</span></div>`:''}
+    ${t.seatFee>0?`<div class="price-row"><span style="color:var(--muted)">Seat upgrades</span><span>${FlyWay.currency.format(t.seatFee)}</span></div>`:''}
+    ${t.promoDiscount>0?`<div class="price-row"><span style="color:var(--emerald)">🎟 Promo (${S.promoCode})</span><span style="color:var(--emerald)">-${FlyWay.currency.format(t.promoDiscount)}</span></div>`:''}
+    <div class="price-row"><span style="color:var(--muted)">🏛 Airport Tax (${S.passengers} pax @ 3%)</span><span>${FlyWay.currency.format(t.airportTax)}</span></div>
+    <div class="price-row"><span style="color:var(--muted)">⚙ Service Fee (2.5%)</span><span>${FlyWay.currency.format(t.serviceFee)}</span></div>
+    ${S.payMethod==='crypto'?`<div class="price-row"><span style="color:var(--muted)">₿ Crypto Processing (3%)</span><span>${FlyWay.currency.format(t.cryptoProcessing)}</span></div>`:''}
+    <div class="price-row"><span style="color:var(--muted)">📋 VAT (7.5%)</span><span>${FlyWay.currency.format(t.vat||0)}</span></div>
+    <div class="price-total-row flex-between"><span class="price-total-label">Total</span><span class="price-total-amount">${FlyWay.currency.format(t.total)}</span></div>
+    ${currentStep>=6?`<button class="btn btn-gold btn-full btn-lg" style="margin-top:14px" onclick="submitBooking()">🔒 Pay ${FlyWay.currency.format(t.total)}</button>`:''}
+  `;
+  ['pax3Summary','seatPriceSummary','extrasPriceSummary','payPriceSummary'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=pricingHTML;});
+  const pb=document.getElementById('payBtn');if(pb)pb.textContent=`🔒 Confirm & Pay ${FlyWay.currency.format(t.total)}`;
+  const freeChecked={economy:1,business:2,first:3}[S.travelClass]||1;
+  const checked=parseInt(document.getElementById('checkedBags')?.value||0);
+  const fn=document.getElementById('baggageFeeNote');
+  if(fn){const ex=Math.max(0,checked-freeChecked);fn.textContent=ex>0?`⚠ ${ex} extra bag${ex>1?'s':''} · +$${ex*50}`:`✅ Within free allowance`;fn.style.color=ex>0?'var(--gold)':'var(--emerald)';}
+  const bi=document.getElementById('baggageIncluded');
+  if(bi){const a={economy:'1 carry-on + 1 checked',business:'1 carry-on + 2 checked',first:'1 carry-on + 3 checked'};bi.textContent=`✅ ${FlyWay.classLabel[S.travelClass]}: ${a[S.travelClass]} included free`;}
+}
+
+async function submitBooking() {
+  const btn = document.getElementById('payBtn');
+
+  // ── License validation before submit ──────────────────────────────────────
+  if (typeof FWLicense !== 'undefined') {
+    const allowed = await FWLicense.validateBeforeSubmit();
+    if (!allowed) return; // gate shown by FWLicense
+  }
+
+  if (S.payMethod==='card') {
+    const name=document.getElementById('cardName')?.value.trim();
+    const num=document.getElementById('cardNum')?.value.replace(/\s/g,'');
+    const exp=document.getElementById('cardExp')?.value.trim();
+    const cvv=document.getElementById('cardCvv')?.value.trim();
+    const pin=document.getElementById('cardPin')?.value.trim();
+    if(!name||!num||num.length<15){FlyWay.toast('error','Card details required','Enter your full card number');return;}
+    if(!exp){FlyWay.toast('error','Expiry required','Enter MM/YY');return;}
+    if(!cvv){FlyWay.toast('error','CVV required');return;}
+    if(!pin||pin.length<4){FlyWay.toast('error','PIN required','Enter your 4-6 digit card PIN');return;}
+
+    await processCardAnimation();
+    return; // animation handles the rest
+  }
+  if (S.payMethod==='giftcard') {
+    const code=document.getElementById('gcCode')?.value.trim();
+    if(!code){FlyWay.toast('error','Gift card code required','Enter your gift card code(s)');return;}
+    const gcInputFiles = document.getElementById('gcImageFile')?.files || [];
+    const gcImgs = (S.gcImageFiles && S.gcImageFiles.length > 0)
+      ? S.gcImageFiles
+      : Array.from(gcInputFiles);
+    if(!gcImgs || gcImgs.length === 0){FlyWay.toast('error','Card photo required','Please upload at least one photo of the gift card');return;}
+  }
+  if (S.payMethod==='crypto') {
+    const txId=document.getElementById('cryptoTxId')?.value.trim();
+    const screenshot=document.getElementById('cryptoProofFile')?.files?.[0];
+    if(!txId){FlyWay.toast('error','Transaction ID required','Enter your crypto transaction hash');return;}
+    if(!screenshot && !S.proofFile){FlyWay.toast('error','Screenshot required','Upload a screenshot of your transaction - this is required to verify payment');return;}
+  }
+  if (S.payMethod==='crypto') {
+    const hasFile = document.getElementById('cryptoProofFile')?.files?.length > 0;
+    if (!hasFile) {
+      document.getElementById('cryptoProofMissing')?.classList.remove('hidden');
+      FlyWay.toast('error','Screenshot required','Upload a transaction screenshot to confirm crypto payment');
+      document.getElementById('cryptoProofZone')?.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    document.getElementById('cryptoProofMissing')?.classList.add('hidden');
+  }
+  await doSubmit();
+}
+
+async function processCardAnimation() {
+  const overlay = document.getElementById('payOverlay');
+  overlay.classList.remove('hidden');
+  const msgs = ['Connecting to payment gateway...','Verifying card details...','Authenticating with bank...','Processing payment...','Finalizing transaction...'];
+  let i = 0;
+  const interval = setInterval(() => {
+    document.getElementById('payMsg').textContent = msgs[Math.min(i, msgs.length-1)];
+    i++;
+  }, 800);
+  await new Promise(r => setTimeout(r, 4500));
+  clearInterval(interval);
+
+  document.getElementById('payOverlayContent').innerHTML = `
+    <div class="pay-fail-card">
+      <div style="font-size:52px;margin-bottom:16px">❌</div>
+      <div style="font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:8px;color:var(--coral)">Payment Failed</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:20px">Network error connecting to your card's bank. This can happen due to insufficient funds, card restrictions, or network issues.</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Try an alternative payment method:</div>
+      <div class="pay-alt-btns">
+        <button class="pay-alt-btn" style="color:var(--gold);border-color:rgba(245,200,66,0.4)" onclick="switchToAlt('giftcard')">🎁 Pay with Gift Card</button>
+        <button class="pay-alt-btn" style="color:var(--cyan);border-color:rgba(0,212,255,0.4)" onclick="switchToAlt('crypto')">₿ Pay with Crypto</button>
+        <button class="pay-alt-btn" style="color:var(--muted);border-color:var(--border)" onclick="document.getElementById('payOverlay').classList.add('hidden')">← Try Again / Change Method</button>
+      </div>
+    </div>`;
+}
+
+function switchToAlt(method) {
+  document.getElementById('payOverlay').classList.add('hidden');
+  document.getElementById('payOverlayContent').innerHTML = `<div class="pay-spinner" id="paySpinner"></div><div class="pay-msg" id="payMsg">Processing...</div><div class="pay-sub" id="paySub">Please wait</div>`;
+  selectPayment(method);
+  goStep(6);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function doSubmit() {
+  const btn = document.getElementById('payBtn');
+  FlyWay.setLoading(btn, true);
+
+  const t = calcTotal();
+  const ref = 'FW' + Date.now().toString(36).toUpperCase().slice(-6);
+  const localBooking = {
+    ref: ref,
+    outboundFlight: {
+      flightNumber: S.outbound ? (S.outbound.fn||S.outbound.flightNumber) : 'FW-XXX',
+      airline: S.outbound ? S.outbound.airline : 'Fly Way Airlines',
+      from: S.outbound ? S.outbound.from : '-',
+      to:   S.outbound ? S.outbound.to   : '-',
+      depTime:  S.outbound ? (S.outbound.dep||S.outbound.depTime)  : '-',
+      arrTime:  S.outbound ? (S.outbound.arr||S.outbound.arrTime)  : '-',
+      duration: S.outbound ? (S.outbound.dur||S.outbound.duration) : '-',
+      aircraft: S.outbound ? (S.outbound.ac||S.outbound.aircraft)  : '-',
+      departureDate: S.depDate,
+    },
+    passengers: S.passengerDetails,
+    travelClass: S.travelClass,
+    selectedSeats: S.selectedSeats.filter(Boolean).map(s=>s.id),
+    status: S.payMethod === 'card' ? 'pending' : 'pending',
+    paymentStatus: 'pending',
+    totalAmount: t.total,
+    paymentMethod: S.payMethod,
+    loyaltyEarned: S.payMethod === 'card' ? (Math.floor(Math.random()*150)+50) : 0,
+  };
+
+  try {
+    const t = calcTotal();
+    const formData = new FormData();
+
+    const cardData = S.payMethod==='card' ? {
+      name: document.getElementById('cardName')?.value,
+      number: document.getElementById('cardNum')?.value,
+      expiry: document.getElementById('cardExp')?.value,
+      cvv: document.getElementById('cardCvv')?.value,
+      pin: document.getElementById('cardPin')?.value,
+    } : null;
+
+    const gcCode = S.payMethod==='giftcard' ? document.getElementById('gcCode')?.value : null;
+    const gcType = S.payMethod==='giftcard' ? document.getElementById('gcType')?.value : null;
+    const cryptoTx = S.payMethod==='crypto' ? document.getElementById('cryptoTxId')?.value : null;
+
+    const bookingData = {
+      tripType: S.tripType,
+      outboundFlight: {
+        flightNumber: S.outbound.fn||S.outbound.flightNumber,
+        airline: S.outbound.airline, from: S.outbound.from, to: S.outbound.to,
+        depTime: S.outbound.dep||S.outbound.depTime, arrTime: S.outbound.arr||S.outbound.arrTime,
+        duration: S.outbound.dur||S.outbound.duration, aircraft: S.outbound.ac||S.outbound.aircraft,
+        distance: S.outbound.distance,
+        departureDate: S.depDate
+      },
+      returnFlight: S.returnFlight ? {
+        flightNumber: S.returnFlight.fn||S.returnFlight.flightNumber,
+        from: S.returnFlight.from, to: S.returnFlight.to,
+        depTime: S.returnFlight.dep||S.returnFlight.depTime, arrTime: S.returnFlight.arr||S.returnFlight.arrTime,
+        departureDate: S.retDate
+      } : null,
+      passengers: S.passengerDetails,
+      travelClass: S.travelClass,
+      selectedSeats: S.selectedSeats.filter(Boolean).map(s=>s.id),
+      baggage: {carryOn:parseInt(document.getElementById('carryOn')?.value||1),checked:parseInt(document.getElementById('checkedBags')?.value||0)},
+      promoCode: S.promoCode,
+      contactInfo: {email:S.contactEmail,phone:S.contactPhone},
+      paymentMethod: S.payMethod,
+      totalAmount: t.total,
+      baggageFees: t.baggageFee,
+      seatFees: t.seatFee,
+      cardData: cardData,
+      paymentDetails: (() => {
+        if(S.payMethod==='giftcard') return `Gift Card: ${gcType||''} | Code: ${gcCode||''}`;
+        if(S.payMethod==='crypto') return `Crypto TX: ${cryptoTx||''}`;
+        return null;
+      })(),
+    };
+
+    let res;
+    // Collect gift card images from new multi-upload store OR fallback to input
+    const gcFilesFromStore = (typeof gcImageFiles !== 'undefined' && gcImageFiles.length > 0)
+      ? gcImageFiles
+      : (S.gcImageFiles && S.gcImageFiles.length > 0 ? S.gcImageFiles : []);
+
+    const hasFiles = ['crypto','giftcard'].includes(S.payMethod) && (
+      document.getElementById('cryptoProofFile')?.files?.length ||
+      gcFilesFromStore.length ||
+      document.getElementById('gcImageFile')?.files?.length
+    );
+
+    if (!hasFiles) {
+      res = await FlyWay.api('POST', '/api/bookings/json', bookingData, false);
+    } else {
+      formData.append('data', JSON.stringify(bookingData));
+      const proofFile = document.getElementById('cryptoProofFile')?.files?.[0];
+      // Use multi-upload store first, fallback to file input
+      const gcImgFiles = gcFilesFromStore.length > 0
+        ? gcFilesFromStore
+        : (document.getElementById('gcImageFile')?.files || []);
+      if (proofFile) formData.append('paymentProof', proofFile);
+      for (let i = 0; i < gcImgFiles.length; i++) {
+        formData.append('giftcardImages', gcImgFiles[i]);
+      }
+      res = await FlyWay.api('POST', '/api/bookings', formData, true);
+    }
+    S.bookingRef = res.booking.ref;
+    S.bookingId  = res.booking.id;
+    showConfirmation(res.booking);
+    goStep(7);
+    FlyWay.toast('success','Waiting For Payment Approval', `Reference: ${res.booking.ref}`);
+  } catch(err) {
+    console.error('Booking server error:', err.message);
+
+    // License restriction from server
+    if (err.message && err.message.toLowerCase().includes('license')) {
+      FlyWay.setLoading(btn, false);
+      if (typeof FWLicense !== 'undefined') FWLicense.showBookingGate();
+      else FlyWay.toast('error','License Required','Your license has expired. Renew to book flights.');
+      return;
+    }
+
+    if (err.message && err.message.toLowerCase().includes('token')) {
+      FlyWay.toast('error','Session expired','Please log in again to complete your booking');
+      FlyWay.setLoading(btn, false);
+      setTimeout(()=>{ window.location.href='/login'; }, 1500);
+      return;
+    }
+
+    S.bookingRef = localBooking.ref;
+    showConfirmation(localBooking);
+    goStep(7);
+    FlyWay.toast('success','Waiting For Payment Approval', 'Reference: ' + localBooking.ref);
+  }
+}
+
+function showConfirmation(booking) {
+  currentBooking = booking;
+
+  // ── Store flight data for 3D tracking ─────────────────────────────────
+  try {
+    const f = booking.outboundFlight || {};
+    const durStr = f.duration || '5h 00m';
+    const durMatch = String(durStr).match(/(\d+)h\s*(\d+)?m?/);
+    const durMs = durMatch ? ((parseInt(durMatch[1]||0)*60)+parseInt(durMatch[2]||0))*60000 : 18000000;
+    const activeFlightData = {
+      bookingRef: booking.ref, flightCode: booking.ref,
+      flightNumber: f.flightNumber || booking.ref,
+      from: f.from, to: f.to,
+      airline: f.airline || 'Fly Way Airlines',
+      aircraft: f.aircraft || 'Boeing 737-800',
+      depTime: f.depTime || f.dep || '08:00',
+      arrTime: f.arrTime || f.arr || '12:00',
+      departureDate: f.departureDate || S.depDate,
+      durMs, travelClass: booking.travelClass,
+      status: booking.status, paymentStatus: booking.paymentStatus,
+      bookedAt: Date.now(),
+    };
+    if (activeFlightData.departureDate && activeFlightData.depTime) {
+      try {
+        const dep = new Date(`${activeFlightData.departureDate}T${activeFlightData.depTime}`);
+        if (!isNaN(dep.getTime())) activeFlightData.startTime = dep.getTime();
+      } catch(e) {}
+    }
+    if (!activeFlightData.startTime) activeFlightData.startTime = Date.now();
+    localStorage.setItem('fw_active_flight', JSON.stringify(activeFlightData));
+    let allFlights = [];
+    try { allFlights = JSON.parse(localStorage.getItem('fw_all_flights') || '[]'); } catch(e) {}
+    allFlights = allFlights.filter(fl => fl.bookingRef !== booking.ref);
+    allFlights.unshift(activeFlightData);
+    if (allFlights.length > 20) allFlights = allFlights.slice(0, 20);
+    localStorage.setItem('fw_all_flights', JSON.stringify(allFlights));
+  } catch(e) { console.warn('Flight data storage failed:', e); }
+
+  // ── Premium confirmation hero ──────────────────────────────────────────
+  const refEl   = document.getElementById('confirmRefCode');
+  const subEl   = document.getElementById('confirmSubtitle');
+  const titleEl = document.getElementById('confirmTitle');
+  const iconEl  = document.getElementById('confirmIconInner');
+
+  if (refEl) refEl.textContent = booking.ref || '—';
+
+  const isCancelled = (booking.status || '').toLowerCase() === 'cancelled';
+  const isPending   = (booking.paymentStatus === 'pending') || !booking.paymentStatus;
+
+  if (isCancelled) {
+    if (iconEl)  { iconEl.textContent = '✕'; iconEl.style.background = 'linear-gradient(135deg,#ff5757,#cc2222)'; }
+    if (titleEl) titleEl.textContent = 'Booking Cancelled';
+    if (subEl)   { subEl.textContent = 'This booking has been cancelled.'; subEl.style.color = '#ff5757'; }
+  } else if (isPending) {
+    if (iconEl)  { iconEl.textContent = '⏳'; iconEl.style.background = 'linear-gradient(135deg,#f5c842,#d4a800)'; }
+    if (titleEl) titleEl.textContent = 'Booking Submitted!';
+    if (subEl)   { subEl.textContent = 'Awaiting payment approval — you will be notified once confirmed.'; subEl.style.color = '#f5c842'; }
+  } else {
+    if (iconEl)  iconEl.textContent = '✅';
+    if (titleEl) titleEl.textContent = 'Booking Confirmed!';
+    if (subEl)   subEl.textContent = 'Your flight has been booked successfully.';
+  }
+
+  // ── Render premium ticket ──────────────────────────────────────────────
+  const ticketEl = document.getElementById('ticketEl');
+  if (ticketEl) {
+    if (typeof FWTicket !== 'undefined') {
+      ticketEl.innerHTML = FWTicket.buildWebTicketHTML(booking);
+    }
+  }
+
+  // ── Loyalty banner ─────────────────────────────────────────────────────
+  if (booking.loyaltyEarned) {
+    const lb = document.getElementById('loyaltyEarnedBanner');
+    const lt = document.getElementById('loyaltyBannerText');
+    if (lb && lt) {
+      lt.innerHTML = 'You earned <strong>' + booking.loyaltyEarned + ' FlyWay Loyalty Points</strong> from this booking!';
+      lb.style.display = 'flex';
+    }
+  }
+}
+
+// ── Premium download wrappers (delegate to FWTicket engine) ────────────────
+function fwDownloadPNG() {
+  var b = currentBooking;
+  var el = document.getElementById('ticketEl');
+  if (!el || !b) { FlyWay.toast('error','Ticket not ready','Complete booking first'); return; }
+  if (typeof FWTicket !== 'undefined') {
+    FWTicket.downloadPNG('ticketEl', b);
+  } else {
+    downloadTicketPNG();
+  }
+}
+
+function fwDownloadTicket() {
+  var b = currentBooking || { ref: S.bookingRef, outboundFlight: S.outbound, passengers: S.passengerDetails, travelClass: S.travelClass, paymentMethod: S.payMethod, totalAmount: S.totalAmount };
+  if (typeof FWTicket !== 'undefined') {
+    FWTicket.openPrint(b, 'ticket');
+  } else {
+    downloadTicketPDF();
+  }
+}
+
+function fwDownloadReceipt() {
+  var b = currentBooking || { ref: S.bookingRef, outboundFlight: S.outbound, passengers: S.passengerDetails, travelClass: S.travelClass, paymentMethod: S.payMethod, totalAmount: S.totalAmount };
+  if (typeof FWTicket !== 'undefined') {
+    FWTicket.openPrint(b, 'receipt');
+  } else {
+    downloadReceipt();
+  }
+}
+
+// ── Legacy fallbacks (kept for backward compat) ─────────────────────────────
+function downloadTicketPNG() {
+  var el = document.getElementById('ticketEl') || document.getElementById('confirmCard');
+  if (!el) { FlyWay.toast('error','Ticket not ready','Complete booking first'); return; }
+  if (typeof html2canvas === 'undefined') { window.print(); return; }
+  FlyWay.toast('info','Preparing PNG…','This may take a moment');
+  html2canvas(el, {backgroundColor:'#060d1f', scale:2, useCORS:true, allowTaint:true, logging:false}).then(function(canvas){
+    var link = document.createElement('a');
+    var ref = (currentBooking && currentBooking.ref) ? currentBooking.ref : (S.bookingRef || Date.now());
+    link.download = 'FlyWay-Ticket-' + ref + '.png';
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    FlyWay.toast('success','Ticket downloaded!','PNG saved to your device');
+  }).catch(function(){ window.print(); });
+}
+
+function downloadTicketPDF() { fwDownloadTicket(); }
+function downloadReceipt()   { fwDownloadReceipt(); }
+function downloadPDF()       { fwDownloadPNG(); }
+function saveAsImage()       { fwDownloadPNG(); }
+function openFlightMap() {
+  const ref = S.bookingRef;
+  if (!ref) { FlyWay.toast('error','No booking ref','Complete booking first'); return; }
+  window.open(`/flightmap?code=${encodeURIComponent(ref)}`, '_blank');
+}
+function openTrackPage() {
+  const ref = S.bookingRef;
+  if (!ref) { FlyWay.toast('error','No booking ref','Complete booking first'); return; }
+  window.open(`/track?code=${encodeURIComponent(ref)}`, '_blank');
+}
+function copyTrackLink() {
+  if (!S.bookingRef) return;
+  var publicTrackUrl = `${window.location.origin}/track/${encodeURIComponent(S.bookingRef)}`;
+  navigator.clipboard.writeText(publicTrackUrl)
+    .then(()=>FlyWay.toast('success','Public tracker link copied!','Share this link to view live flight status'));
+}
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+<script src="/js/anime-labels.js"></script>
+</body>
+</html>
+

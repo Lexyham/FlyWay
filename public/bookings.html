@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>My Bookings - FlyWay</title><link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/assets/css/responsive.css"><link rel="stylesheet" href="/css/ticket-system.css">
+<link rel="stylesheet" href="/css/license-system.css"></head>
+<body>
+<nav class="navbar" id="mainNav"><div class="nav-inner">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="hamburger" id="navHamburger" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    <a href="/" class="nav-logo"><div class="nav-logo-icon glow3d">✈</div><span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span></a>
+  </div>
+  <div class="nav-links">
+    <a href="/" class="nav-link">Home</a>
+    <a href="/booking" class="nav-link">Book Flight</a>
+    <a href="/track" class="nav-link">Track Flight</a>
+    <a href="/flightmap" class="nav-link">3D Map</a>
+    <a href="/flightgame" class="nav-link">Have Fun</a>
+    <a href="/contact" class="nav-link">Contact</a>
+    <a href="/dashboard" class="nav-link hidden" id="navDashBtn">My Account</a>
+  </div>
+  <div class="nav-actions"><button class="btn btn-ghost btn-sm" onclick="FlyWay.logout()">Sign Out</button></div>
+</div></nav>
+<div class="dashboard-layout">
+<aside class="site-sidebar" id="sidebar">
+  <div class="sidebar-nav-section">
+    <div class="sidebar-nav-label">Main</div>
+    <a href="/dashboard" class="sidebar-nav-item"><span class="nav-icon">🏠</span>Dashboard</a>
+    <a href="/booking" class="sidebar-nav-item"><span class="nav-icon">✈</span>Book a Flight</a>
+    <a href="/bookings" class="sidebar-nav-item active"><span class="nav-icon">🗓</span>My Bookings</a>
+  </div>
+  <div class="sidebar-nav-section">
+    <div class="sidebar-nav-label">Account</div>
+    <a href="/transactions" class="sidebar-nav-item"><span class="nav-icon">💳</span>Transactions</a>
+    <a href="/profile" class="sidebar-nav-item"><span class="nav-icon">👤</span>My Profile</a>
+    <a href="/notifications" class="sidebar-nav-item"><span class="nav-icon">🔔</span>Notifications</a>
+    <a href="/track" class="sidebar-nav-item"><span class="nav-icon">📡</span>Track Flight</a>
+  </div>
+  <div class="sidebar-footer">
+    <a href="/profile" class="user-chip"><div class="user-avatar" id="sidebarAvatar">U</div><div style="flex:1;min-width:0"><div class="user-name" id="sidebarName">Loading...</div><div class="user-sub" id="sidebarSub">-</div></div></a>
+  </div>
+</aside>
+<main class="dashboard-main">
+  <div class="page-header">
+    <div class="flex-between"><div><h1 class="page-title-h">🗓 My Bookings</h1><div class="page-subtitle">All your flight reservations</div></div>
+    <a href="/booking" class="btn btn-primary">✈ New Booking</a></div>
+  </div>
+  
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+    <button class="trip-tab active" onclick="filterBookings('all',this)">All</button>
+    <button class="trip-tab" onclick="filterBookings('confirmed',this)">✅ Confirmed</button>
+    <button class="trip-tab" onclick="filterBookings('pending',this)">⏳ Pending</button>
+    <button class="trip-tab" onclick="filterBookings('cancelled',this)">❌ Cancelled</button>
+    <button class="trip-tab" onclick="filterBookings('completed',this)">🛬 Completed</button>
+  </div>
+  <div id="bookingsList"><div class="empty-state"><div class="loading-spinner" style="margin:0 auto"></div></div></div>
+</main></div>
+
+
+<div class="overlay hidden" id="cancelModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><div class="modal-title">Cancel Booking</div><button class="modal-close" onclick="FlyWay.hideModal('cancelModal')">×</button></div>
+    <p style="color:var(--muted);margin-bottom:20px">Are you sure you want to cancel this booking? Refunds take 5-7 business days.</p>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="FlyWay.hideModal('cancelModal')">Keep Booking</button>
+      <button class="btn btn-danger" id="confirmCancelBtn">Yes, Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="overlay hidden" id="proofModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header"><div class="modal-title">Upload Payment Proof</div><button class="modal-close" onclick="FlyWay.hideModal('proofModal')">×</button></div>
+    <p style="color:var(--muted);margin-bottom:16px">Upload your payment receipt. Admin will approve your booking within 1-2 hours.</p>
+    <div class="upload-zone" id="modalProofZone"><input type="file" accept="image/*,.pdf" id="modalProofFile"><div class="upload-icon">📤</div><div style="font-weight:600">Drop or click to upload proof</div><div style="font-size:12px;color:var(--muted)">JPG, PNG, PDF · Max 10MB</div></div>
+    <div id="modalProofPreview" class="mt-16"></div>
+    <button class="btn btn-primary btn-full mt-16" id="uploadProofBtn">Upload Proof</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="ticketModal">
+  <div class="modal modal-lg" style="max-width:880px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column">
+    <div class="modal-header" style="flex-shrink:0">
+      <div class="modal-title" id="modalTitle">🎫 Flight Ticket</div>
+      <button class="modal-close" onclick="FlyWay.hideModal('ticketModal')">×</button>
+    </div>
+    <div id="modalBody" style="overflow-y:auto;flex:1;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(0,212,255,0.3) transparent"></div>
+  </div>
+</div>
+<div id="toastContainer"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="/js/main.js"></script>
+<script src="/js/barcode-gen.js"></script>
+<script src="/js/ticket-system.js"></script>
+<script src="/js/license-system.js"></script>
+<script src="/js/sidebar-toggle.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ── FWLicense + socket for real-time license sync on bookings page ───────────
+(function() {
+  if (typeof io === 'undefined') return;
+  var user = null;
+  try { user = JSON.parse(localStorage.getItem('fw_user') || '{}'); } catch(e){}
+  if (!user || !user.id) return;
+  var socket = io();
+  socket.on('connect', function(){ socket.emit('join_user', user.id); });
+  socket.emit('join_user', user.id);
+  socket.on('notification_' + user.id, function(note){
+    if(typeof FlyWay !== 'undefined' && FlyWay.toast) FlyWay.toast('info', note.title||'', note.message||'');
+  });
+  if (typeof FWLicense !== 'undefined') FWLicense.connectSocket(socket);
+})();
+</script>
+<script>
+let allBookings=[], currentProofBookingId=null;
+document.addEventListener('DOMContentLoaded', async ()=>{
+  if(!FlyWay.requireAuth()) return;
+  FlyWay.setupSidebar();
+
+  FlyWay.api('GET','/api/notifications/unread-count').then(function(nc){
+    var badge = document.getElementById('notifyBadgeSide');
+    if(badge && nc.count > 0){badge.textContent=nc.count;badge.style.display='flex';}
+  }).catch(function(){});
+  await loadBookings();
+  let proofFile=null;
+  FlyWay.setupUploadZone(document.getElementById('modalProofZone'), document.getElementById('modalProofPreview'), f=>proofFile=f);
+  document.getElementById('uploadProofBtn').addEventListener('click', async ()=>{
+    if(!proofFile){FlyWay.toast('error','No file','Please select a file');return;}
+    const btn=document.getElementById('uploadProofBtn');
+    FlyWay.setLoading(btn,true);
+    try {
+      const fd=new FormData(); fd.append('proof',proofFile);
+      await FlyWay.api('POST',`/api/bookings/${currentProofBookingId}/proof`,fd,true);
+      FlyWay.toast('success','Proof uploaded!','Admin will verify and confirm shortly');
+      FlyWay.hideModal('proofModal');
+      await loadBookings();
+    } catch(e){ FlyWay.toast('error','Upload failed',e.message); FlyWay.setLoading(btn,false); }
+  });
+});
+
+async function loadBookings() {
+  try {
+    allBookings=await FlyWay.api('GET','/api/bookings');
+    renderBookings(allBookings);
+  } catch(e){ document.getElementById('bookingsList').innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Failed to load bookings</div></div>`; }
+}
+
+// Returns true if arrival time is already past (flight landed)
+function flightHasLanded(b) {
+  var f = b.outboundFlight || {};
+  if (!f.departureDate || !f.depTime) return false;
+  try {
+    var p = (f.depTime||'00:00').split(':');
+    var dep = new Date(f.departureDate + 'T' + (p[0]||'00').padStart(2,'0') + ':' + (p[1]||'00').padStart(2,'0') + ':00');
+    var durMatch = (f.duration||'').match(/(\d+)h\s*(\d+)?/);
+    var durMins = durMatch ? (parseInt(durMatch[1])*60 + (parseInt(durMatch[2])||0)) : 240;
+    return new Date(dep.getTime() + durMins * 60000) < new Date();
+  } catch(e) { return false; }
+}
+function getFlightDisplayStatus(b) {
+  if (b.status === 'cancelled') return 'cancelled';
+  if (b.status === 'confirmed' && flightHasLanded(b)) return 'landed';
+  return (b.status || 'pending').toLowerCase();
+}
+function filterBookings(status, btn) {
+  document.querySelectorAll('.trip-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  var filtered;
+  if (status === 'all') {
+    filtered = allBookings;
+  } else if (status === 'completed') {
+    filtered = allBookings.filter(function(b){ return getFlightDisplayStatus(b) === 'landed'; });
+  } else {
+    filtered = allBookings.filter(function(b){ return b.status === status && getFlightDisplayStatus(b) !== 'landed'; });
+  }
+  renderBookings(filtered);
+}
+
+function renderBookings(bookings) {
+  if (!bookings.length) {
+    document.getElementById('bookingsList').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">✈</div><div class="empty-title">No bookings found</div><div class="empty-desc">Book your first flight today!</div><a href="/booking" class="btn btn-primary mt-16">Book a Flight</a></div>';
+    return;
+  }
+
+  const statusCls = { confirmed:'status-confirmed', pending:'status-pending', cancelled:'status-cancelled' };
+
+  document.getElementById('bookingsList').innerHTML = bookings.map(function(b, idx) {
+    const f   = b.outboundFlight || {};
+    const st  = (b.status || 'pending').toLowerCase();
+    const displaySt = getFlightDisplayStatus(b);
+    const isLanded = displaySt === 'landed';
+    const isPending   = (b.paymentStatus==='pending' || b.paymentStatus==='proof_submitted') && b.status !== 'cancelled';
+    const isCancelled = st === 'cancelled';
+
+    const stColor  = isLanded ? '#a78bfa' : st==='confirmed' ? '#00e396' : st==='cancelled' ? '#ff5757' : '#f5c842';
+    const stBg     = isLanded ? 'rgba(167,139,250,0.1)' : st==='confirmed' ? 'rgba(0,227,150,0.1)' : st==='cancelled' ? 'rgba(255,87,87,0.1)' : 'rgba(245,200,66,0.1)';
+    const stBorder = isLanded ? 'rgba(167,139,250,0.25)' : st==='confirmed' ? 'rgba(0,227,150,0.25)' : st==='cancelled' ? 'rgba(255,87,87,0.25)' : 'rgba(245,200,66,0.25)';
+    const payColor = b.paymentStatus==='paid' ? '#00e396' : b.paymentStatus==='proof_submitted' ? '#00d4ff' : b.paymentStatus==='refunded' ? '#a78bfa' : '#f5c842';
+    const payBg    = b.paymentStatus==='paid' ? 'rgba(0,227,150,0.08)' : b.paymentStatus==='proof_submitted' ? 'rgba(0,212,255,0.08)' : b.paymentStatus==='refunded' ? 'rgba(167,139,250,0.08)' : 'rgba(245,200,66,0.08)';
+
+    const adminNote = b.adminNote
+      ? '<div style="margin-top:10px;padding:9px 13px;background:rgba(245,200,66,0.07);border:1px solid rgba(245,200,66,0.18);border-radius:10px;font-size:12px;color:#f5c842">📝 <strong>Admin note:</strong> ' + b.adminNote + '</div>'
+      : '';
+    const payProof = b.paymentProof
+      ? '<div style="margin-top:6px;font-size:12px;color:#00d4ff">📎 <a href="' + b.paymentProof + '" target="_blank" style="color:#00d4ff;text-decoration:underline">View payment proof</a></div>'
+      : '';
+
+    const paxNames = (b.passengers || []).map(function(p){ return p.name; }).filter(Boolean);
+    const paxStr   = paxNames.length
+      ? paxNames.slice(0,2).join(', ') + (paxNames.length > 2 ? ' +' + (paxNames.length-2) : '')
+      : ((b.passengers||[]).length || 1) + ' passenger(s)';
+
+    return (
+      '<div class="fw-booking-card ' + (statusCls[st]||'') + '" style="animation-delay:' + (idx*0.06) + 's">' +
+        '<div class="fw-bcard-main">' +
+          '<div class="fw-bcard-left">' +
+            '<div class="fw-bcard-route">' +
+              '<span class="fw-bcard-iata">' + (f.from||'—') + '</span>' +
+              '<span class="fw-bcard-arrow">→</span>' +
+              '<span class="fw-bcard-iata">' + (f.to||'—') + '</span>' +
+              '<span class="fw-status-badge" style="color:' + stColor + ';background:' + stBg + ';border-color:' + stBorder + ';font-size:9px;padding:3px 10px">' + (isLanded ? '🛬 LANDED' : st.toUpperCase()) + '</span>' +
+              '<span class="fw-status-badge" style="color:' + payColor + ';background:' + payBg + ';border-color:' + payColor + '30;font-size:9px;padding:3px 10px">💳 ' + (b.paymentStatus||'pending').replace('_',' ').toUpperCase() + '</span>' +
+            '</div>' +
+            '<div class="fw-bcard-meta">' +
+              '<span class="fw-bcard-meta-item" style="font-family:var(--font-m);color:#00d4ff;background:rgba(0,212,255,0.08);padding:2px 8px;border-radius:6px;font-size:11px;display:flex;align-items:center;gap:6px">' +
+              '<span>' + b.ref + '</span>' +
+              '<button class="fw-bcard-btn fw-bcard-btn-ghost" style="font-size:11px;padding:4px 6px;min-width:auto;line-height:1;" data-ref="' + b.ref + '" onclick="copyBookingRef(this.dataset.ref)">Copy</button>' +
+            '</span>' +
+              '<span class="fw-bcard-meta-item" style="display:flex;align-items:center;gap:6px;">✈ <span>' + (f.flightNumber||'—') + '</span>' +
+                ((f.flightNumber && f.flightNumber !== '') ? '<button class="fw-bcard-btn fw-bcard-btn-ghost" style="font-size:11px;padding:4px 6px;min-width:auto;line-height:1;" data-fn="' + f.flightNumber + '" onclick="copyFlightNumber(this.dataset.fn)">Copy</button>' : '') +
+              '</span>' +
+              '<span class="fw-bcard-meta-item">' + (f.airline||'Fly Way Airlines') + '</span>' +
+              '<span class="fw-bcard-meta-item" style="text-transform:uppercase">' + (b.travelClass||'Economy') + '</span>' +
+            '</div>' +
+            '<div class="fw-bcard-meta">' +
+              '<span class="fw-bcard-meta-item">📅 ' + (f.departureDate||b.createdAt&&b.createdAt.split('T')[0]||'—') + '</span>' +
+              '<span class="fw-bcard-meta-item">⏰ ' + (f.depTime||'—') + ' → ' + (f.arrTime||'—') + '</span>' +
+              '<span class="fw-bcard-meta-item">⏱ ' + (f.duration||'—') + '</span>' +
+            '</div>' +
+            '<div class="fw-bcard-meta">' +
+              '<span class="fw-bcard-meta-item">👤 ' + paxStr + '</span>' +
+              (f.aircraft ? '<span class="fw-bcard-meta-item">🛩 ' + f.aircraft + '</span>' : '') +
+            '</div>' +
+            adminNote + payProof +
+          '</div>' +
+          '<div class="fw-bcard-right">' +
+            '<div class="fw-bcard-amount">$' + FlyWay.fmt(b.totalAmount) + '</div>' +
+            '<div class="fw-bcard-method">' + (b.paymentMethod||'—').replace('_',' ') + '</div>' +
+            '<div class="fw-bcard-date">' + FlyWay.fmtDate(b.createdAt) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="fw-bcard-actions">' +
+          (b.status === 'confirmed'
+            ? '<button type="button" class="fw-bcard-btn fw-bcard-btn-primary" data-bid="' + b.id + '" onclick="openTicketModal(this.dataset.bid)">🎫 View Ticket</button>' +
+              '<button type="button" class="fw-bcard-btn fw-bcard-btn-ghost" data-bid="' + b.id + '" onclick="printReceipt(this.dataset.bid)">🧾 Receipt</button>' +
+              '<button type="button" class="fw-bcard-btn fw-bcard-btn-ghost" data-bid="' + b.id + '" onclick="downloadTicketPDF(this.dataset.bid)">📄 PDF</button>' +
+              '<button type="button" class="fw-bcard-btn fw-bcard-btn-ghost" data-ref="' + b.ref + '" onclick="copyTrack(this.dataset.ref)">🔗 Track</button>' +
+              '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px">' +
+              '<select id="emailTemplate-' + b.id + '" style="border:1px solid rgba(71,85,105,0.16);border-radius:999px;padding:8px 12px;background:#fff;color:#1d2939;font-size:12px;min-width:150px;">' +
+                '<option value="standard">Standard Email</option>' +
+                '<option value="premium">Premium Email</option>' +
+              '</select>' +
+              '<button type="button" class="fw-bcard-btn fw-bcard-btn-ghost" data-bid="' + b.id + '" onclick="sendBookingEmail(this, \'ticket\')">📧 Ticket</button>' +
+              '<button type="button" class="fw-bcard-btn fw-bcard-btn-ghost" data-bid="' + b.id + '" onclick="sendBookingEmail(this, \'receipt\')">📧 Receipt</button>' +
+              '</div>'
+            : '') +
+          (isPending
+            ? '<button class="fw-bcard-btn fw-bcard-btn-success" data-bid="' + b.id + '" onclick="openProofModal(this.dataset.bid)">📎 Upload Payment Proof</button>'
+            : '') +
+          (!isCancelled
+            ? '<button class="fw-bcard-btn fw-bcard-btn-danger" data-bid="' + b.id + '" onclick="openCancel(this.dataset.bid)">✕ Cancel</button>'
+            : '<span style="font-size:11px;color:rgba(255,87,87,0.5);padding:8px 4px">Cancelled ' + FlyWay.fmtDate(b.cancelledAt) + '</span>') +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function openCancel(id) {
+  FlyWay.showModal('cancelModal');
+  document.getElementById('confirmCancelBtn').onclick=async()=>{
+    const btn=document.getElementById('confirmCancelBtn');
+    FlyWay.setLoading(btn,true);
+    try {
+      await FlyWay.api('PATCH',`/api/bookings/${id}/cancel`,{});
+      FlyWay.toast('success','Booking cancelled','Refund initiated · 5-7 business days');
+      FlyWay.hideModal('cancelModal');
+      await loadBookings();
+    } catch(e){ FlyWay.toast('error','Failed',e.message); FlyWay.setLoading(btn,false); }
+  };
+}
+
+function openProofModal(id) {
+  currentProofBookingId=id;
+  FlyWay.showModal('proofModal');
+}
+
+function openTicketModal(id) {
+  const b = allBookings.find(x => x.id === id);
+  if (!b) { FlyWay.toast('error','Not found','Booking not found'); return; }
+  FlyWay.showModal('ticketModal');
+  const titleEl = document.getElementById('modalTitle');
+  if (titleEl) titleEl.textContent = '🎫 Booking · ' + b.ref;
+  const container = document.getElementById('modalBody');
+  if (!container) return;
+  let html = '<div class="fw-modal-ticket">';
+  if (typeof FWTicket !== 'undefined') {
+    html += FWTicket.buildWebTicketHTML(b);
+  } else {
+    html += '<div style="padding:24px;color:var(--muted)">Ticket system unavailable.</div>';
+  }
+  html += '</div>';
+  html += '<div class="fw-action-strip" style="padding:16px 0 4px;border-top:1px solid rgba(255,255,255,0.06);margin-top:16px">' +
+    '<button class="fw-action-btn fw-action-btn-primary" data-bid="' + b.id + '" onclick="downloadTicketPDF(this.dataset.bid)">📄 Ticket PDF</button>' +
+    '<button class="fw-action-btn fw-action-btn-ghost" data-bid="' + b.id + '" onclick="printReceipt(this.dataset.bid)">🧾 Receipt</button>' +
+    '<button class="fw-action-btn fw-action-btn-ghost" data-bid="' + b.id + '" onclick="fwSavePNG(this.dataset.bid)">🖼 Save PNG</button>' +
+    '<button class="fw-action-btn fw-action-btn-ghost" data-ref="' + b.ref + '" onclick="copyTrack(this.dataset.ref)">🔗 Share</button>' +
+    '</div>';
+  container.innerHTML = html;
+}
+
+function fwSavePNG(id) {
+  const b = allBookings.find(x => x.id === id);
+  if (!b) return;
+  const el = document.querySelector('.fw-modal-ticket .fw-ticket-system');
+  if (el && !el.id) el.id = 'fw-modal-ts-' + id;
+  if (typeof FWTicket !== 'undefined') {
+    FWTicket.downloadPNG(el ? el.id : 'modalBody', b);
+  } else {
+    FlyWay.toast('info','Tip','Use your browser screenshot tool');
+  }
+}
+
+
+function downloadTicketPDF(id) {
+  const b = allBookings.find(x => x.id === id);
+  if (!b) { FlyWay.toast('error','Not found',''); return; }
+  if (typeof FWTicket !== 'undefined') {
+    FWTicket.openPrint(b, 'ticket');
+  } else {
+    FlyWay.toast('info','Opening print view…','');
+    window.print();
+  }
+}
+
+function printReceipt(id) {
+  const b = allBookings.find(x => x.id === id);
+  if (!b) { FlyWay.toast('error','Not found',''); return; }
+  if (typeof FWTicket !== 'undefined') {
+    FWTicket.openPrint(b, 'receipt');
+  } else {
+    FlyWay.toast('info','Opening receipt…','');
+    window.print();
+  }
+}
+
+async function sendBookingEmail(btn, type) {
+  const bookingId = btn.dataset.bid;
+  const templateSelect = document.getElementById('emailTemplate-' + bookingId);
+  const template = templateSelect ? templateSelect.value : 'standard';
+  FlyWay.setLoading(btn, true);
+  try {
+    const endpoint = type === 'ticket' ? '/api/send-ticket-email' : '/api/send-receipt-email';
+    await FlyWay.api('POST', endpoint, { bookingId, template });
+    FlyWay.toast('success', 'Email sent', 'Check your inbox for your ' + type + '.');
+  } catch (e) {
+    FlyWay.toast('error', 'Email failed', e.message);
+  } finally {
+    FlyWay.setLoading(btn, false);
+  }
+}
+
+function copyFlightNumber(flightNumber) {
+  if (!flightNumber) return;
+  navigator.clipboard.writeText(flightNumber).then(function(){
+    FlyWay.toast('success','Flight code copied!','You can now paste it where needed');
+  }).catch(function(){
+    var ta = document.createElement('textarea');
+    ta.value = flightNumber;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    FlyWay.toast('success','Flight code copied!','You can now paste it where needed');
+  });
+}
+
+function copyBookingRef(ref) {
+  if (!ref) return;
+  navigator.clipboard.writeText(ref).then(function(){
+    FlyWay.toast('success','Booking reference copied!','You can now paste it where needed');
+  }).catch(function(){
+    var ta = document.createElement('textarea');
+    ta.value = ref;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    FlyWay.toast('success','Booking reference copied!','You can now paste it where needed');
+  });
+}
+
+function copyTrack(ref) {
+  var link=window.location.origin+'/track/'+ref;
+  navigator.clipboard.writeText(link).then(function(){FlyWay.toast('success','Link copied!','Share to track your flight live');});
+}
+
+
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function(){
+  if (typeof io === 'undefined') return;
+  var user = null;
+  try { var s = localStorage.getItem('fw_user'); if(s) user = JSON.parse(s); } catch(e){}
+  if (!user || !user.id) return;
+  var socket = io();
+  socket.on('connect', function(){ socket.emit('join_user', user.id); });
+  socket.emit('join_user', user.id);
+  socket.on('booking_updated_' + user.id, function(){
+    if (typeof load === 'function') load();
+  });
+  socket.on('notification_' + user.id, function(note){
+    if(typeof FlyWay !== 'undefined' && FlyWay.toast) FlyWay.toast('info', note.title || 'Update', note.message || '');
+    if (typeof load === 'function') load();
+  });
+})();
+</script>
+
+</body></html>
+

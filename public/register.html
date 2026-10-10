@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account - FlyWay</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/assets/css/responsive.css">
+  <style>
+    /* License key journey cards */
+    .pw-hint-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      gap: 8px;
+    }
+    .pw-hint-card {
+      padding: 6px 10px;
+      background: rgba(0,212,255,0.06);
+      border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pw-hint-card:hover { border-color: rgba(0,212,255,0.4); }
+    .pw-hint-card-key   { color: var(--cyan); font-size: 13px; word-break: break-all; }
+    .pw-hint-card-label { color: var(--muted); font-size: 10px; margin-top: 2px; }
+    @media (max-width: 480px) {
+      .pw-hint-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+      .pw-hint-card { padding: 6px 8px; }
+      .pw-hint-card-key { font-size: 10px; }
+    }
+  </style>
+<meta name="robots" content="noindex,nofollow">
+  <meta name="copyright" content="FlyWay © 2025. All rights reserved. Unauthorized reproduction prohibited.">
+  <meta http-equiv="Cache-Control" content="no-store">
+  </head>
+<body>
+<script>
+(function(){
+var _c=console,_l=_c.log,_w=_c.warn,_e=_c.error,_i=_c.info,_d=_c.debug;
+function _b(){_l=_w=_e=_i=_d=function(){};}
+try{Object.defineProperty(_c,'log',{get:function(){_b();return function(){};}});
+Object.defineProperty(_c,'warn',{get:function(){_b();return function(){};}});
+Object.defineProperty(_c,'error',{get:function(){_b();return function(){};}});}catch(e){}
+var _dt=false;
+var _thresh=160;
+(function _chk(){
+  var w=window.outerWidth-window.innerWidth;
+  var h=window.outerHeight-window.innerHeight;
+  if(w>_thresh||h>_thresh){
+    if(!_dt){_dt=true;document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#020812;color:#e0f0ff;font-family:sans-serif;flex-direction:column;gap:20px"><div style="font-size:48px">🔒</div><div style="font-size:24px;font-weight:700">Access Restricted</div><div style="color:#4a6080;text-align:center;max-width:400px">Developer tools detected. This application is protected.</div></div>';}
+  }else{_dt=false;}
+  setTimeout(_chk,800);
+})();
+document.addEventListener('keydown',function(e){
+  if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C','U'].includes(e.key))||(e.ctrlKey&&e.key==='U')){e.preventDefault();e.stopPropagation();return false;}
+},true);
+document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
+(function _debug(){
+  var s=new Date();var _=debugger;
+  if(new Date()-s>100){document.location.reload();}
+  setTimeout(_debug,3000);
+})();
+})();
+</script>
+<nav class="navbar"><div class="nav-inner">
+  <a href="/" class="nav-logo"><div class="nav-logo-icon glow3d">✈</div><span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span></a>
+</div></nav>
+
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:90px 20px 40px;background:radial-gradient(ellipse at 70% 50%,rgba(124,58,237,0.06) 0%,transparent 60%),var(--navy);">
+  <div style="width:100%;max-width:560px">
+    
+    <div id="step1" class="card animate-in">
+      <div class="text-center mb-28">
+        <div style="font-size:40px;margin-bottom:8px">🚀</div>
+        <h1 class="modal-title" style="font-size:26px">Create Your Account</h1>
+        <p style="color:var(--muted);font-size:14px;margin-top:6px">Join millions of travelers on FlyWay</p>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:24px;">
+        <div style="flex:1;height:4px;background:var(--cyan);border-radius:2px"></div>
+        <div style="flex:1;height:4px;background:var(--border);border-radius:2px" id="step2Bar"></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:24px">Step 1 of 2 - Personal Details</div>
+
+      <div id="errBox1" class="hidden" style="background:rgba(255,87,87,0.1);border:1px solid rgba(255,87,87,0.3);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--coral);margin-bottom:16px;"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input class="form-input" id="firstName" placeholder="John" autocomplete="given-name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input class="form-input" id="lastName" placeholder="Doe" autocomplete="family-name">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <div class="input-group"><span class="input-prefix">@</span>
+          <input class="form-input" id="username" placeholder="Choose a username" autocomplete="username">
+        </div>
+        <div class="form-hint">This is how you'll sign in. Lowercase letters, numbers, underscores only.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <div class="input-group"><span class="input-prefix">✉</span>
+          <input class="form-input" type="email" id="email" placeholder="john@example.com" autocomplete="email">
+        </div>
+        <div id="emailStatus" style="margin-top:6px;font-size:12px;min-height:18px;"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number (optional)</label>
+        <div class="input-group"><span class="input-prefix">📞</span>
+          <input class="form-input" type="tel" id="phone" placeholder="+1 555 0000" autocomplete="tel">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-group"><span class="input-prefix">🔒</span>
+          <input class="form-input" type="password" id="password" placeholder="Create a strong password" autocomplete="new-password">
+          <span class="input-suffix" onclick="togglePw('password')">👁</span>
+        </div>
+        <div class="form-hint" id="pwStrength"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <div class="input-group"><span class="input-prefix">🔒</span>
+          <input class="form-input" type="password" id="confirmPw" placeholder="Repeat your password" autocomplete="new-password">
+          <span class="input-suffix" onclick="togglePw('confirmPw')">👁</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" id="continueBtn" onclick="goToStep2()">Continue →</button>
+      <div style="text-align:center;margin-top:16px;font-size:14px;color:var(--muted)">
+        Already have an account? <a href="/login" style="color:var(--cyan);font-weight:600">Sign In</a>
+      </div>
+    </div>
+
+    
+    <div id="step2" class="card animate-in hidden">
+      <div class="text-center mb-28">
+        <div style="font-size:40px;margin-bottom:8px">🔑</div>
+        <h1 class="modal-title" style="font-size:26px">Enter License Key</h1>
+        <p style="color:var(--muted);font-size:14px;margin-top:6px;max-width:360px;margin-left:auto;margin-right:auto;">A license key is required to activate your account. Contact our team if you need one.</p>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:24px;">
+        <div style="flex:1;height:4px;background:var(--emerald);border-radius:2px"></div>
+        <div style="flex:1;height:4px;background:var(--cyan);border-radius:2px"></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:24px">Step 2 of 2 - License Activation</div>
+
+      <div id="errBox2" class="hidden" style="background:rgba(255,87,87,0.1);border:1px solid rgba(255,87,87,0.3);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--coral);margin-bottom:16px;"></div>
+
+      <div class="form-group">
+        <label class="form-label">License Key</label>
+        <div class="input-group"><span class="input-prefix">🔑</span>
+          <input class="form-input" id="licenseKey" placeholder="FLY-XXXX-XXXX-XXXX" style="font-family:var(--font-m);letter-spacing:1px;text-transform:uppercase" autocomplete="off">
+        </div>
+        <div class="form-hint">Format: FLY-XXXX-XXXX-XXXX · Contact <a href="/contact" style="color:var(--cyan)">support</a> for a key.</div>
+      </div>
+
+      <div id="licenseStatus" class="hidden" style="margin-bottom:16px;padding:12px 14px;border-radius:10px;font-size:13px;border:1px solid"></div>
+
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-ghost" onclick="goBack()">← Back</button>
+        <button class="btn btn-primary btn-lg" style="flex:1" id="validateBtn" onclick="validateAndCheck()">Validate Key</button>
+      </div>
+      <button class="btn btn-gold btn-full btn-lg mt-16 hidden" id="createBtn" onclick="doRegister()">Create Account ✓</button>
+
+      <div style="background:linear-gradient(135deg,rgba(245,200,66,0.06),rgba(0,212,255,0.03));border:1px solid rgba(245,200,66,0.2);border-radius:12px;padding:16px;margin-top:20px;">
+        <div style="font-weight:700;margin-bottom:4px;color:var(--gold);font-size:13px">✈ Choose Your Journey Type</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Select the key that matches your travel purpose</div>
+        <div class="pw-hint-grid">
+          <div class="pw-hint-card" onclick="document.getElementById('licenseKey').value='FLY-SOLO-TRAVEL';validateAndFill()">
+            <div class="pw-hint-card-key">FLY-SOLO-TRAVEL</div>
+            <div class="pw-hint-card-label">🧑 Solo Traveller</div>
+          </div>
+          <div class="pw-hint-card" onclick="document.getElementById('licenseKey').value='FLY-HOLIDAY-FUN';validateAndFill()">
+            <div class="pw-hint-card-key">FLY-HOLIDAY-FUN</div>
+            <div class="pw-hint-card-label">🌴 Holiday &amp; Fun</div>
+          </div>
+          <div class="pw-hint-card" onclick="document.getElementById('licenseKey').value='FLY-ADVENTURE-2024';validateAndFill()">
+            <div class="pw-hint-card-key">FLY-ADVENTURE-2024</div>
+            <div class="pw-hint-card-label">🏔 Adventure Trip</div>
+          </div>
+          <div class="pw-hint-card" onclick="document.getElementById('licenseKey').value='FLY-STUDENT-PASS';validateAndFill()">
+            <div class="pw-hint-card-key">FLY-STUDENT-PASS</div>
+            <div class="pw-hint-card-label">📚 Student</div>
+          </div>
+          <div class="pw-hint-card" onclick="document.getElementById('licenseKey').value='FLY-SENIOR-GOLD';validateAndFill()">
+            <div class="pw-hint-card-key">FLY-SENIOR-GOLD</div>
+            <div class="pw-hint-card-label">👴 Senior (15% discount)</div>
+          </div>
+          <div class="pw-hint-card" onclick="document.getElementById('licenseKey').value='FLY-COUPLE-GETAWAY';validateAndFill()">
+            <div class="pw-hint-card-key">FLY-COUPLE-GETAWAY</div>
+            <div class="pw-hint-card-label">💑 Couple (2 users)</div>
+          </div>
+          <div class="pw-hint-card" onclick="document.getElementById('licenseKey').value='FLY-FAMILY-2024';validateAndFill()">
+            <div class="pw-hint-card-key">FLY-FAMILY-2024</div>
+            <div class="pw-hint-card-label">👨‍👩‍👧‍👦 Family (up to 5)</div>
+          </div>
+          <div class="pw-hint-card" onclick="document.getElementById('licenseKey').value='FLY-HONEYMOON';validateAndFill()">
+            <div class="pw-hint-card-key">FLY-HONEYMOON</div>
+            <div class="pw-hint-card-label">💍 Honeymoon (2 users)</div>
+          </div>
+          <div class="pw-hint-card" onclick="document.getElementById('licenseKey').value='FLY-GROUP-TRIP';validateAndFill()">
+            <div class="pw-hint-card-key">FLY-GROUP-TRIP</div>
+            <div class="pw-hint-card-label">👥 Group (up to 8)</div>
+          </div>
+          <div class="pw-hint-card" onclick="document.getElementById('licenseKey').value='FLY-BUSINESS-PRO';validateAndFill()">
+            <div class="pw-hint-card-key">FLY-BUSINESS-PRO</div>
+            <div class="pw-hint-card-label">💼 Business (10 users)</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:10px">💡 Click any key above to auto-fill. Or type your own key if you received one via email.</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted);">🔒 256-bit SSL · Your data is safe and encrypted</div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+<script src="/js/main.js"></script>
+<script>
+  if (FlyWay.isLoggedIn()) window.location.href = '/dashboard';
+
+  function validateAndFill() {
+    // Auto-validate when a key is clicked from the list
+    setTimeout(function() { validateAndCheck(); }, 100);
+  }
+
+  function togglePw(id) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+  }
+
+  // Password strength
+  document.getElementById('password').addEventListener('input', function() {
+    const pw = this.value;
+    const el = document.getElementById('pwStrength');
+    if (!pw) { el.textContent = ''; return; }
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    const levels = ['', 'Weak 🔴', 'Fair 🟡', 'Good 🟢', 'Strong 💪'];
+    const colors = ['', 'var(--coral)', 'var(--gold)', 'var(--emerald)', 'var(--cyan)'];
+    el.textContent = `Password strength: ${levels[score]}`;
+    el.style.color = colors[score];
+  });
+
+  // Username validation
+  document.getElementById('username').addEventListener('input', function() {
+    this.value = this.value.toLowerCase().replace(/[^a-z0-9_]/g,'');
+  });
+
+  // License key formatting
+  document.getElementById('licenseKey').addEventListener('input', function() {
+    let v = this.value.toUpperCase().replace(/[^A-Z0-9-]/g,'');
+    this.value = v;
+    document.getElementById('licenseStatus').classList.add('hidden');
+    document.getElementById('createBtn').classList.add('hidden');
+    document.getElementById('validateBtn').classList.remove('hidden');
+  });
+
+  async function goToStep2() {
+    const errBox = document.getElementById('errBox1');
+    errBox.classList.add('hidden');
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName  = document.getElementById('lastName').value.trim();
+    const username  = document.getElementById('username').value.trim();
+    const email     = document.getElementById('email').value.trim();
+    const pw        = document.getElementById('password').value;
+    const cpw       = document.getElementById('confirmPw').value;
+
+    if (!firstName || !lastName) { errBox.textContent = 'Please enter your full name.'; errBox.classList.remove('hidden'); return; }
+    if (!username || username.length < 3) { errBox.textContent = 'Username must be at least 3 characters.'; errBox.classList.remove('hidden'); return; }
+    if (!email || !email.includes('@')) { errBox.textContent = 'Please enter a valid email address.'; errBox.classList.remove('hidden'); return; }
+    if (!pw || pw.length < 6) { errBox.textContent = 'Password must be at least 6 characters.'; errBox.classList.remove('hidden'); return; }
+    if (pw !== cpw) { errBox.textContent = 'Passwords do not match.'; errBox.classList.remove('hidden'); return; }
+
+    // ── Email verification gate ──────────────────────────────────────────────
+    const btn = document.getElementById('continueBtn');
+    const statusEl = document.getElementById('emailStatus');
+    FlyWay.setLoading(btn, true);
+    setEmailStatus('checking', '🔍 Verifying email address...');
+    try {
+      const check = await FlyWay.api('POST', '/api/auth/validate-email', { email });
+      if (!check.valid) {
+        const icon = check.disposable ? '⚠️' : '❌';
+        setEmailStatus('error', `${icon} ${check.reason}`);
+        errBox.textContent = check.disposable
+          ? 'Disposable/temporary email addresses are not allowed. Please use a real email.'
+          : `Invalid email: ${check.reason}`;
+        errBox.classList.remove('hidden');
+        FlyWay.setLoading(btn, false);
+        return;
+      }
+      setEmailStatus('ok', '✔️ Email verified');
+    } catch {
+      // Fail-open: network/server error → allow through
+      setEmailStatus('warn', '⚠️ Could not verify email — proceeding anyway');
+    }
+    FlyWay.setLoading(btn, false);
+    // ── Proceed to Step 2 ───────────────────────────────────────────────────
+    document.getElementById('step1').classList.add('hidden');
+    document.getElementById('step2').classList.remove('hidden');
+    document.getElementById('step2Bar').style.background = 'var(--cyan)';
+  }
+
+  function setEmailStatus(type, msg) {
+    const el = document.getElementById('emailStatus');
+    if (!el) return;
+    const colors = { checking: 'var(--muted)', ok: 'var(--emerald)', error: 'var(--coral)', warn: 'var(--gold)' };
+    el.style.color = colors[type] || 'var(--muted)';
+    el.textContent = msg;
+  }
+
+  function goBack() {
+    document.getElementById('step2').classList.add('hidden');
+    document.getElementById('step1').classList.remove('hidden');
+  }
+
+  async function validateAndCheck() {
+    const key = document.getElementById('licenseKey').value.trim();
+    if (!key) { FlyWay.toast('error','Enter license key','Please enter your license key'); return; }
+    const btn = document.getElementById('validateBtn');
+    FlyWay.setLoading(btn, true);
+    try {
+      const res = await FlyWay.api('POST', '/api/auth/validate-license', { licenseKey: key });
+      const statusEl = document.getElementById('licenseStatus');
+      statusEl.classList.remove('hidden');
+      if (res.valid) {
+        statusEl.style.background = 'rgba(0,227,150,0.1)';
+        statusEl.style.borderColor = 'rgba(0,227,150,0.3)';
+        statusEl.style.color = 'var(--emerald)';
+        statusEl.textContent = `✅ Valid ${res.type} license - Ready to activate`;
+        document.getElementById('createBtn').classList.remove('hidden');
+        btn.classList.add('hidden');
+      } else {
+        statusEl.style.background = 'rgba(255,87,87,0.1)';
+        statusEl.style.borderColor = 'rgba(255,87,87,0.3)';
+        statusEl.style.color = 'var(--coral)';
+        statusEl.textContent = `❌ ${res.message}`;
+        FlyWay.setLoading(btn, false);
+      }
+    } catch { FlyWay.setLoading(btn, false); }
+  }
+
+  async function doRegister() {
+    const btn = document.getElementById('createBtn');
+    const errBox = document.getElementById('errBox2');
+    errBox.classList.add('hidden');
+    FlyWay.setLoading(btn, true);
+    try {
+      const res = await FlyWay.api('POST', '/api/auth/register', {
+        firstName: document.getElementById('firstName').value.trim(),
+        lastName: document.getElementById('lastName').value.trim(),
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        password: document.getElementById('password').value,
+        licenseKey: document.getElementById('licenseKey').value.trim(),
+      });
+      FlyWay.toast('success', 'Verification required', 'Redirecting to the secure verification gateway...');
+      window.location.href = res.nextUrl || `/security-check/${res.verificationSessionId}`;
+    } catch (err) {
+      errBox.textContent = err.message;
+      errBox.classList.remove('hidden');
+      FlyWay.setLoading(btn, false);
+    }
+  }
+</script>
+<script src="/socket.io/socket.io.js"></script>
+</body>
+</html>
+

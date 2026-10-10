@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin Panel - FlyWay</title>
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="/assets/css/responsive.css">
+<style>
+.adm-side{width:255px;background:linear-gradient(180deg,#080f1e 0%,#0a1628 100%);border-right:1px solid var(--border);position:fixed;top:0;bottom:0;left:0;display:flex;flex-direction:column;z-index:200;overflow-y:auto}
+.adm-logo{padding:22px 18px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.adm-logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--gold),var(--coral));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--navy);flex-shrink:0}
+.adm-nav{flex:1;padding:14px 10px;overflow-y:auto}
+.adm-nav-sect{margin-bottom:18px}
+.adm-nav-lbl{font-size:9px;font-weight:700;letter-spacing:1.8px;color:rgba(148,163,184,0.6);text-transform:uppercase;padding:0 8px;margin-bottom:6px;display:block}
+.adm-ni{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:9px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;transition:all 0.18s;margin-bottom:2px}
+.adm-ni:hover{background:rgba(255,255,255,0.05);color:var(--white)}
+.adm-ni.active{background:linear-gradient(135deg,rgba(193, 152, 27, 0.115),rgba(255,107,107,0.06));color:var(--gold);border:1px solid rgba(245,200,66,0.18)}
+.adm-ni-icon{width:20px;text-align:center;font-size:15px;flex-shrink:0}
+.adm-ni-badge{margin-left:auto;background:var(--coral);color:white;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700}
+.adm-footer{padding:14px;border-top:1px solid var(--border)}
+.adm-main{margin-left:255px;padding:26px 28px;min-height:100vh}
+.adm-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;flex-wrap:wrap;gap:10px}
+.adm-stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:22px}
+.adm-stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden;transition:all 0.2s;cursor:default}
+.adm-stat:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.adm-stat-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.adm-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px}
+.adm-th{background:rgba(255,255,255,0.03);padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap}
+.adm-td{padding:11px 14px;border-top:1px solid var(--border);vertical-align:middle;font-size:12px}
+.adm-tr:hover .adm-td{background:rgba(255,255,255,0.015)}
+.proof-img{width:50px;height:50px;border-radius:7px;border:1px solid var(--border);object-fit:cover;cursor:pointer;transition:all 0.2s}
+.proof-img:hover{transform:scale(1.12);border-color:var(--cyan)}
+.cred-box{background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.12);border-radius:10px;padding:12px}
+.cred-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.cred-row:last-child{border:none}
+.cred-key{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0}
+.cred-val{font-family:var(--font-m);font-size:12px;color:var(--cyan);text-align:right;word-break:break-all}
+.notify-panel{background:linear-gradient(135deg,rgba(0,212,255,0.05),rgba(124,58,237,0.04));border:1px solid rgba(0,212,255,0.15);border-radius:14px;padding:20px}
+@media(max-width:900px){.adm-side{transform:translateX(-100%)}.adm-side.open{transform:translateX(0)}.adm-main{margin-left:0;padding:16px}}
+#admMenuBtn{display:none}
+@media(max-width:900px){#admMenuBtn{display:flex;align-items:center;justify-content:center}}
+.adm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:199;backdrop-filter:blur(2px)}
+.adm-overlay.open{display:block}
+</style>
+</head>
+<body style="background:var(--navy);min-height:100vh">
+<div id="toastContainer"></div>
+
+
+<div class="adm-overlay" id="admOverlay" onclick="toggleAdmSide()"></div>
+<aside class="adm-side" id="admSide">
+  <div class="adm-logo">
+    <div class="adm-logo-icon glow3d">🗝️</div>
+    <div><div style="font-family:var(--font-h);font-weight:800;font-size:16px">FLY<span style="color:var(--cyan)">WAY</span></div><div style="font-size:10px;color:var(--muted);margin-top:2px">Admin Control Panel</div></div>
+  </div>
+  <nav class="adm-nav">
+    <div class="adm-nav-sect"><span class="adm-nav-lbl">Overview</span>
+      <div class="adm-ni active" onclick="T('overview')" id="n_overview"><span class="adm-ni-icon">📊</span>Dashboard</div>
+    </div>
+    <div class="adm-nav-sect"><span class="adm-nav-lbl">Operations</span>
+      <div class="adm-ni" onclick="T('bookings')" id="n_bookings"><span class="adm-ni-icon">✈</span>Bookings<span class="adm-ni-badge hidden" id="bd_bookings">0</span></div>
+      <div class="adm-ni" onclick="T('payments')" id="n_payments"><span class="adm-ni-icon">📎</span>Payment Reviews<span class="adm-ni-badge hidden" id="bd_payments">0</span></div>
+      <div class="adm-ni" onclick="T('transactions')" id="n_transactions"><span class="adm-ni-icon">💳</span>Transactions</div>
+      <div class="adm-ni" onclick="T('emailReports')" id="n_emailReports"><span class="adm-ni-icon">✉</span>Email Deliveries</div>
+    </div>
+    <div class="adm-nav-sect"><span class="adm-nav-lbl">Users</span>
+      <div class="adm-ni" onclick="T('users')" id="n_users"><span class="adm-ni-icon">👥</span>Users & Credentials</div>
+      <div class="adm-ni" onclick="T('notify')" id="n_notify"><span class="adm-ni-icon">🔔</span>Notifications</div>
+      <div class="adm-ni" onclick="T('messages')" id="n_messages"><span class="adm-ni-icon">💬</span>Messages<span class="adm-ni-badge hidden" id="bd_messages">0</span></div>
+    </div>
+    <div class="adm-nav-sect"><span class="adm-nav-lbl">Settings</span>
+      <div class="adm-ni" onclick="T('promos')" id="n_promos"><span class="adm-ni-icon">🎟</span>Promo Codes</div>
+      <div class="adm-ni" onclick="T('licenses')" id="n_licenses"><span class="adm-ni-icon">🔑</span>License Keys</div>
+      <div class="adm-ni" onclick="T('uploads')" id="n_uploads"><span class="adm-ni-icon">🗂</span>Proof Files</div>
+    </div>
+    <div class="adm-nav-sect"><span class="adm-nav-lbl">Security</span>
+      <div class="adm-ni" onclick="T('logs')" id="n_logs"><span class="adm-ni-icon">🔐</span>Access Logs</div>
+    </div>
+  </nav>
+  <div class="adm-footer">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--glass);border-radius:10px;border:1px solid var(--border)">
+      <div style="width:34px;height:34px;background:linear-gradient(135deg,var(--gold),var(--coral));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--navy)">A</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">Admin</div><div style="font-size:10px;color:var(--muted)">System Admin</div></div>
+      <button onclick="FlyWay.logout()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px" title="Sign Out">⇥</button>
+    </div>
+  </div>
+</aside>
+
+
+<main class="adm-main">
+  <div class="adm-topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button onclick="toggleAdmSide()" id="admMenuBtn" style="background:var(--glass);border:1px solid var(--border);color:white;padding:8px 12px;border-radius:8px;cursor:pointer">☰</button>
+      <div><h2 id="pgTitle" style="font-family:var(--font-h);font-size:22px;font-weight:800">Dashboard</h2><div id="pgSub" style="font-size:12px;color:var(--muted)">Loading...</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="badge badge-gold">👑 Admin</span>
+      <span id="liveClock" style="font-size:12px;color:var(--muted)"></span>
+      <button class="btn btn-ghost btn-sm" onclick="refresh()">🔄 Refresh</button>
+      <a href="/" class="btn btn-ghost btn-sm">← Website</a>
+    </div>
+  </div>
+
+  
+  <div id="t_overview">
+    <div class="adm-stats-grid">
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--cyan),var(--purple))"></div><div style="font-size:24px;margin-bottom:8px">👥</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_users">-</div><div style="font-size:11px;color:var(--muted)">Total Users</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--emerald),var(--cyan))"></div><div style="font-size:24px;margin-bottom:8px">✈</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_bookings">-</div><div style="font-size:11px;color:var(--muted)">Total Bookings</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--gold),var(--coral))"></div><div style="font-size:24px;margin-bottom:8px">💰</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_revenue">-</div><div style="font-size:11px;color:var(--muted)">Total Revenue</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--gold),#f59e0b)"></div><div style="font-size:24px;margin-bottom:8px">⏳</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_pending">-</div><div style="font-size:11px;color:var(--muted)">Pending</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--coral),var(--gold))"></div><div style="font-size:24px;margin-bottom:8px">📎</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_proofs">-</div><div style="font-size:11px;color:var(--muted)">Proofs to Review</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--purple),var(--cyan))"></div><div style="font-size:24px;margin-bottom:8px">💬</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_msgs">-</div><div style="font-size:11px;color:var(--muted)">Unread Messages</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--emerald),var(--gold))"></div><div style="font-size:24px;margin-bottom:8px">📅</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_today">-</div><div style="font-size:11px;color:var(--muted)">Today's Bookings</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--cyan),var(--emerald))"></div><div style="font-size:24px;margin-bottom:8px">💵</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_todayrev">-</div><div style="font-size:11px;color:var(--muted)">Today's Revenue</div></div>
+    </div>
+    <div class="adm-card"><div style="display:flex;justify-content:space-between;margin-bottom:16px"><div style="font-family:var(--font-h);font-weight:700">🔴 Live Feed</div><button class="btn btn-ghost btn-sm" onclick="loadOverview()">Refresh</button></div><div id="liveFeed"></div></div>
+  </div>
+
+  
+  <div id="t_bookings" class="hidden">
+    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="trip-tab active" onclick="filterB('all',this)">All</button>
+      <button class="trip-tab" onclick="filterB('confirmed',this)">✅ Confirmed</button>
+      <button class="trip-tab" onclick="filterB('pending',this)">⏳ Pending</button>
+      <button class="trip-tab" onclick="filterB('cancelled',this)">❌ Cancelled</button>
+    </div>
+    <div id="bookingsEl"></div>
+  </div>
+
+  
+  <div id="t_payments" class="hidden">
+    <div style="background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.2);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--gold);margin-bottom:18px">⚠ Review payment proofs below. Approve with a note or reject with a clear reason - the user will be notified immediately.</div>
+    <div id="paymentsEl"></div>
+  </div>
+
+  
+  <div id="t_transactions" class="hidden"><div class="adm-card"><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr id="txHead"></tr></thead><tbody id="txBody"></tbody></table></div></div></div>
+
+  <div id="t_emailReports" class="hidden">
+    <div class="adm-card" style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div><div style="font-family:var(--font-h);font-weight:700;font-size:16px">Email Delivery Reports</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Review ticket and receipt delivery activity, status, and template usage.</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="loadEmailReports()">Refresh</button>
+      </div>
+    </div>
+    <div id="emailReportsEl"></div>
+  </div>
+
+  <div id="t_users" class="hidden">
+    <div style="background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.15);border-radius:12px;padding:13px 16px;font-size:13px;margin-bottom:18px">🔑 <strong>User Credentials</strong> - Passwords shown in plain text for admin reference. Keep this panel secure. <span style="color:var(--muted)">Blurred by default - click 👁 to reveal.</span></div>
+    <div id="usersEl"></div>
+  </div>
+
+  
+  <div id="t_notify" class="hidden">
+    <div class="grid-2" style="gap:20px;align-items:start">
+      <div>
+        <div class="notify-panel mb-20">
+          <div style="font-family:var(--font-h);font-weight:700;font-size:16px;margin-bottom:16px">📨 Send to Specific User</div>
+          <div class="form-group"><label class="form-label">User</label><select class="form-input" id="notifyUsr"><option value="">Select user...</option></select></div>
+          <div class="form-group"><label class="form-label">Type</label>
+            <select class="form-input" id="notifyTyp">
+              <option value="info">ℹ Info</option><option value="success">✅ Success</option><option value="warning">⚠ Warning</option>
+              <option value="booking_confirmed">✅ Booking Confirmed</option><option value="payment_confirmed">💳 Payment Confirmed</option>
+              <option value="booking_cancelled">❌ Booking Cancelled</option><option value="promo">🎟 Promo</option><option value="admin">👑 Admin Message</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="notifyTtl" placeholder="Notification title"></div>
+          <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" id="notifyMsg" rows="3" placeholder="Your message..."></textarea></div>
+          <button class="btn btn-primary btn-full" onclick="sendNotify()">📨 Send Notification</button>
+        </div>
+        <div class="notify-panel" style="background:linear-gradient(135deg,rgba(245,200,66,0.07),rgba(255,87,87,0.04));border-color:rgba(245,200,66,0.2)">
+          <div style="font-family:var(--font-h);font-weight:700;color:var(--gold);margin-bottom:16px">📢 Broadcast to All Users</div>
+          <div class="form-group"><label class="form-label">Type</label><select class="form-input" id="bcTyp"><option value="broadcast">📢 Broadcast</option><option value="promo">🎟 Promo</option><option value="info">ℹ Info</option><option value="warning">⚠ Warning</option></select></div>
+          <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="bcTtl" placeholder="e.g. 🎉 Flash Sale - 24 hours only!"></div>
+          <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" id="bcMsg" rows="3" placeholder="Message to all users..."></textarea></div>
+          <button class="btn btn-gold btn-full" onclick="broadcast()">📢 Broadcast to ALL Users</button>
+        </div>
+      </div>
+      <div class="adm-card"><div style="font-family:var(--font-h);font-weight:700;margin-bottom:12px">ℹ How Notifications Work</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.8">
+          Notifications appear instantly on the user's <strong style="color:var(--white)">notification bell 🔔</strong> in their dashboard navigation.<br><br>
+          They also see them in a <strong style="color:var(--white)">notification panel</strong> with full message, timestamp, and type icon.<br><br>
+          When you approve or reject a booking, the user is automatically notified with your note/reason.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="t_messages" class="hidden"><div id="messagesEl"></div></div>
+
+  
+  <div id="t_promos" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-family:var(--font-h);font-weight:700;font-size:18px">🎟 Promo Codes</div>
+      <button class="btn btn-primary btn-sm" onclick="FlyWay.showModal('newPromoM')">+ Create Code</button>
+    </div>
+    <div id="promosEl"></div>
+  </div>
+
+  
+  <div id="t_licenses" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-family:var(--font-h);font-weight:700;font-size:18px">🔑 License Keys</div>
+      <button class="btn btn-primary btn-sm" onclick="FlyWay.showModal('newLicM')">+ New License</button>
+    </div>
+    <div class="adm-card"><div id="licensesEl"></div></div>
+  </div>
+
+  
+  <div id="t_uploads" class="hidden"><div id="uploadsEl"></div></div>
+
+  
+  <div id="t_logs" class="hidden">
+    <div style="background:rgba(255,87,87,0.07);border:1px solid rgba(255,87,87,0.2);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--coral);margin-bottom:16px">⚠ Sensitive - Admin only. Shows all user actions, logins, and system events.</div>
+    <div class="adm-card"><div id="logsEl"></div></div>
+  </div>
+</main>
+
+
+<div class="overlay hidden" id="bdModal"><div class="modal modal-lg"><div class="modal-header"><div class="modal-title" id="bdTitle">Booking</div><button class="modal-close" onclick="FlyWay.hideModal('bdModal')">×</button></div><div id="bdContent"></div></div></div>
+<div class="overlay hidden" id="imgM"><div style="position:relative;max-width:90vw"><button onclick="FlyWay.hideModal('imgM')" style="position:absolute;top:-12px;right:-12px;width:30px;height:30px;background:var(--coral);border:none;border-radius:50%;color:white;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">×</button><img id="imgMSrc" style="max-width:90vw;max-height:88vh;border-radius:12px;object-fit:contain;display:block"></div></div>
+<div class="overlay hidden" id="newPromoM"><div class="modal" style="max-width:480px"><div class="modal-header"><div class="modal-title">🎟 Create Promo Code</div><button class="modal-close" onclick="FlyWay.hideModal('newPromoM')">×</button></div>
+  <div class="form-group"><label class="form-label">Code</label><input class="form-input" id="pc_code" placeholder="SUMMER25" style="text-transform:uppercase;font-family:var(--font-m)"></div>
+  <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="pc_desc" placeholder="25% off bookings"></div>
+  <div class="form-row"><div class="form-group"><label class="form-label">Type</label><select class="form-input" id="pc_type"><option value="percentage">% Percentage</option><option value="fixed">$ Fixed</option></select></div><div class="form-group"><label class="form-label">Value</label><input class="form-input" type="number" id="pc_val" placeholder="25"></div></div>
+  <div class="form-row"><div class="form-group"><label class="form-label">Max Discount $</label><input class="form-input" type="number" id="pc_max" placeholder="500"></div><div class="form-group"><label class="form-label">Usage Limit</label><input class="form-input" type="number" id="pc_limit" placeholder="100"></div></div>
+  <div class="form-group"><label class="form-label">Valid Until</label><input class="form-input" type="date" id="pc_expiry" value="2027-12-31"></div>
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px"><button class="btn btn-ghost" onclick="FlyWay.hideModal('newPromoM')">Cancel</button><button class="btn btn-primary" onclick="createPromo()">Create (will be inactive - activate separately)</button></div>
+</div></div>
+<div class="overlay hidden" id="newLicM"><div class="modal" style="max-width:400px"><div class="modal-header"><div class="modal-title">🔑 New License</div><button class="modal-close" onclick="FlyWay.hideModal('newLicM')">×</button></div>
+  <div class="form-group"><label class="form-label">Key</label><input class="form-input" id="lic_key" placeholder="FLY-XXXX-XXXX-XXXX" style="font-family:var(--font-m)"><button class="btn btn-ghost btn-sm mt-8" onclick="genKey()">🎲 Generate</button></div>
+  <div class="form-row"><div class="form-group"><label class="form-label">Type</label><select class="form-input" id="lic_type"><option value="standard">Standard</option><option value="family">Family</option><option value="business">Business</option></select></div><div class="form-group"><label class="form-label">Max Users</label><input class="form-input" type="number" id="lic_max" value="1"></div></div>
+  <div class="form-group"><label class="form-label">Expires</label><input class="form-input" type="date" id="lic_exp" value="2027-12-31"></div>
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px"><button class="btn btn-ghost" onclick="FlyWay.hideModal('newLicM')">Cancel</button><button class="btn btn-primary" onclick="createLic()">Create</button></div>
+</div></div>
+
+<script src="/js/main.js"></script>
+<script>
+let AB=[],AU=[],curTab='overview';
+setInterval(()=>{document.getElementById('liveClock').textContent=new Date().toLocaleTimeString();},1000);
+function toggleAdmSide(){
+  var side=document.getElementById('admSide');
+  var overlay=document.getElementById('admOverlay');
+  side.classList.toggle('open');
+  overlay.classList.toggle('open');
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  if(!FlyWay.requireAuth(true))return;
+  document.getElementById('pgSub').textContent=`${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}`;
+  await loadOverview();
+});
+
+function T(tab){
+  document.querySelectorAll('[id^="t_"]').forEach(el=>el.classList.add('hidden'));
+  document.getElementById(`t_${tab}`).classList.remove('hidden');
+  document.querySelectorAll('.adm-ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById(`n_${tab}`)?.classList.add('active');
+  curTab=tab;
+  const titles={overview:'Dashboard',bookings:'All Bookings',payments:'Payment Reviews',transactions:'Transactions',emailReports:'Email Deliveries',users:'Users & Credentials',notify:'Notifications',messages:'Messages',promos:'Promo Codes',licenses:'License Keys',uploads:'Proof Files',logs:'Access Logs'};
+  document.getElementById('pgTitle').textContent=titles[tab]||tab;
+  ({bookings:loadBookings,payments:loadPayments,transactions:loadTx,emailReports:loadEmailReports,users:loadUsers,notify:loadNotify,messages:loadMessages,promos:loadPromos,licenses:loadLicenses,uploads:loadUploads,logs:loadLogs})[tab]?.();
+}
+
+function refresh(){({overview:loadOverview,bookings:loadBookings,payments:loadPayments,transactions:loadTx,emailReports:loadEmailReports,users:loadUsers,messages:loadMessages,promos:loadPromos,licenses:loadLicenses,uploads:loadUploads,logs:loadLogs})[curTab]?.();}
+
+function S(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+function viewImg(url){document.getElementById('imgMSrc').src=url;FlyWay.showModal('imgM');}
+function bumpBadge(t){const b=document.getElementById(`bd_${t}`);if(b){b.textContent=parseInt(b.textContent||0)+1;b.classList.remove('hidden');}}
+
+async function loadOverview(){
+  try{
+    const s=await FlyWay.api('GET','/api/admin/stats');
+    AB=s.recentBookings||[];
+    S('st_users',s.totalUsers);S('st_bookings',s.totalBookings);S('st_revenue','$'+FlyWay.fmt(s.totalRevenue));
+    S('st_pending',s.pending);S('st_proofs',s.pendingProofs);S('st_msgs',s.unreadMessages);
+    S('st_today',s.todayBookings);S('st_todayrev','$'+FlyWay.fmt(s.todayRevenue));
+    if(s.unreadMessages>0){const b=document.getElementById('bd_messages');b.textContent=s.unreadMessages;b.classList.remove('hidden');}
+    if(s.pendingProofs>0){const b=document.getElementById('bd_payments');b.textContent=s.pendingProofs;b.classList.remove('hidden');}
+    document.getElementById('liveFeed').innerHTML=AB.map(b=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+        <div><div style="font-weight:700;font-size:14px">${b.outboundFlight?.from||'-'} → ${b.outboundFlight?.to||'-'} <span style="font-family:var(--font-m);font-size:11px;color:var(--cyan);margin-left:6px">${b.ref}</span></div>
+        <div style="font-size:11px;color:var(--muted)">👤 ${b.userName||'?'} · ${b.paymentMethod||''} · ${FlyWay.fmtDate(b.createdAt)}</div></div>
+        <div style="display:flex;gap:6px;align-items:center">${FlyWay.statusBadge(b.status)}${FlyWay.statusBadge(b.paymentStatus)}<div style="font-family:var(--font-h);font-weight:800;color:var(--cyan)">$${FlyWay.fmt(b.totalAmount)}</div><button class="btn btn-ghost btn-sm" onclick="openBD('${b.id}')">View</button></div>
+      </div>`).join('')||'<div style="color:var(--muted);padding:20px;text-align:center">No bookings yet</div>';
+  }catch(e){FlyWay.toast('error','Failed',e.message);}
+}
+
+async function loadBookings(){
+  try{AB=await FlyWay.api('GET','/api/admin/bookings');renderB(AB);}catch(e){FlyWay.toast('error','Failed');}
+}
+function filterB(s,btn){document.querySelectorAll('#t_bookings .trip-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderB(s==='all'?AB:AB.filter(b=>b.status===s));}
+function renderB(list){
+  if(!list.length){document.getElementById('bookingsEl').innerHTML=`<div class="empty-state"><div class="empty-icon">✈</div><div>No bookings</div></div>`;return;}
+  document.getElementById('bookingsEl').innerHTML=list.map(b=>`
+    <div class="adm-card" style="transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(0,212,255,0.25)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
+            <div style="font-family:var(--font-h);font-weight:800;font-size:17px">${b.outboundFlight?.from||'-'} → ${b.outboundFlight?.to||'-'}</div>
+            <span style="font-family:var(--font-m);font-size:10px;background:rgba(0,212,255,0.1);color:var(--cyan);padding:2px 9px;border-radius:20px;border:1px solid rgba(0,212,255,0.2)">${b.ref}</span>
+            ${FlyWay.statusBadge(b.status)}${FlyWay.statusBadge(b.paymentStatus)}
+          </div>
+          <div style="font-size:12px;color:var(--muted)">👤 ${b.userName||'?'} · ✉ ${b.userEmail||''} · 💺 ${b.travelClass} · ${(b.passengers||[]).length} pax · 💳 ${b.paymentMethod}</div>
+          ${b.adminNote?`<div style="margin-top:6px;padding:5px 10px;background:rgba(245,200,66,0.07);border-radius:6px;font-size:11px;color:var(--gold)">📝 ${b.adminNote}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:var(--font-h);font-size:20px;font-weight:800;color:var(--cyan)">$${FlyWay.fmt(b.totalAmount)}</div>
+          ${b.paymentProof?`<img src="${b.paymentProof}" class="proof-img" onclick="viewImg('${b.paymentProof}')" style="margin-top:6px" onerror="this.style.display='none'">`:''} 
+          ${b.giftcardCode?`<div style="font-size:10px;color:var(--gold);margin-top:3px;font-family:var(--font-m)">🎁 ${b.giftcardCode}</div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${b.status!=='confirmed'?`<button class="btn btn-success btn-sm" onclick="approveBk('${b.id}')">✅ Approve</button>`:''}
+        ${['proof_submitted','pending'].includes(b.paymentStatus)?`<button class="btn btn-success btn-sm" onclick="confirmPay('${b.id}')">💳 Confirm Payment</button>`:''}
+        ${b.status!=='cancelled'?`<button class="btn btn-danger btn-sm" onclick="cancelBk('${b.id}')">❌ Cancel</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="openBD('${b.id}')">📋 Details</button>
+        <button class="btn btn-ghost btn-sm" onclick="msgUser('${b.userId}','${b.ref}')">💬 Notify User</button>
+      </div>
+    </div>`).join('');
+}
+
+async function approveBk(id){const note=prompt('Note for user (optional):')||'Booking approved by admin';await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{status:'confirmed',paymentStatus:'paid',adminNote:note});FlyWay.toast('success','Approved!');loadBookings();}
+async function confirmPay(id){await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{paymentStatus:'paid',adminNote:'Payment verified by admin'});FlyWay.toast('success','Payment confirmed!');loadBookings();}
+async function cancelBk(id){const reason=prompt('Reason for cancellation (required - shown to user):');if(!reason){FlyWay.toast('error','Reason required');return;}await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{status:'cancelled',adminNote:reason});FlyWay.toast('info','Cancelled');loadBookings();}
+
+async function openBD(id){
+  const all=await FlyWay.api('GET','/api/admin/bookings').catch(()=>[]);
+  const b=all.find(x=>x.id===id);if(!b)return;
+  const f=b.outboundFlight||{};
+  document.getElementById('bdTitle').textContent=`Booking ${b.ref}`;
+  document.getElementById('bdContent').innerHTML=`
+    <div class="split-grid" style="font-size:13px;margin-bottom:16px">
+      <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">ROUTE</div><strong style="font-size:15px">${f.from||'-'} → ${f.to||'-'}</strong></div>
+      <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">STATUS</div>${FlyWay.statusBadge(b.status)} ${FlyWay.statusBadge(b.paymentStatus)}</div>
+      <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">AMOUNT</div><strong style="color:var(--cyan);font-size:18px">$${FlyWay.fmt(b.totalAmount)}</strong></div>
+      <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">USER</div><strong>${b.userName||'-'}</strong> <span style="color:var(--muted);font-size:11px">${b.userEmail||''}</span></div>
+      <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">FLIGHT</div>${f.flightNumber||'-'} · ${f.depTime||'-'}→${f.arrTime||'-'} · ${f.duration||'-'}</div>
+      <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">PAYMENT</div>${b.paymentMethod} ${b.promoCode?'· Promo: '+b.promoCode:''}</div>
+    </div>
+    ${b.adminNote?`<div style="padding:10px;background:rgba(245,200,66,0.07);border:1px solid rgba(245,200,66,0.2);border-radius:8px;font-size:12px;color:var(--gold);margin-bottom:12px">📝 Admin Note: ${b.adminNote}</div>`:''}
+    ${b.paymentProof?`<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--muted);margin-bottom:6px">PAYMENT PROOF</div><img src="${b.paymentProof}" style="max-height:180px;border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="viewImg('${b.paymentProof}')" onerror="this.outerHTML='<a href=${b.paymentProof} target=_blank class=btn btn-ghost btn-sm>View File</a>'"></div>`:''}
+    ${b.giftcardCode?`<div style="padding:10px;background:rgba(245,200,66,0.07);border-radius:8px;margin-bottom:12px"><div style="font-size:10px;color:var(--gold)">GIFT CARD CODE</div><div style="font-family:var(--font-m);font-size:16px;color:var(--gold)">${b.giftcardCode}</div></div>`:''}
+    ${b.paymentDetails?`<div style="padding:10px;background:var(--navy3);border-radius:8px;margin-bottom:12px;font-size:12px"><div style="color:var(--muted);font-size:10px;margin-bottom:4px">PAYMENT DETAILS</div>${b.paymentDetails}</div>`:''}
+    <div style="margin-bottom:16px"><div style="font-size:10px;color:var(--muted);margin-bottom:6px">PASSENGERS</div>${(b.passengers||[]).map((p,i)=>`<div style="padding:7px 10px;background:var(--navy3);border-radius:7px;margin-bottom:4px;font-size:12px">${p.name||'Pax '+(i+1)} · Age ${p.age} · ${p.meal||'Standard'} · Seat: ${b.selectedSeats?.[i]||'Auto'}</div>`).join('')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${b.status!=='confirmed'?`<button class="btn btn-success" onclick="approveBk('${b.id}');FlyWay.hideModal('bdModal')">✅ Approve</button>`:''}
+      ${b.status!=='cancelled'?`<button class="btn btn-danger" onclick="cancelBk('${b.id}');FlyWay.hideModal('bdModal')">❌ Cancel</button>`:''}
+    </div>`;
+  FlyWay.showModal('bdModal');
+}
+
+async function loadPayments(){
+  try{
+    const all=await FlyWay.api('GET','/api/admin/bookings');
+    const list=all.filter(b=>b.paymentStatus==='proof_submitted'||b.paymentStatus==='pending');
+    if(!list.length){document.getElementById('paymentsEl').innerHTML=`<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">All Clear!</div><div class="empty-desc">No payments pending review.</div></div>`;return;}
+    document.getElementById('paymentsEl').innerHTML=list.map(b=>`
+      <div class="adm-card" style="border-color:rgba(245,200,66,0.25);margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+          <div><div style="font-weight:800;font-size:15px;font-family:var(--font-h)">${b.outboundFlight?.from||'-'} → ${b.outboundFlight?.to||'-'}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px"><span style="font-family:var(--font-m);color:var(--cyan)">${b.ref}</span> · ${b.userName||'?'} · ${b.paymentMethod}</div></div>
+          <div style="font-family:var(--font-h);font-size:22px;font-weight:800;color:var(--gold)">$${FlyWay.fmt(b.totalAmount)}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:14px">
+          ${b.paymentProof?`<div style="background:var(--navy3);border-radius:8px;padding:10px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);margin-bottom:6px">📎 PAYMENT RECEIPT</div><img src="${b.paymentProof}" style="width:100%;height:130px;object-fit:cover;border-radius:5px;cursor:pointer" onclick="viewImg('${b.paymentProof}')" onerror="this.outerHTML='<a href=${b.paymentProof} target=_blank class=btn btn-ghost btn-sm>View File</a>'"></div>`:''}
+          ${b.giftcardImage?`<div style="background:var(--navy3);border-radius:8px;padding:10px;border:1px solid rgba(245,200,66,0.3)"><div style="font-size:10px;color:var(--gold);margin-bottom:6px">🎁 GIFT CARD IMAGE</div><img src="${b.giftcardImage}" style="width:100%;height:130px;object-fit:cover;border-radius:5px;cursor:pointer" onclick="viewImg('${b.giftcardImage}')"></div>`:''}
+          ${b.giftcardCode?`<div style="background:var(--navy3);border-radius:8px;padding:10px;border:1px solid rgba(245,200,66,0.3)"><div style="font-size:10px;color:var(--gold);margin-bottom:6px">🎁 GIFT CARD CODE</div><div style="font-family:var(--font-m);font-size:15px;color:var(--gold);word-break:break-all">${b.giftcardCode}</div></div>`:''}
+          ${b.paymentDetails?`<div style="background:var(--navy3);border-radius:8px;padding:10px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);margin-bottom:6px">📝 DETAILS</div><div style="font-size:12px">${b.paymentDetails}</div></div>`:''}
+        </div>
+        <div class="form-group"><label class="form-label">Admin Note / Reason (shown to user)</label><input class="form-input" id="nr_${b.id}" placeholder="e.g. Payment received ✓  OR  Wrong amount - please resend $${FlyWay.fmt(b.totalAmount)}"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-success" onclick="approvePay('${b.id}')">✅ Approve - Confirm Booking</button>
+          <button class="btn btn-danger" onclick="rejectPay('${b.id}')">❌ Reject - Notify User</button>
+          <button class="btn btn-ghost btn-sm" onclick="openBD('${b.id}')">📋 Full Details</button>
+        </div>
+      </div>`).join('');
+  }catch(e){FlyWay.toast('error','Failed',e.message);}
+}
+
+async function approvePay(id){const note=document.getElementById(`nr_${id}`)?.value||'Payment verified by admin';await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{status:'confirmed',paymentStatus:'paid',adminNote:note});FlyWay.toast('success','Approved! User notified.');loadPayments();}
+async function rejectPay(id){const note=document.getElementById(`nr_${id}`)?.value;if(!note){FlyWay.toast('error','Add reason','Please write a reason so the user knows what to do.');return;}await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{paymentStatus:'pending',adminNote:note});FlyWay.toast('info','Rejected. User notified.');loadPayments();}
+
+async function loadTx(){
+  try{
+    const txs=await FlyWay.api('GET','/api/admin/transactions');
+    document.getElementById('txHead').innerHTML='<th class="adm-th">Ref</th><th class="adm-th">User</th><th class="adm-th">Route</th><th class="adm-th">Amount</th><th class="adm-th">Method</th><th class="adm-th">Status</th><th class="adm-th">Proof</th><th class="adm-th">Date</th>';
+    document.getElementById('txBody').innerHTML=txs.map(t=>`<tr class="adm-tr"><td class="adm-td" style="font-family:var(--font-m);color:var(--cyan);font-size:11px">${t.bookingRef}</td><td class="adm-td">${t.userName||'-'}</td><td class="adm-td" style="font-weight:600">${t.route||'-'}</td><td class="adm-td" style="font-family:var(--font-h);font-weight:700;color:var(--cyan)">$${FlyWay.fmt(t.amount)}</td><td class="adm-td" style="text-transform:capitalize">${t.paymentMethod}</td><td class="adm-td">${FlyWay.statusBadge(t.status)}</td><td class="adm-td">${t.proofFile?`<img src="${t.proofFile}" class="proof-img" onclick="viewImg('${t.proofFile}')" onerror="this.outerHTML='<a href=${t.proofFile} target=_blank style=color:var(--cyan);font-size:11px>View</a>'">`:'-'}</td><td class="adm-td" style="font-size:11px;color:var(--muted)">${FlyWay.fmtDateTime(t.createdAt)}</td></tr>`).join('');
+  }catch(e){}
+}
+
+async function loadEmailReports(){
+  try{
+    const data = await FlyWay.api('GET','/api/admin/email-reports');
+    const summary = data.summary || {};
+    document.getElementById('emailReportsEl').innerHTML = `
+      <div class="adm-card" style="margin-bottom:18px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
+          <div style="padding:16px;background:rgba(0,212,255,0.08);border-radius:14px;"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Total Emails</div><div style="font-family:var(--font-h);font-size:22px;font-weight:800">${summary.total||0}</div></div>
+          <div style="padding:16px;background:rgba(16,185,129,0.08);border-radius:14px;"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Sent</div><div style="font-family:var(--font-h);font-size:22px;font-weight:800">${summary.sent||0}</div></div>
+          <div style="padding:16px;background:rgba(248,113,113,0.08);border-radius:14px;"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Failed</div><div style="font-family:var(--font-h);font-size:22px;font-weight:800">${summary.failed||0}</div></div>
+          <div style="padding:16px;background:rgba(59,130,246,0.08);border-radius:14px;"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Tickets</div><div style="font-family:var(--font-h);font-size:22px;font-weight:800">${summary.ticket||0}</div></div>
+          <div style="padding:16px;background:rgba(168,85,247,0.08);border-radius:14px;"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Receipts</div><div style="font-family:var(--font-h);font-size:22px;font-weight:800">${summary.receipt||0}</div></div>
+        </div>
+      </div>
+      ${data.reports && data.reports.length ? data.reports.slice(0,30).map(r=>`
+        <div class="adm-card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+            <div>
+              <div style="font-weight:700;font-size:14px">${r.type === 'ticket' ? 'Ticket' : 'Receipt'} email · ${r.template}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px">Booking: ${r.bookingId} · User: ${r.userId} · To: ${r.recipient}</div>
+            </div>
+            <div style="text-align:right;font-size:12px;color:${r.status==='sent'?'#22c55e':'#ef4444'};font-weight:700">${r.status.toUpperCase()}</div>
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted)">Sent: ${new Date(r.timestamp).toLocaleString()}${r.error?` · Error: ${r.error}`:''}</div>
+        </div>
+      `).join('') : '<div class="empty-state"><div class="empty-icon">✉</div><div class="empty-title">No email deliveries yet</div><div class="empty-desc">Users have not requested any ticket or receipt emails yet.</div></div>'}
+    `;
+  }catch(e){FlyWay.toast('error','Failed to load delivery reports',e.message);}  
+}
+
+async function loadUsers(){
+  try{
+    AU=await FlyWay.api('GET','/api/admin/users');
+    document.getElementById('usersEl').innerHTML=AU.map(u=>`
+      <div class="adm-card">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
+          <div style="width:46px;height:46px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:var(--navy);overflow:hidden;flex-shrink:0">${u.avatar?`<img src="${u.avatar}" style="width:100%;height:100%;object-fit:cover">`:(u.firstName||u.username||'U')[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:15px">${u.firstName||''} ${u.lastName||''} <span style="color:var(--muted);font-size:12px">@${u.username}</span></div>
+            <div style="font-size:12px;color:var(--muted)">${u.email} · ${u.phone||'no phone'}</div>
+            <div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">
+              <span class="badge ${u.role==='admin'?'badge-gold':'badge-cyan'}">${u.role}</span>
+              <span class="badge ${u.isActive?'badge-green':'badge-red'}">${u.isActive?'Active':'Disabled'}</span>
+              <span class="badge badge-purple">⭐ ${FlyWay.fmtInt(u.loyaltyPoints)} pts</span>
+              <span class="badge badge-muted">✈ ${u.bookingCount||0} bookings</span>
+            </div>
+          </div>
+          <div style="text-align:right;font-size:11px;color:var(--muted)"><div>Joined ${FlyWay.fmtDate(u.createdAt)}</div><div>Last login: ${FlyWay.fmtDate(u.lastLogin)||'Never'}</div></div>
+        </div>
+        <div class="cred-box mb-14">
+          <div style="font-size:10px;color:var(--cyan);font-weight:700;margin-bottom:8px;letter-spacing:0.5px">🔑 CREDENTIALS</div>
+          <div class="cred-row"><span class="cred-key">Username</span><span class="cred-val">${u.username}</span></div>
+          <div class="cred-row"><span class="cred-key">Password</span><span style="display:flex;align-items:center;gap:6px"><span class="cred-val" id="pw_${u.id}" style="filter:blur(5px)">${u.passwordPlain||'-'}</span><button onclick="document.getElementById('pw_${u.id}').style.filter=document.getElementById('pw_${u.id}').style.filter==='none'?'blur(5px)':'none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px">👁</button></span></div>
+          <div class="cred-row"><span class="cred-key">Email</span><span class="cred-val">${u.email}</span></div>
+          <div class="cred-row"><span class="cred-key">License Key</span><span class="cred-val">${u.licenseKey||'-'}</span></div>
+        </div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn ${u.isActive?'btn-danger':'btn-success'} btn-sm" onclick="toggleU('${u.id}','${u.username}',${u.isActive})">${u.isActive?'🚫 Disable':'✅ Enable'}</button>
+          <button class="btn btn-ghost btn-sm" onclick="msgUser('${u.id}','(direct)')">💬 Send Notification</button>
+        </div>
+      </div>`).join('');
+  }catch(e){FlyWay.toast('error','Failed');}
+}
+
+async function toggleU(id,name,cur){if(!confirm(`${cur?'Disable':'Enable'} ${name}?`))return;await FlyWay.api('PATCH',`/api/admin/users/${id}/toggle`,{});FlyWay.toast('success','Updated');loadUsers();}
+
+async function loadNotify(){
+  if(!AU.length)AU=await FlyWay.api('GET','/api/admin/users').catch(()=>[]);
+  const sel=document.getElementById('notifyUsr');
+  sel.innerHTML=`<option value="">Select user...</option>${AU.filter(u=>u.role!=='admin').map(u=>`<option value="${u.id}">${u.username} - ${u.email}</option>`).join('')}`;
+}
+
+async function sendNotify(){
+  const userId=document.getElementById('notifyUsr').value,type=document.getElementById('notifyTyp').value;
+  const title=document.getElementById('notifyTtl').value.trim(),msg=document.getElementById('notifyMsg').value.trim();
+  if(!userId||!title||!msg){FlyWay.toast('error','Fill all fields');return;}
+  await FlyWay.api('POST','/api/admin/notify-user',{userId,type,title,message:msg});
+  FlyWay.toast('success','Notification sent!');
+  document.getElementById('notifyTtl').value='';document.getElementById('notifyMsg').value='';
+}
+
+async function broadcast(){
+  const type=document.getElementById('bcTyp').value,title=document.getElementById('bcTtl').value.trim(),msg=document.getElementById('bcMsg').value.trim();
+  if(!title||!msg){FlyWay.toast('error','Fill all fields');return;}
+  if(!confirm(`Broadcast "${title}" to ALL users?`))return;
+  const r=await FlyWay.api('POST','/api/admin/notify-all',{type,title,message:msg});
+  FlyWay.toast('success',`Sent to ${r.sent} users!`);
+  document.getElementById('bcTtl').value='';document.getElementById('bcMsg').value='';
+}
+
+function msgUser(userId,ref){T('notify');setTimeout(async()=>{if(!AU.length)AU=await FlyWay.api('GET','/api/admin/users').catch(()=>[]);loadNotify();setTimeout(()=>{const sel=document.getElementById('notifyUsr');if(sel)sel.value=userId;const ttl=document.getElementById('notifyTtl');if(ttl)ttl.value=`Update on booking ${ref}`;},300);},100);}
+
+async function loadMessages(){
+  try{
+    const msgs=await FlyWay.api('GET','/api/admin/messages');
+    if(!msgs.length){document.getElementById('messagesEl').innerHTML=`<div class="empty-state"><div class="empty-icon">💬</div><div>No messages</div></div>`;return;}
+    document.getElementById('messagesEl').innerHTML=msgs.map(m=>`
+      <div class="adm-card" style="${m.status==='unread'?'border-color:rgba(0,212,255,0.3)':''}">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <div><div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:3px"><strong>${m.name}</strong><span class="badge ${m.status==='unread'?'badge-cyan':m.status==='replied'?'badge-green':'badge-muted'}">${m.status}</span><span class="badge badge-muted">${m.subject}</span></div>
+          <div style="font-size:12px;color:var(--muted)">${m.email} · ${FlyWay.fmtDateTime(m.createdAt)}</div></div>
+          ${m.status==='unread'?`<button class="btn btn-ghost btn-sm" onclick="markR('${m.id}')">Mark Read</button>`:''}
+        </div>
+        <div style="padding:10px 12px;background:var(--navy3);border-radius:8px;font-size:13px;line-height:1.7;margin-bottom:10px">${m.message}</div>
+        ${m.reply?`<div style="padding:10px 12px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:8px;font-size:12px;margin-bottom:10px"><strong style="color:var(--cyan)">Your reply:</strong> ${m.reply}</div>`:''}
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="rep_${m.id}" placeholder="Type reply to send..." style="flex:1;font-size:13px">
+          <button class="btn btn-primary btn-sm" onclick="replyM('${m.id}','${m.userId||''}')">Send</button>
+        </div>
+      </div>`).join('');
+  }catch(e){}
+}
+async function markR(id){await FlyWay.api('PATCH',`/api/admin/messages/${id}`,{status:'read'});loadMessages();}
+async function replyM(id,uid){const r=document.getElementById(`rep_${id}`)?.value?.trim();if(!r){FlyWay.toast('error','Enter reply');return;}await FlyWay.api('PATCH',`/api/admin/messages/${id}`,{reply:r,status:'replied',userId:uid});FlyWay.toast('success','Sent!');loadMessages();}
+
+async function loadPromos(){
+  try{
+    const promos=await FlyWay.api('GET','/api/admin/promos');
+    document.getElementById('promosEl').innerHTML=promos.map(p=>{
+      let expDate = p.validUntil ? new Date(p.validUntil) : null;
+      if (expDate && isNaN(expDate.getTime())) expDate = null;
+      const expired = expDate ? expDate < new Date() : false;
+      const expiresText = expDate ? expDate.toLocaleDateString() + (expired ? ' · expired' : '') : 'N/A';
+      return `
+      <div class="adm-card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span style="font-family:var(--font-m);font-size:16px;font-weight:800;color:var(--cyan)">${p.code}</span>
+              <button type="button" class="btn btn-ghost btn-sm" style="font-size:11px;padding:4px 8px" title="Copy promo code" data-copy="${encodeURIComponent(p.code)}" onclick="copyAdminText(decodeURIComponent(this.dataset.copy),'Promo code copied!')">Copy</button>
+              <span class="badge ${p.isActive?'badge-green':'badge-muted'}">${p.isActive?'● Active':'Inactive'}</span>
+            </div>
+          <div style="font-size:12px;color:var(--muted)">${p.description} · ${p.discountType==='percentage'?p.discountValue+'%':'$'+p.discountValue} off · Used: ${p.usedCount||0}/${p.usageLimit||'∞'} · Exp: ${expiresText}</div></div>
+          <div style="display:flex;gap:6px"><button type="button" class="btn ${p.isActive?'btn-danger':'btn-success'} btn-sm" onclick="toggleP('${p.id}',${p.isActive})">${p.isActive?'Deactivate':'Activate'}</button><button type="button" class="btn btn-ghost btn-sm" data-copy="${encodeURIComponent(p.code)}" onclick="copyAdminText(decodeURIComponent(this.dataset.copy),'Promo code copied!')">Copy</button><button type="button" class="btn btn-danger btn-sm" onclick="delP('${p.id}')">Delete</button></div>
+        </div>
+      </div>`;
+    }).join('')||`<div class="empty-state"><div>No promo codes yet</div></div>`;
+  }catch(e){}
+}
+async function toggleP(id,c){await FlyWay.api('PATCH',`/api/admin/promos/${id}`,{isActive:!c});FlyWay.toast('success',`Promo ${c?'deactivated':'activated'}`);loadPromos();}
+async function delP(id){if(!confirm('Delete?'))return;await FlyWay.api('DELETE',`/api/admin/promos/${id}`,null);FlyWay.toast('info','Deleted');loadPromos();}
+function copyAdminText(value,message){
+  if(!value) return;
+  navigator.clipboard.writeText(value).then(function(){
+    FlyWay.toast('success',message||'Copied to clipboard');
+  }).catch(function(){
+    var ta=document.createElement('textarea');
+    ta.value=value;
+    ta.style.position='fixed';
+    ta.style.opacity='0';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    FlyWay.toast('success',message||'Copied to clipboard');
+  });
+}
+async function createPromo(){
+  const d={code:document.getElementById('pc_code').value.trim().toUpperCase(),description:document.getElementById('pc_desc').value,discountType:document.getElementById('pc_type').value,discountValue:parseFloat(document.getElementById('pc_val').value)||0,maxDiscount:parseFloat(document.getElementById('pc_max').value)||9999,usageLimit:parseInt(document.getElementById('pc_limit').value)||100,validUntil:document.getElementById('pc_expiry').value};
+  if(!d.code){FlyWay.toast('error','Enter code');return;}
+  await FlyWay.api('POST','/api/admin/promos',d);FlyWay.toast('success','Created! Activate it to make it usable.');FlyWay.hideModal('newPromoM');loadPromos();
+}
+async function loadLicenses(){
+  try{
+    const lics=await FlyWay.api('GET','/api/admin/licenses');
+    const rows = lics.map(l => {
+      let expDate = l.expiresAt ? new Date(l.expiresAt) : null;
+      if (expDate && isNaN(expDate.getTime())) expDate = null;
+      const expired = expDate ? expDate < new Date() : false;
+      const statusClass = expired ? 'badge-red' : l.status==='active' ? 'badge-green' : 'badge-muted';
+      const statusText = expired ? 'expired' : l.status;
+      const expiresText = expDate ? expDate.toLocaleDateString() + (expired ? ' · expired' : '') : 'N/A';
+      return `
+        <tr class="adm-tr">
+          <td class="adm-td" style="font-family:var(--font-m);color:var(--cyan);font-size:11px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${l.key}<button type="button" class="btn btn-ghost btn-sm" style="font-size:11px;padding:4px 8px" title="Copy license key" data-copy="${encodeURIComponent(l.key)}" onclick="copyAdminText(decodeURIComponent(this.dataset.copy),'License key copied!')">Copy</button></td>
+          <td class="adm-td"><span class="badge badge-muted">${l.type}</span></td>
+          <td class="adm-td"><span class="badge ${statusClass}">${statusText}</span></td>
+          <td class="adm-td" style="font-size:12px">${l.usedByUser||'<span style="color:var(--muted)">Available</span>'}</td>
+          <td class="adm-td" style="text-align:center">${l.maxUsers}</td>
+          <td class="adm-td" style="font-size:11px;color:var(--muted)">${expiresText}</td>
+        </tr>`;
+    }).join('');
+    document.getElementById('licensesEl').innerHTML = `<table style="width:100%;border-collapse:collapse"><thead><tr><th class="adm-th">Key</th><th class="adm-th">Type</th><th class="adm-th">Status</th><th class="adm-th">Used By</th><th class="adm-th">Max</th><th class="adm-th">Expires</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }catch(e){}
+}
+function genKey(){const c='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',s=()=>Array.from({length:4},()=>c[Math.floor(Math.random()*c.length)]).join('');document.getElementById('lic_key').value=`FLY-${s()}-${s()}-${s()}`;}
+async function createLic(){const k=document.getElementById('lic_key').value.trim();if(!k){FlyWay.toast('error','Enter key');return;}await FlyWay.api('POST','/api/admin/licenses',{key:k,status:'active',type:document.getElementById('lic_type').value,maxUsers:parseInt(document.getElementById('lic_max').value)||1,expiresAt:document.getElementById('lic_exp').value});FlyWay.toast('success','License created!');FlyWay.hideModal('newLicM');loadLicenses();}
+async function loadUploads(){
+  try{const files=await FlyWay.api('GET','/api/admin/uploads');if(!files.length){document.getElementById('uploadsEl').innerHTML=`<div class="empty-state"><div class="empty-icon">📎</div><div>No uploads yet</div></div>`;return;}document.getElementById('uploadsEl').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">${files.map(f=>`<div class="adm-card" style="padding:12px;cursor:pointer" onclick="viewImg('${f.url}')">${f.url.match(/\.(jpg|jpeg|png|webp|gif)$/i)?`<img src="${f.url}" style="width:100%;height:120px;object-fit:cover;border-radius:7px;margin-bottom:8px" onerror="this.style.display='none'">`:`<div style="height:70px;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--navy3);border-radius:7px;margin-bottom:8px">📄</div>`}<div style="font-size:10px;font-family:var(--font-m);color:var(--muted);word-break:break-all">${f.filename}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">${(f.size/1024).toFixed(0)} KB</div>${f.booking?`<div style="margin-top:5px"><span class="badge badge-cyan" style="font-size:10px">${f.booking.ref}</span></div>`:''}<a href="${f.url}" target="_blank" onclick="event.stopPropagation()" class="btn btn-ghost btn-sm mt-8 btn-full" style="font-size:11px">Open</a></div>`).join('')}</div>`;}catch(e){}
+}
+async function loadLogs(){
+  try{const logs=await FlyWay.api('GET','/api/admin/access-logs');document.getElementById('logsEl').innerHTML=`<table style="width:100%;border-collapse:collapse"><thead><tr><th class="adm-th">Time</th><th class="adm-th">User</th><th class="adm-th">Action</th><th class="adm-th">IP</th><th class="adm-th">Details</th></tr></thead><tbody>${logs.slice(0,100).map(l=>`<tr class="adm-tr"><td class="adm-td" style="font-size:11px;color:var(--muted);white-space:nowrap">${FlyWay.fmtDateTime(l.timestamp)}</td><td class="adm-td" style="font-size:12px">${l.userName||l.userId?.slice(0,8)||'-'}</td><td class="adm-td"><span class="badge ${l.action.includes('LOGIN')?'badge-cyan':l.action.includes('CANCEL')?'badge-red':l.action.includes('BOOKING')?'badge-green':'badge-muted'}">${l.action}</span></td><td class="adm-td" style="font-family:var(--font-m);font-size:10px;color:var(--muted)">${l.ip}</td><td class="adm-td" style="font-size:11px;color:var(--muted)">${JSON.stringify(l.details||{}).slice(0,80)}</td></tr>`).join('')}</tbody></table>`;}catch(e){}
+}
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function() {
+  if (typeof io === 'undefined') return;
+  var sock = io();
+  sock.emit('join_admin');
+  function showToast(title, msg) {
+    var c = document.getElementById('toastContainer');
+    if (!c) { c = document.createElement('div'); c.id = 'toastContainer'; c.style.cssText='position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(c); }
+    var t = document.createElement('div');
+    t.style.cssText = 'display:flex;gap:10px;align-items:flex-start;padding:14px 16px;background:rgba(8,15,30,0.97);border:1px solid rgba(0,212,255,0.25);border-radius:12px;min-width:280px;max-width:380px;color:#fff;font-family:inherit;box-shadow:0 8px 32px rgba(0,0,0,0.5)';
+    t.innerHTML = '<div style="flex:1"><div style="font-weight:700;font-size:13px;margin-bottom:3px">'+title+'</div><div style="font-size:12px;color:rgba(148,163,184,0.8)">'+msg+'</div></div><span style="cursor:pointer;color:rgba(148,163,184,0.5);flex-shrink:0" onclick="this.parentElement.remove()">×</span>';
+    c.appendChild(t);
+    setTimeout(function(){ if(t.parentNode) t.remove(); }, 6000);
+  }
+  sock.on('admin_new_booking', function(data) {
+    showToast('✈ New Booking', (data.route||'') + ' · $' + parseFloat(data.amount||0).toFixed(2) + ' · ' + (data.paymentMethod||''));
+    if (typeof loadStats === 'function') loadStats();
+    if (typeof loadBookings === 'function') loadBookings();
+  });
+  sock.on('admin_proof_uploaded', function(data) {
+    showToast('📎 Proof Uploaded', 'Booking ' + (data.ref||'') + ' needs review');
+    if (typeof loadPayments === 'function') loadPayments();
+  });
+  sock.on('admin_new_message', function(data) {
+    showToast('💬 New Message', '"' + (data.subject||'') + '" from ' + (data.name||'user'));
+    if (typeof loadMessages === 'function') loadMessages();
+  });
+  sock.on('admin_notification', function(note) {
+    showToast(note.title || 'Admin Alert', note.message || '');
+  });
+})();
+</script>
+
+</body>
+</html>
+

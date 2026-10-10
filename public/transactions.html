@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Transactions - FlyWay</title><link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/assets/css/responsive.css"></head>
+<body>
+<nav class="navbar" id="mainNav">
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="hamburger" id="navHamburger" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button>
+      <a href="/" class="nav-logo"><div class="nav-logo-icon">✈</div><span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span></a>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/booking" class="nav-link">Book Flight</a>
+      <a href="/track" class="nav-link">Track Flight</a>
+      <a href="/flightmap" class="nav-link">3D Map</a>
+      <a href="/flightgame" class="nav-link">Have Fun</a>
+      <a href="/contact" class="nav-link">Contact</a>
+      <a href="/dashboard" class="nav-link hidden" id="navDashBtn">My Account</a>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-ghost btn-sm" id="navLogoutBtn" onclick="FlyWay.logout()">Sign Out</button>
+    </div>
+  </div>
+</nav>
+<div class="dashboard-layout">
+<aside class="site-sidebar" id="sidebar">
+  <div class="sidebar-nav-section">
+    <div class="sidebar-nav-label">Main</div>
+    <a href="/dashboard" class="sidebar-nav-item"><span class="nav-icon glow3d">🏠</span>Dashboard</a>
+    <a href="/booking" class="sidebar-nav-item"><span class="nav-icon glow3d">✈</span>Book a Flight</a>
+    <a href="/bookings" class="sidebar-nav-item"><span class="nav-icon glow3d">🗓</span>My Bookings</a>
+  </div>
+  <div class="sidebar-nav-section">
+    <div class="sidebar-nav-label">Account</div>
+    <a href="/transactions" class="sidebar-nav-item active"><span class="nav-icon glow3d">💳</span>Transactions</a>
+    <a href="/profile" class="sidebar-nav-item"><span class="nav-icon glow3d">👤</span>My Profile</a>
+    <a href="/notifications" class="sidebar-nav-item"><span class="nav-icon glow3d">🔔</span>Notifications</a>
+    <a href="/track" class="sidebar-nav-item"><span class="nav-icon glow3d">📡</span>Track Flight</a>
+  </div>
+  <div class="sidebar-footer">
+    <a href="/profile" class="user-chip"><div class="user-avatar glow3d" id="sidebarAvatar">U</div><div style="flex:1;min-width:0"><div class="user-name" id="sidebarName">Loading...</div><div class="user-sub" id="sidebarSub">-</div></div></a>
+  </div>
+</aside>
+<main class="dashboard-main">
+  <div class="page-header"><h1 class="page-title-h">💳 Transaction History</h1><div class="page-subtitle">All your payments and refunds</div></div>
+  <div class="stats-grid mb-24">
+    <div class="stat-card c1"><div class="stat-icon">📊</div><div class="stat-value" id="statTotal">-</div><div class="stat-label">Total Transactions</div></div>
+    <div class="stat-card c2"><div class="stat-icon">✅</div><div class="stat-value" id="statPaid">-</div><div class="stat-label">Successful</div></div>
+    <div class="stat-card c3"><div class="stat-icon">💰</div><div class="stat-value" id="statSpent">-</div><div class="stat-label">Total Spent</div></div>
+    <div class="stat-card c4"><div class="stat-icon">↩</div><div class="stat-value" id="statRefunded">-</div><div class="stat-label">Refunded</div></div>
+  </div>
+  <div class="card">
+    <div class="section-header mb-16"><div class="section-title-text">All Transactions</div></div>
+    <div id="txList"><div class="empty-state"><div class="loading-spinner" style="margin:0 auto"></div></div></div>
+  </div>
+</main></div>
+<div id="toastContainer"></div>
+<script src="/js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async ()=>{
+  if(!FlyWay.requireAuth()) return;
+  FlyWay.setupSidebar();
+  // Load notification count for badge
+  FlyWay.api('GET','/api/notifications/unread-count').then(function(nc){
+    var badge = document.getElementById('notifyBadgeSide');
+    if(badge && nc.count > 0){badge.textContent=nc.count;badge.style.display='flex';}
+  }).catch(function(){});
+  try {
+    const txs=await FlyWay.api('GET','/api/transactions');
+    const paid=txs.filter(t=>t.status==='paid'), refunded=txs.filter(t=>t.status==='refunded');
+    const totalSpent=paid.reduce((s,t)=>s+t.amount,0);
+    document.getElementById('statTotal').textContent=txs.length;
+    document.getElementById('statPaid').textContent=paid.length;
+    document.getElementById('statSpent').textContent=`$${FlyWay.fmt(totalSpent)}`;
+    document.getElementById('statRefunded').textContent=refunded.length;
+    if(txs.length===0){document.getElementById('txList').innerHTML=`<div class="empty-state"><div class="empty-icon">💳</div><div class="empty-title">No transactions yet</div></div>`;return;}
+    document.getElementById('txList').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Reference</th><th>Route</th><th>Amount</th><th>Method</th><th>Status</th><th>Proof</th><th>Date</th></tr></thead><tbody>${txs.map(t=>`<tr>
+      <td><span style="font-family:var(--font-m);color:var(--cyan);font-size:12px">${t.bookingRef}</span></td>
+      <td style="font-weight:600">${t.route||'-'}</td>
+      <td style="font-family:var(--font-h);font-weight:700">$${FlyWay.fmt(t.amount)}</td>
+      <td style="text-transform:capitalize">${t.paymentMethod}</td>
+      <td>${FlyWay.statusBadge(t.status)}</td>
+      <td>${t.proofFile?`<a href="${t.proofFile}" target="_blank"><img src="${t.proofFile}" class="proof-thumb" onerror="this.outerHTML='<span style=color:var(--cyan);font-size:12px>View</span>'"></a>`:'<span style="color:var(--muted)">-</span>'}</td>
+      <td style="color:var(--muted);font-size:12px">${FlyWay.fmtDateTime(t.createdAt)}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+  } catch(e){ document.getElementById('txList').innerHTML=`<div class="empty-state"><div class="empty-title">Failed to load</div></div>`; }
+});
+
+
+</script>
+<script src="/js/sidebar-toggle.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+</body></html>
+

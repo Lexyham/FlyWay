@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Verification Gateway - FlyWay</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/assets/css/responsive.css">
+  <style>
+    body { background: radial-gradient(circle at top left, rgba(0,212,255,0.16), transparent 28%), radial-gradient(circle at bottom right, rgba(245,200,66,0.12), transparent 28%), #050b1a; color: #e8f7ff; }
+    .verify-shell { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px 16px; }
+    .verify-grid { width:100%; max-width:1200px; display:grid; grid-template-columns: 1.1fr .9fr; gap:18px; }
+    .secure-panel, .console-panel { background:rgba(7,13,33,0.96); border:1px solid rgba(0,212,255,0.18); border-radius:28px; padding:28px; box-shadow:0 30px 90px rgba(0,0,0,0.28); position:relative; overflow:hidden; }
+    .secure-panel::before, .console-panel::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at top, rgba(0,212,255,0.06), transparent 35%), radial-gradient(circle at bottom, rgba(245,200,66,0.05), transparent 30%); pointer-events:none; }
+    .secure-panel >*, .console-panel >* { position:relative; z-index:1; }
+    .verify-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:24px; }
+    .verify-badge { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:999px; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.16); color:var(--cyan); font-weight:700; letter-spacing:0.02em; }
+    .verify-title { font-family:var(--font-h); font-size:30px; line-height:1.1; margin:0; }
+    .verify-sub { color:var(--muted); font-size:14px; max-width:520px; }
+    .status-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:24px 0; }
+    .status-card { border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); border-radius:18px; padding:18px; min-height:110px; }
+    .status-card strong { display:block; font-size:22px; margin-bottom:6px; }
+    .status-card span { color:var(--muted); font-size:12px; }
+    .timeline { list-style:none; padding:0; margin:0; display:grid; gap:12px; }
+    .timeline li { display:grid; grid-template-columns:24px 1fr; gap:14px; align-items:flex-start; }
+    .timeline li::before { content:'•'; color:var(--cyan); font-size:22px; line-height:1; margin-top:1px; }
+    .timeline strong { display:block; margin-bottom:4px; font-size:14px; }
+    .pulse { display:inline-flex; align-items:center; gap:8px; font-size:12px; }
+    .pulse-dot { width:10px; height:10px; border-radius:50%; background:var(--emerald); box-shadow:0 0 10px rgba(0,227,150,0.8); animation:pulse 1.8s infinite; }
+    @keyframes pulse { 0%,100% { transform: scale(0.9); opacity:0.8; } 50% { transform: scale(1.2); opacity:1; }}
+    .console-log { background:rgba(0,0,0,0.2); border:1px solid rgba(0,212,255,0.1); border-radius:18px; padding:18px; min-height:200px; font-family:monospace; font-size:13px; color:#cde8ff; overflow:hidden; position:relative; }
+    .console-log::before { content:'SECURE LOG'; position:absolute; right:18px; top:18px; color:rgba(255,255,255,0.25); font-size:11px; letter-spacing:1px; }
+    .console-line { opacity:0; transform:translateY(6px); animation:lineIn 0.35s forwards; }
+    .console-line:nth-child(1){animation-delay:0.1s;} .console-line:nth-child(2){animation-delay:0.18s;} .console-line:nth-child(3){animation-delay:0.26s;} .console-line:nth-child(4){animation-delay:0.34s;}
+    @keyframes lineIn { to { opacity:1; transform:translateY(0); } }
+    .codeframe { display:grid; gap:16px; margin-top:20px; }
+    .otp-deck { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:20px; }
+    .otp-cell { width:58px; height:70px; border-radius:18px; border:1px solid rgba(0,212,255,0.18); background:rgba(0,0,0,0.24); display:flex; align-items:center; justify-content:center; font-family:var(--font-m); font-size:28px; letter-spacing:0.18em; color:#e8f7ff; transition:transform 0.3s ease, border-color 0.3s ease; }
+    .otp-cell.active { border-color: var(--cyan); box-shadow:0 0 24px rgba(0,212,255,0.18); transform:translateY(-2px); }
+    .otp-controls { display:flex; gap:12px; flex-wrap:wrap; margin-top:24px; }
+    .otp-controls button { flex:1 1 140px; }
+    .scan-status-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+    .holo-shell { border:1px solid rgba(0,212,255,0.12); background:rgba(0,0,0,0.14); border-radius:20px; padding:18px; display:flex; gap:12px; align-items:center; justify-content:center; min-height:100px; position:relative; overflow:hidden; }
+    .holo-shell::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at center, rgba(0,212,255,0.08), transparent 38%); pointer-events:none; }
+    .holo-shell span { position:relative; z-index:1; }
+    .scan-beam { height:2px; width:100%; background:linear-gradient(90deg, transparent, rgba(0,212,255,0.42), transparent); animation:beam 2s infinite; margin-top:14px; opacity:0.8; }
+    .cipher-glow { color: rgba(0,212,255,0.95); font-weight:700; letter-spacing:0.06em; }
+    .otp-entry { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:20px; }
+    .otp-input { width:50px; height:58px; border-radius:14px; border:1px solid rgba(255,255,255,0.12); background:rgba(0,0,0,0.25); color:#e8f7ff; font-size:24px; text-align:center; font-family:var(--font-m); }
+    .otp-input:focus { border-color:var(--cyan); outline:none; box-shadow:0 0 0 4px rgba(0,212,255,0.08); }
+    .hidden { display:none !important; }
+    .panel-note { color:var(--muted); font-size:13px; margin-top:12px; }
+    .hint-pill { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.12); border-radius:999px; font-size:12px; color:var(--cyan); }
+    .success-panel { background:rgba(0,227,150,0.12); border-color:rgba(0,227,150,0.25); color:var(--emerald); }
+    .failure-panel { background:rgba(255,87,87,0.12); border-color:rgba(255,87,87,0.28); color:var(--coral); }
+    @media(max-width:1024px){ .verify-grid { grid-template-columns:1fr; } .secure-panel, .console-panel { padding:22px; } }
+  </style>
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body>
+<div class="verify-shell">
+  <div class="verify-grid">
+    <section class="secure-panel">
+      <div class="verify-header">
+        <div>
+          <div class="verify-badge">🔒 SECURE GATEWAY</div>
+          <h1 class="verify-title">FlyWay secure verification terminal</h1>
+          <p class="verify-sub">This portal establishes a temporary encrypted session, decodes your access package, and presents a holographic OTP in a protected runway.</p>
+        </div>
+        <div class="pulse"><span class="pulse-dot"></span><span id="statusTag">Initializing</span></div>
+      </div>
+      <div class="status-grid">
+        <div class="status-card"><strong id="sessionStage">Awaiting tunnel</strong><span>Secure session status</span></div>
+        <div class="status-card"><strong id="sessionExpires">-</strong><span>Session expiration</span></div>
+        <div class="status-card"><strong id="sessionAction">-</strong><span>Verification target</span></div>
+        <div class="status-card"><strong id="sessionAttempt">-</strong><span>Attempts remaining</span></div>
+      </div>
+      <ul class="timeline">
+        <li><strong>Session created</strong><span id="timelineCreated">Pending</span></li>
+        <li><strong>Fingerprint locked</strong><span id="timelineFingerprint">Secure</span></li>
+        <li><strong>OTP reveal stage</strong><span id="timelineReveal">Locked</span></li>
+        <li><strong>Verification state</strong><span id="timelineState">Pending</span></li>
+      </ul>
+      <div class="panel-note">Designed to feel like an airline terminal boarding pass, but for secure account verification.</div>
+    </section>
+
+    <section class="console-panel">
+      <div class="verify-header" style="align-items:flex-start;">
+        <div>
+          <h2 class="modal-title">Verification console</h2>
+          <p class="verify-sub">Interact with the decryption sequence to expose your one-time key.</p>
+        </div>
+      </div>
+
+      <div class="console-log" id="consoleLog"></div>
+
+      <div class="codeframe" id="revealFrame">
+        <div class="holo-shell">
+          <span id="holoStatus">READY FOR SECURE DECODE</span>
+          <div class="scan-beam"></div>
+        </div>
+        <div class="scan-status-row">
+          <span class="hint-pill" id="scanTag">Booting secure tunnel</span>
+          <span class="hint-pill" id="cipherStrength">Cipher strength: 0%</span>
+        </div>
+        <div class="otp-deck" id="otpDeck">
+          <div class="otp-cell" id="deck0">•</div>
+          <div class="otp-cell" id="deck1">•</div>
+          <div class="otp-cell" id="deck2">•</div>
+          <div class="otp-cell" id="deck3">•</div>
+          <div class="otp-cell" id="deck4">•</div>
+          <div class="otp-cell" id="deck5">•</div>
+        </div>
+        <div class="otp-controls">
+          <button class="btn btn-primary" id="revealBtn" onclick="triggerReveal()">INITIATE DECRYPT</button>
+          <button class="btn btn-secondary" id="refreshBtn" onclick="resetConsole()">RESET SEQUENCE</button>
+        </div>
+      </div>
+
+      <div id="otpEntryPanel" class="hidden">
+        <div class="panel-note">Enter the OTP shown above into the authentication matrix to continue.</div>
+        <div class="otp-entry" id="otpEntry"></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;">
+          <button class="btn btn-gold" onclick="verifyOtp()">VERIFY CODE</button>
+          <button class="btn btn-ghost" onclick="clearOtpInputs()">CLEAR</button>
+        </div>
+      </div>
+
+      <div id="resetPanel" class="hidden" style="margin-top:22px;">
+        <div class="status-card success-panel" style="padding:16px;">OTP accepted. Complete the password reset below.</div>
+        <div class="form-group" style="margin-top:16px;">
+          <label class="form-label">New password</label>
+          <input class="form-input" type="password" id="newPassword" placeholder="Create a strong password" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm password</label>
+          <input class="form-input" type="password" id="confirmPassword" placeholder="Repeat new password" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="submitResetPassword()">APPLY PASSWORD</button>
+      </div>
+
+      <div id="successPanel" class="hidden" style="margin-top:22px; padding:18px; border-radius:18px; border:1px solid rgba(0,227,150,0.25); background:rgba(0,227,150,0.08); color:var(--emerald);">
+        <strong>ACCESS GRANTED.</strong>
+        <p style="margin:10px 0 0; color:var(--muted);">Your verification is complete. Redirecting shortly...</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/main.js"></script>
+<script>
+  const sessionId = window.location.pathname.split('/').pop();
+  const socket = typeof io === 'function' ? io() : null;
+  let sessionInfo = null;
+  let otpCode = '';
+  let isResetFlow = false;
+
+  const logLines = [
+    'Engaging FlyWay secure tunnel...',
+    'Validating session packet...',
+    'Anchoring fingerprint to browser context...',
+    'Preparing code release sequence...'
+  ];
+
+  document.addEventListener('DOMContentLoaded', initPortal);
+
+  async function initPortal() {
+    addConsoleLine('Boot sequence initiated.');
+    setStatus('Connecting to verification core');
+    try {
+      const res = await FlyWay.api('GET', `/api/verification-session/${sessionId}`);
+      sessionInfo = res.session;
+      isResetFlow = sessionInfo.action === 'reset';
+      document.getElementById('sessionStage').textContent = 'Secure tunnel active';
+      document.getElementById('sessionAction').textContent = sessionInfo.action === 'reset' ? 'Password reset' : 'Account activation';
+      document.getElementById('sessionExpires').textContent = formatTimer(sessionInfo.expiresAt);
+      document.getElementById('sessionAttempt').textContent = `${Math.max(0, sessionInfo.maxAttempts - sessionInfo.attempts)} / ${sessionInfo.maxAttempts}`;
+      document.getElementById('timelineCreated').textContent = new Date(sessionInfo.createdAt).toLocaleString();
+      document.getElementById('timelineFingerprint').textContent = 'Browser locked';
+      document.getElementById('timelineReveal').textContent = sessionInfo.revealStage > 0 ? 'In progress' : 'Locked';
+      document.getElementById('timelineState').textContent = sessionInfo.status.toUpperCase();
+      setStatus('Ready for secure reveal');
+      if (sessionInfo.status !== 'pending') {
+        throw new Error('Session is not available for verification.');
+      }
+      attachSocket();
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    } catch (err) {
+      setStatus('Verification session unavailable');
+      const msg = err.message || 'Unknown error';
+      const isNotFound = msg.includes('404') || msg.includes('not found') || msg.includes('expired') || msg.includes('unavailable');
+      addConsoleLine('Unable to load session: ' + msg, true);
+      if (isNotFound) {
+        const hint = isResetFlow
+          ? 'Session not found or expired. <a href="/forgot-password" style="color:var(--cyan)">Restart password reset →</a>'
+          : 'Session not found or expired. <a href="/register" style="color:var(--cyan)">Restart registration →</a>';
+        addConsoleLine(hint, true);
+      }
+      document.getElementById('revealBtn').disabled = true;
+    }
+  }
+
+  function addConsoleLine(text, error = false) {
+    const log = document.getElementById('consoleLog');
+    const line = document.createElement('div');
+    line.className = 'console-line';
+    line.style.color = error ? 'var(--coral)' : '#cde8ff';
+    // Use innerHTML so links/bold in error hints render correctly
+    line.innerHTML = '> ' + text;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function setStatus(text) {
+    document.getElementById('statusTag').textContent = text;
+  }
+
+  function attachSocket() {
+    if (!socket) {
+      addConsoleLine('Real-time gateway channel unavailable. Live status is disabled.', true);
+      return;
+    }
+    socket.on('connect', () => {
+      addConsoleLine('Live gateway channel open.');
+      socket.emit('join-session', sessionId);
+    });
+    socket.on('session_connected', (payload) => {
+      addConsoleLine(payload.message || 'Secure channel confirmed.');
+    });
+    socket.on('session_update', (payload) => {
+      if (payload.attempts !== undefined) {
+        addConsoleLine(`Security monitor: ${payload.attempts} failed attempt(s).`);
+        document.getElementById('sessionAttempt').textContent = `${Math.max(0, sessionInfo.maxAttempts - payload.attempts)} / ${sessionInfo.maxAttempts}`;
+      }
+      if (payload.cooldownUntil) {
+        const retry = Math.max(0, Math.ceil((new Date(payload.cooldownUntil) - Date.now()) / 1000));
+        addConsoleLine(`Retry cooldown active: ${retry}s`);
+      }
+    });
+    socket.on('session_verified', () => {
+      addConsoleLine('Session verified by secure core.');
+    });
+    socket.on('session_expired', (payload) => {
+      addConsoleLine(payload.message || 'Session expired.', true);
+      setStatus('Session expired');
+      document.getElementById('revealBtn').disabled = true;
+    });
+  }
+
+  function formatTimer(iso) {
+    const diff = Math.max(0, new Date(iso).getTime() - Date.now());
+    const minutes = String(Math.floor(diff / 60000)).padStart(2, '0');
+    const seconds = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  }
+
+  function updateCountdown() {
+    if (!sessionInfo) return;
+    document.getElementById('sessionExpires').textContent = formatTimer(sessionInfo.expiresAt);
+  }
+
+  function resetConsole() {
+    document.getElementById('consoleLog').innerHTML = '';
+    document.getElementById('otpEntryPanel').classList.add('hidden');
+    document.getElementById('resetPanel').classList.add('hidden');
+    document.getElementById('successPanel').classList.add('hidden');
+    document.getElementById('scanTag').textContent = 'Gateway reset. Ready to decode.';
+    document.getElementById('cipherStrength').textContent = 'Cipher strength: 0%';
+    document.getElementById('otpEntry').innerHTML = ''; // clear inputs so they rebuild fresh
+    Array.from(document.querySelectorAll('.otp-cell')).forEach(cell => cell.textContent = '•');
+    setStatus('Secure portal reset');
+    addConsoleLine('Sequence reset. Awaiting next reveal command.');
+  }
+
+  async function triggerReveal() {
+    const btn = document.getElementById('revealBtn');
+    btn.disabled = true;
+    setStatus('Dispatching OTP to email');
+    addConsoleLine('Sending reveal request to secure core...');
+    document.getElementById('scanTag').textContent = 'Dispatching secure OTP...';
+    document.getElementById('cipherStrength').textContent = 'Cipher strength: 45%';
+    try {
+      await new Promise(resolve => setTimeout(resolve, 900));
+      addConsoleLine('Decryptor engaged. Routing OTP packet...');
+      document.getElementById('cipherStrength').textContent = 'Cipher strength: 72%';
+      const res = await FlyWay.api('POST', `/api/verification-session/${sessionId}/reveal`, {});
+      addConsoleLine('OTP packet dispatched. Parsing response...');
+      const masked = decodeRevealPayload(res.revealPayload);
+      otpCode = null; // OTP is secret — user must enter from email
+      document.getElementById('timelineReveal').textContent = 'Reveal stage ' + res.stage;
+      document.getElementById('sessionAttempt').textContent = `${Math.max(0, sessionInfo.maxAttempts - sessionInfo.attempts)} / ${sessionInfo.maxAttempts}`;
+      document.getElementById('cipherStrength').textContent = 'Cipher strength: 100%';
+      setStatus('OTP dispatched to email');
+      animateOtpReveal(masked);
+      if (res.emailSent) {
+        const hint = res.emailHint || 'your registered email';
+        addConsoleLine(`✉ OTP sent to <strong style="color:var(--cyan)">${hint}</strong> — check your inbox.`);
+      } else {
+        addConsoleLine('⚠️ Email not configured — contact support for your OTP.', true);
+      }
+    } catch (err) {
+      addConsoleLine('Reveal failed: ' + (err.message || 'Unable to decode.'), true);
+      setStatus('Reveal error');
+      document.getElementById('scanTag').textContent = 'Reveal failure';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function decodeRevealPayload(payload) {
+    try {
+      // Server now sends a simple base64 of the masked string (e.g. "3●●●●●")
+      return atob(payload);
+    } catch (err) {
+      return '';
+    }
+  }
+
+  function animateOtpReveal(masked) {
+    // masked = e.g. "3●●●●●" — first char is a hint, rest are hidden dots
+    const chars = masked.split('');
+    chars.forEach((char, index) => {
+      const cell = document.getElementById(`deck${index}`);
+      if (!cell) return;
+      setTimeout(() => {
+        cell.textContent = char; // shows digit for first, ● for rest
+        cell.classList.add('active');
+        if (char === '●') {
+          addConsoleLine(`Digit ${index + 1} encrypted — protected in transit.`);
+        } else {
+          addConsoleLine(`Digit ${index + 1} partially decoded.`);
+        }
+      }, 300 + index * 220);
+    });
+    // After animation: show the entry panel, tell user to check email
+    setTimeout(() => {
+      buildOtpInputs();
+      // DO NOT auto-fill — user must enter the real OTP from their inbox
+      document.getElementById('otpEntryPanel').classList.remove('hidden');
+      document.getElementById('scanTag').textContent = 'Check your email inbox and enter the 6-digit code below.';
+    }, 1700);
+  }
+
+  function buildOtpInputs() {
+    const container = document.getElementById('otpEntry');
+    if (container.children.length) return;
+    for (let i = 0; i < 6; i++) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.maxLength = 1;
+      input.className = 'otp-input';
+      input.addEventListener('input', (e) => {
+        const target = e.target;
+        target.value = target.value.replace(/[^0-9]/g, '');
+        if (target.value && target.nextElementSibling) target.nextElementSibling.focus();
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && e.target.previousElementSibling) {
+          e.target.previousElementSibling.focus();
+        }
+      });
+      container.appendChild(input);
+    }
+  }
+
+  function clearOtpInputs() {
+    document.querySelectorAll('.otp-input').forEach(i => i.value = '');
+  }
+
+  async function verifyOtp() {
+    const otp = Array.from(document.querySelectorAll('.otp-input')).map(i => i.value.trim()).join('');
+    if (otp.length !== 6) {
+      FlyWay.toast('warning', 'Code incomplete', 'Enter all six digits from the secure reveal.');
+      return;
+    }
+    setStatus('Validating verification code');
+    addConsoleLine('Submitting OTP for secure validation...');
+    try {
+      const res = await FlyWay.api('POST', `/api/verification-session/${sessionId}/verify`, { otp });
+      if (res.allowReset) {
+        document.getElementById('resetPanel').classList.remove('hidden');
+        setStatus('OTP verified - reset enabled');
+        addConsoleLine('Reset flow unlocked. Enter your new password.');
+      } else {
+        if (res.token) {
+          localStorage.setItem('fw_token', res.token);
+          localStorage.setItem('fw_user', JSON.stringify(res.user));
+        }
+        document.getElementById('successPanel').classList.remove('hidden');
+        setStatus('Verification complete');
+        addConsoleLine('Verification successful. Redirecting to dashboard...');
+        setTimeout(() => window.location.href = '/dashboard', 2200);
+      }
+    } catch (err) {
+      addConsoleLine('OTP validation failed: ' + (err.message || 'Invalid code'), true);
+      setStatus('Verification failed');
+      FlyWay.toast('error', 'Verification failed', err.message || 'Unable to validate the OTP.');
+    }
+  }
+
+  async function submitResetPassword() {
+    const password = document.getElementById('newPassword').value.trim();
+    const confirmPassword = document.getElementById('confirmPassword').value.trim();
+    if (!password || password.length < 6) { FlyWay.toast('warning', 'Invalid password', 'Use at least 6 characters.'); return; }
+    if (password !== confirmPassword) { FlyWay.toast('warning', 'Password mismatch', 'Passwords must match.'); return; }
+    setStatus('Applying new password');
+    try {
+      await FlyWay.api('POST', '/api/auth/reset-password-session', { sessionId, password });
+      document.getElementById('successPanel').classList.remove('hidden');
+      setStatus('Password reset complete');
+      addConsoleLine('Password reset finalized. Redirecting to login...');
+      setTimeout(() => window.location.href = '/login', 2200);
+    } catch (err) {
+      addConsoleLine('Password reset failed: ' + (err.message || 'Unable to apply password'), true);
+      FlyWay.toast('error', 'Reset failed', err.message || 'Unable to reset password.');
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>My Profile - FlyWay</title><link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/assets/css/responsive.css"></head>
+<body>
+<nav class="navbar" id="mainNav">
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="hamburger" id="navHamburger" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button>
+      <a href="/" class="nav-logo"><div class="nav-logo-icon">✈</div><span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span></a>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/booking" class="nav-link">Book Flight</a>
+      <a href="/track" class="nav-link">Track Flight</a>
+      <a href="/flightmap" class="nav-link">3D Map</a>
+      <a href="/flightgame" class="nav-link">Have Fun</a>
+      <a href="/contact" class="nav-link">Contact</a>
+      <a href="/dashboard" class="nav-link hidden" id="navDashBtn">My Account</a>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-ghost btn-sm" id="navLogoutBtn" onclick="FlyWay.logout()">Sign Out</button>
+    </div>
+  </div>
+</nav>
+<div class="dashboard-layout">
+<aside class="site-sidebar" id="sidebar">
+  <div class="sidebar-nav-section">
+    <div class="sidebar-nav-label">Main</div>
+    <a href="/dashboard" class="sidebar-nav-item"><span class="nav-icon">🏠</span>Dashboard</a>
+    <a href="/booking" class="sidebar-nav-item"><span class="nav-icon">✈</span>Book a Flight</a>
+    <a href="/bookings" class="sidebar-nav-item"><span class="nav-icon">🗓</span>My Bookings</a>
+  </div>
+  <div class="sidebar-nav-section">
+    <div class="sidebar-nav-label">Account</div>
+    <a href="/transactions" class="sidebar-nav-item"><span class="nav-icon">💳</span>Transactions</a>
+    <a href="/profile" class="sidebar-nav-item active"><span class="nav-icon">👤</span>My Profile</a>
+    <a href="/notifications" class="sidebar-nav-item"><span class="nav-icon">🔔</span>Notifications</a>
+    <a href="/track" class="sidebar-nav-item"><span class="nav-icon">📡</span>Track Flight</a>
+  </div>
+  <div class="sidebar-footer">
+    <a href="/profile" class="user-chip"><div class="user-avatar" id="sidebarAvatar">U</div><div style="flex:1;min-width:0"><div class="user-name" id="sidebarName">Loading...</div><div class="user-sub" id="sidebarSub">-</div></div></a>
+  </div>
+</aside>
+<main class="dashboard-main">
+  <div class="page-header"><h1 class="page-title-h">👤 My Profile</h1><div class="page-subtitle">Manage your account details and preferences</div></div>
+
+  
+  <div class="profile-header mb-24">
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar" id="profileAvatarDisplay">U</div>
+        <label class="avatar-edit-btn" for="avatarInput" title="Change photo">✏</label>
+        <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="previewAvatar(this)">
+      </div>
+      <div>
+        <div style="font-family:var(--font-h);font-size:24px;font-weight:800" id="profileName">Loading...</div>
+        <div style="color:var(--muted);font-size:14px" id="profileEmail">-</div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <span class="badge badge-green" id="profileRole">Member</span>
+          <span class="badge badge-cyan" id="profileLicense">-</span>
+          <span class="badge badge-gold" id="profilePoints">- pts</span>
+        </div>
+      </div>
+    </div>
+    <div class="loyalty-bar-wrap mt-16">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px">
+        <span id="loyaltyLabel">Bronze Member</span><span id="loyaltyNext">Next: Silver at 2,000 pts</span>
+      </div>
+      <div class="loyalty-bar"><div class="loyalty-fill" id="loyaltyFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="align-items:start;gap:24px;">
+    
+    <div>
+      <div class="card mb-20">
+        <div class="section-title-text mb-20">✏ Personal Information</div>
+        <div id="profileErr" class="hidden" style="background:rgba(255,87,87,0.1);border:1px solid rgba(255,87,87,0.3);border-radius:10px;padding:12px;font-size:13px;color:var(--coral);margin-bottom:14px"></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="editFirst" placeholder="First name"></div>
+          <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="editLast" placeholder="Last name"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Username</label><input class="form-input" id="editUsername" disabled style="opacity:0.5;cursor:not-allowed"></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="editEmail" type="email" placeholder="email@example.com"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="editPhone" type="tel" placeholder="+1 555 0000"></div>
+        <div class="form-group"><label class="form-label">Meal Preference</label>
+          <select class="form-input" id="editMeal">
+            <option value="Standard">Standard</option><option value="Vegetarian">Vegetarian</option><option value="Vegan">Vegan</option><option value="Halal">Halal</option><option value="Kosher">Kosher</option><option value="Gluten-Free">Gluten-Free</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Preferred Seat</label>
+          <select class="form-input" id="editSeat">
+            <option value="window">Window</option><option value="aisle">Aisle</option><option value="middle">Middle</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-full" id="saveProfileBtn" onclick="saveProfile()">Save Changes</button>
+      </div>
+
+      
+      <div class="card">
+        <div class="section-title-text mb-20">🔒 Change Password</div>
+        <div id="pwErr" class="hidden" style="background:rgba(255,87,87,0.1);border:1px solid rgba(255,87,87,0.3);border-radius:10px;padding:12px;font-size:13px;color:var(--coral);margin-bottom:14px"></div>
+        <div class="form-group"><label class="form-label">Current Password</label><input class="form-input" type="password" id="curPw" placeholder="Current password"></div>
+        <div class="form-group"><label class="form-label">New Password</label><input class="form-input" type="password" id="newPw" placeholder="New password (min 6 chars)"></div>
+        <div class="form-group"><label class="form-label">Confirm New Password</label><input class="form-input" type="password" id="confPw" placeholder="Repeat new password"></div>
+        <button class="btn btn-ghost btn-full" id="changePwBtn" onclick="changePassword()">Update Password</button>
+      </div>
+    </div>
+
+    
+    <div>
+      <div class="card mb-20">
+        <div class="section-title-text mb-16">🔑 Account Details</div>
+        <div style="display:flex;flex-direction:column;gap:14px;font-size:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--navy3);border-radius:10px;border:1px solid var(--border)">
+            <span style="color:var(--muted)">License Key</span>
+            <span id="detailLicense" style="font-family:var(--font-m);font-size:12px;color:var(--cyan)">-</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--navy3);border-radius:10px;border:1px solid var(--border)">
+            <span style="color:var(--muted)">Account Status</span>
+            <span class="badge badge-green">● Active</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--navy3);border-radius:10px;border:1px solid var(--border)">
+            <span style="color:var(--muted)">Member Since</span>
+            <span id="detailSince">-</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--navy3);border-radius:10px;border:1px solid var(--border)">
+            <span style="color:var(--muted)">Last Login</span>
+            <span id="detailLastLogin">-</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--navy3);border-radius:10px;border:1px solid var(--border)">
+            <span style="color:var(--muted)">Loyalty Points</span>
+            <span id="detailPoints" style="font-family:var(--font-h);font-weight:700;color:var(--gold)">-</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title-text mb-16">⚠ Danger Zone</div>
+        <button class="btn btn-danger btn-full" onclick="if(confirm('Sign out of all devices?'))FlyWay.logout()">🚪 Sign Out</button>
+        <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px">To delete your account, contact support.</div>
+      </div>
+    </div>
+  </div>
+</main></div>
+<div id="toastContainer"></div>
+<script src="/js/main.js"></script>
+<script>
+let avatarFile=null;
+document.addEventListener('DOMContentLoaded', async ()=>{
+  if(!FlyWay.requireAuth()) return;
+  FlyWay.setupSidebar();
+  // Load notification count for badge
+  FlyWay.api('GET','/api/notifications/unread-count').then(function(nc){
+    var badge = document.getElementById('notifyBadgeSide');
+    if(badge && nc.count > 0){badge.textContent=nc.count;badge.style.display='flex';}
+  }).catch(function(){});
+  try {
+    const u=await FlyWay.api('GET','/api/auth/me');
+    localStorage.setItem('fw_user',JSON.stringify(u));
+    FlyWay.user=u;
+    populateForm(u);
+  } catch { populateForm(FlyWay.user); }
+});
+
+function populateForm(u) {
+  document.getElementById('editFirst').value=u.firstName||'';
+  document.getElementById('editLast').value=u.lastName||'';
+  document.getElementById('editUsername').value=u.username||'';
+  document.getElementById('editEmail').value=u.email||'';
+  document.getElementById('editPhone').value=u.phone||'';
+  document.getElementById('editMeal').value=u.preferences?.meal||'Standard';
+  document.getElementById('editSeat').value=u.preferences?.seat||'window';
+  const name=`${u.firstName||''} ${u.lastName||''}`.trim()||u.username;
+  document.getElementById('profileName').textContent=name;
+  document.getElementById('profileEmail').textContent=u.email;
+  document.getElementById('profileRole').textContent=u.role==='admin'?'👑 Admin':'✈ Member';
+  document.getElementById('profileLicense').textContent=u.licenseKey||'-';
+  document.getElementById('profilePoints').textContent=`⭐ ${FlyWay.fmtInt(u.loyaltyPoints)} pts`;
+  document.getElementById('detailLicense').textContent=u.licenseKey||'-';
+  document.getElementById('detailSince').textContent=FlyWay.fmtDate(u.createdAt);
+  document.getElementById('detailLastLogin').textContent=FlyWay.fmtDate(u.lastLogin)||'First visit';
+  document.getElementById('detailPoints').textContent=FlyWay.fmtInt(u.loyaltyPoints);
+  const pts=u.loyaltyPoints||0;
+  document.getElementById('loyaltyFill').style.width=`${Math.min(100,(pts/10000)*100)}%`;
+  const tier=pts>=10000?'💎 Platinum':pts>=5000?'🥇 Gold':pts>=2000?'🥈 Silver':'🥉 Bronze';
+  document.getElementById('loyaltyLabel').textContent=`${tier} Member`;
+  const nextPts=pts>=10000?0:pts>=5000?10000-pts:pts>=2000?5000-pts:2000-pts;
+  const nextTier=pts>=10000?'Max level':pts>=5000?`${nextPts} pts to Platinum`:pts>=2000?`${nextPts} pts to Gold`:`${nextPts} pts to Silver`;
+  document.getElementById('loyaltyNext').textContent=`Next: ${nextTier}`;
+  const av=document.getElementById('profileAvatarDisplay');
+  if(u.avatar) av.innerHTML=`<img src="${u.avatar}" style="width:100%;height:100%;object-fit:cover">`;
+  else av.textContent=(u.firstName||u.username||'U')[0].toUpperCase();
+  const sav=document.getElementById('sidebarAvatar');
+  if(sav){ if(u.avatar) sav.innerHTML=`<img src="${u.avatar}">`; else sav.textContent=(u.firstName||u.username||'U')[0].toUpperCase(); }
+  document.getElementById('sidebarName').textContent=name;
+  document.getElementById('sidebarSub').textContent=`${FlyWay.fmtInt(u.loyaltyPoints)} pts · ${u.role}`;
+}
+
+function previewAvatar(inp) {
+  avatarFile=inp.files[0];
+  if(!avatarFile) return;
+  const reader=new FileReader();
+  reader.onload=e=>{ document.getElementById('profileAvatarDisplay').innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`; };
+  reader.readAsDataURL(avatarFile);
+}
+
+async function saveProfile() {
+  const btn=document.getElementById('saveProfileBtn');
+  const errEl=document.getElementById('profileErr');
+  errEl.classList.add('hidden');
+  FlyWay.setLoading(btn,true);
+  try {
+    const fd=new FormData();
+    fd.append('firstName',document.getElementById('editFirst').value.trim());
+    fd.append('lastName',document.getElementById('editLast').value.trim());
+    fd.append('phone',document.getElementById('editPhone').value.trim());
+    fd.append('preferences',JSON.stringify({meal:document.getElementById('editMeal').value,seat:document.getElementById('editSeat').value}));
+    if(avatarFile) fd.append('avatar',avatarFile);
+    const res=await FlyWay.api('PUT','/api/auth/profile',fd,true);
+    localStorage.setItem('fw_user',JSON.stringify(res.user));
+    FlyWay.user=res.user;
+    populateForm(res.user);
+    FlyWay.toast('success','Profile updated!','Your changes have been saved.');
+  } catch(e){ errEl.textContent=e.message; errEl.classList.remove('hidden'); }
+  FlyWay.setLoading(btn,false);
+}
+
+async function changePassword() {
+  const btn=document.getElementById('changePwBtn');
+  const errEl=document.getElementById('pwErr');
+  errEl.classList.add('hidden');
+  const cur=document.getElementById('curPw').value;
+  const nw=document.getElementById('newPw').value;
+  const cn=document.getElementById('confPw').value;
+  if(!cur||!nw){errEl.textContent='Please fill in all password fields.';errEl.classList.remove('hidden');return;}
+  if(nw!==cn){errEl.textContent='New passwords do not match.';errEl.classList.remove('hidden');return;}
+  if(nw.length<6){errEl.textContent='New password must be at least 6 characters.';errEl.classList.remove('hidden');return;}
+  FlyWay.setLoading(btn,true);
+  try {
+    await FlyWay.api('PUT','/api/auth/change-password',{currentPassword:cur,newPassword:nw});
+    FlyWay.toast('success','Password changed!','Your password has been updated.');
+    document.getElementById('curPw').value=''; document.getElementById('newPw').value=''; document.getElementById('confPw').value='';
+  } catch(e){ errEl.textContent=e.message; errEl.classList.remove('hidden'); }
+  FlyWay.setLoading(btn,false);
+}
+
+
+</script>
+<script src="/js/sidebar-toggle.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+</body></html>
+

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - FlyWay</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/license-system.css">
+  <link rel="stylesheet" href="/css/glow3d.css">
+  <link rel="stylesheet" href="/assets/css/responsive.css">
+<style>
+.dash-card-glow{position:relative;transition:transform 0.25s cubic-bezier(.22,1,.36,1),box-shadow 0.3s;border-radius:inherit;}
+.dash-card-glow:hover{transform:translateY(-5px) scale(1.02) perspective(800px) rotateX(1.5deg);box-shadow:0 16px 48px rgba(0,212,255,0.2),0 0 0 1px rgba(0,212,255,0.2)!important;}
+.dash-card-glow::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity 0.3s;background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(0,212,255,0.1) 0%,transparent 65%);z-index:1;}
+.dash-card-glow:hover::after{opacity:1;}
+
+.bell-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;}
+.bell-btn svg,.bell-btn span{animation:bellRing 2.5s cubic-bezier(.36,.07,.19,.97) infinite;}
+@keyframes bellRing{
+  0%,90%,100%{transform:rotate(0)}
+  92%{transform:rotate(12deg)}
+  94%{transform:rotate(-10deg)}
+  96%{transform:rotate(8deg)}
+  98%{transform:rotate(-6deg)}
+}
+.bell-glow{filter:drop-shadow(0 0 6px rgba(245,200,66,0.7));color:#f5c842;}
+</style>
+<style>
+/* Slide-in animation for inline key editor */
+@keyframes fwEditIn {
+  from { opacity:0; transform:translateY(-6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+</style>
+<style>
+.chat-fab{position:fixed;bottom:28px;right:28px;z-index:999;width:64px;height:64px;border:none;cursor:pointer;background:transparent;padding:0;}
+.chat-fab-inner{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#0044cc,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;position:relative;overflow:visible;box-shadow:0 8px 32px rgba(0,212,255,0.45);animation:chatFabFloat 3s ease-in-out infinite,chatFabPulse 2s ease infinite;}
+@keyframes chatFabFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}
+@keyframes chatFabPulse{0%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 0 rgba(0,212,255,.4)}70%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 16px rgba(0,212,255,0)}100%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 0 rgba(0,212,255,0)}}
+.chat-fab-ring{position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(0,212,255,.45);animation:chatRing 2.5s linear infinite;}
+.chat-fab-ring2{position:absolute;inset:-12px;border-radius:50%;border:1.5px solid rgba(124,58,237,.3);animation:chatRing 4s linear infinite reverse;}
+@keyframes chatRing{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.chat-fab-icon{font-size:28px;z-index:2;position:relative;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
+.badge-dot{position:absolute;top:0;right:0;width:15px;height:15px;border-radius:50%;background:#ff4757;border:2px solid #020812;font-size:8px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;z-index:3;}
+</style>
+</head>
+<body>
+<script>
+(function(){
+  var tok=localStorage.getItem('fw_token');
+  if(!tok){window.location.replace('/login');return;}
+  try{var u=JSON.parse(localStorage.getItem('fw_user'));if(!u)throw 1;}
+  catch(e){window.location.replace('/login');return;}
+})();
+</script>
+<nav class="navbar" id="mainNav">
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="hamburger" id="navHamburger" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button>
+      <a href="/" class="nav-logo"><div class="nav-logo-icon glow3d">✈</div><span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span></a>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/booking" class="nav-link">Book Flight</a>
+      <a href="/track" class="nav-link">Track Flight</a>
+      <a href="/flightmap" class="nav-link">3D Map</a>
+      <a href="/flightgame" class="nav-link">Have Fun</a>
+      <a href="/contact" class="nav-link">Contact</a>
+      <a href="/dashboard" class="nav-link active" id="navDashBtn">My Account</a>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-ghost btn-sm" onclick="FlyWay.logout()">Sign Out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="dashboard-layout">
+  
+  <aside class="site-sidebar" id="sidebar">
+    <div class="sidebar-nav-section">
+      <div class="sidebar-nav-label">Main</div>
+      <a href="/dashboard" class="sidebar-nav-item active"><span class="nav-icon">🏠</span>Dashboard</a>
+      <a href="/booking" class="sidebar-nav-item"><span class="nav-icon">✈</span>Book a Flight</a>
+      <a href="/bookings" class="sidebar-nav-item"><span class="nav-icon">🗓</span>My Bookings</a>
+    </div>
+    <div class="sidebar-nav-section">
+      <div class="sidebar-nav-label">Account</div>
+      <a href="/transactions" class="sidebar-nav-item"><span class="nav-icon">💳</span>Transactions</a>
+      <a href="/profile" class="sidebar-nav-item"><span class="nav-icon">👤</span>My Profile</a>
+      <a href="/notifications" class="sidebar-nav-item" id="notifyNavLink"><span class="nav-icon"><span class="bell-glow bell-btn">🔔</span></span>Notifications <span id="notifyBadgeSide" class="sidebar-nav-badge" style="display:none">0</span></a>
+    <a href="/track" class="sidebar-nav-item"><span class="nav-icon">📡</span>Track Flight</a>
+    </div>
+    <div class="sidebar-nav-section">
+      <div class="sidebar-nav-label">Support</div>
+      <a href="/contact" class="sidebar-nav-item"><span class="nav-icon">💬</span>Contact Us</a>
+    </div>
+    <div class="sidebar-footer">
+      <a href="/profile" class="user-chip">
+        <div class="user-avatar" id="sidebarAvatar">U</div>
+        <div style="flex:1;min-width:0">
+          <div class="user-name" id="sidebarName">Loading...</div>
+          <div class="user-sub" id="sidebarSub">0 pts</div>
+        </div>
+        <span style="color:var(--muted)">→</span>
+      </a>
+    </div>
+  </aside>
+
+  
+  <main class="dashboard-main" id="dashMain">
+    <div class="page-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h1 class="page-title-h">Welcome back, <span id="greetName" class="fw-anime-label fw-section-phrase" style="color:var(--cyan)">Traveler</span> ✈</h1>
+          <div class="page-subtitle" id="greetSub">Here's your travel overview</div>
+        </div>
+        <a href="/booking" class="btn btn-primary">✈ Book a Flight</a>
+      </div>
+    </div>
+
+    
+    <div class="stats-grid mb-32" id="statsGrid">
+      <div class="stat-card c1"><div class="stat-icon">✈</div><div class="stat-value" id="statBookings">-</div><div class="stat-label">Total Bookings</div></div>
+      <div class="stat-card c2"><div class="stat-icon">✅</div><div class="stat-value" id="statConfirmed">-</div><div class="stat-label">Confirmed</div></div>
+      <div class="stat-card c3"><div class="stat-icon">💰</div><div class="stat-value" id="statSpent">-</div><div class="stat-label">Total Spent</div></div>
+      <div class="stat-card c4"><div class="stat-icon">⭐</div><div class="stat-value" id="statPoints">-</div><div class="stat-label">Loyalty Points</div></div>
+    </div>
+
+    <div class="grid-2 mb-24">
+      
+      <div class="card dash-card-glow">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+          <div>
+            <div style="font-family:var(--font-h);font-weight:700;font-size:16px">⭐ Loyalty Status</div>
+            <div id="loyaltyTier" style="font-size:13px;color:var(--muted);margin-top:3px">Bronze Member</div>
+          </div>
+          <div style="text-align:right">
+            <div id="loyaltyPts" style="font-family:var(--font-h);font-size:24px;font-weight:800;color:var(--gold)">0</div>
+            <div style="font-size:11px;color:var(--muted)">points</div>
+          </div>
+        </div>
+        <div class="loyalty-bar"><div class="loyalty-fill" id="loyaltyFill" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px;">
+          <span>Bronze</span><span>Silver 2K</span><span>Gold 5K</span><span>Platinum 10K</span>
+        </div>
+      </div>
+
+      
+      <div class="card dash-card-glow fw-license-card" id="fwLicenseCard">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-family:var(--font-h);font-weight:700;font-size:16px">🔑 License</div>
+          <button
+            id="fwLicenseEditBtn"
+            onclick="if(typeof FWLicense!=='undefined')FWLicense.showDashboardKeyEditor()"
+            title="Edit / Add License Key"
+            style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:8px;color:#00d4ff;font-size:12px;font-weight:700;padding:5px 11px;cursor:pointer;transition:all 0.2s;line-height:1;display:flex;align-items:center;gap:5px"
+            onmouseover="this.style.background='rgba(0,212,255,0.16)'"
+            onmouseout="this.style.background='rgba(0,212,255,0.08)'"
+          >✏️ Edit</button>
+        </div>
+        <div id="licenseDisplay" class="fw-license-key-display">-</div>
+
+        <!-- Inline key editor (hidden by default) -->
+        <div id="fwLicenseEditWrap" style="display:none;margin-bottom:12px;animation:fwEditIn 0.2s ease">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input
+              id="fwDashKeyInput"
+              type="text"
+              placeholder="FLY-XXXX-XXXX-XXXX"
+              autocomplete="off"
+              spellcheck="false"
+              oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\-]/g,'')"
+              onkeydown="if(event.key==='Enter'&&typeof FWLicense!=='undefined')FWLicense._dashKeySave();if(event.key==='Escape'){document.getElementById('fwLicenseEditWrap').style.display='none';}"
+              style="flex:1;min-width:0;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.25);border-radius:9px;padding:9px 13px;color:#e0f0ff;font-family:var(--font-m,'Space Mono',monospace);font-size:13px;letter-spacing:2px;outline:none;text-transform:uppercase;box-sizing:border-box;transition:border-color 0.2s,box-shadow 0.2s"
+              onfocus="this.style.borderColor='rgba(0,212,255,0.55)';this.style.boxShadow='0 0 0 3px rgba(0,212,255,0.10)'"
+              onblur="this.style.borderColor='rgba(0,212,255,0.25)';this.style.boxShadow=''"
+            >
+            <button
+              id="fwDashKeySaveBtn"
+              onclick="if(typeof FWLicense!=='undefined')FWLicense._dashKeySave()"
+              style="background:linear-gradient(135deg,#0044cc,#00d4ff);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;padding:9px 16px;cursor:pointer;white-space:nowrap;transition:all 0.2s"
+              onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 14px rgba(0,212,255,0.35)'"
+              onmouseout="this.style.transform='';this.style.boxShadow=''"
+            >Save</button>
+            <button
+              onclick="document.getElementById('fwLicenseEditWrap').style.display='none'"
+              style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:rgba(255,255,255,0.5);font-size:13px;font-weight:600;padding:9px 12px;cursor:pointer;transition:all 0.2s"
+              onmouseover="this.style.borderColor='rgba(255,255,255,0.25)';this.style.color='#fff'"
+              onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.5)'"
+            >✕</button>
+          </div>
+          <div id="fwDashKeyMsg" style="font-size:12px;min-height:18px;margin-top:7px;font-weight:600;transition:color 0.2s"></div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+          <span class="badge badge-green" id="licenseStatus">● Active</span>
+          <span class="badge badge-cyan" id="licenseType">Standard</span>
+        </div>
+        <div class="fw-license-expiry expiry-ok" id="licenseExpiry" style="margin-top:10px;display:none"><span class="fw-license-countdown">🟢 Loading...</span></div>
+      </div>
+    </div>
+
+    
+    <div class="card dash-card-glow">
+      <div class="section-header">
+        <div class="section-title-text">🗓 Recent Bookings</div>
+        <a href="/bookings" class="btn btn-ghost btn-sm">View All →</a>
+      </div>
+      <div id="recentBookings">
+        <div class="empty-state"><div class="empty-icon">✈</div><div class="empty-title">No flights yet</div><div class="empty-desc">Start exploring destinations and book your adventure</div><a href="/booking" class="btn btn-primary mt-16">Book First Flight</a></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+
+<button class="chat-fab" id="chatFab">🤖<span class="badge-dot">1</span></button>
+<div class="chat-window" id="chatWindow" style="display:none">
+  <div class="chat-header">
+    <div class="chat-avatar">🤖</div>
+    <div><div style="font-weight:700;font-size:14px">Zephyr</div><div style="font-size:12px;color:var(--muted)">AI Assistant · Online</div></div>
+    <button id="chatClose" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">×</button>
+  </div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div class="chat-input-row">
+    <textarea id="chatInput" class="chat-input" placeholder="Ask about your bookings..." rows="1"></textarea>
+    <button id="chatSend" class="chat-send">Send</button>
+  </div>
+</div>
+<div id="toastContainer"></div>
+
+<script src="/js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!FlyWay.requireAuth()) return;
+  FlyWay.setupSidebar();
+
+  const u = FlyWay.user;
+  document.getElementById('greetName').textContent = u.firstName || u.username;
+  // Re-attach anime after dynamic text overwrite
+  if (window.FWAnime && window.FWAnime.reattach) {
+    window.FWAnime.reattach(document.getElementById('greetName'));
+  }
+  document.getElementById('greetSub').textContent = `Last login: ${FlyWay.fmtDate(u.lastLogin) || 'First visit'} - ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}`;
+
+  try {
+    const fresh = await FlyWay.api('GET', '/api/auth/me');
+    localStorage.setItem('fw_user', JSON.stringify(fresh));
+    FlyWay.user = fresh;
+    updateUserUI(fresh);
+  } catch {}
+
+  async function refreshNotifBadge() {
+    try {
+      const nc = await FlyWay.api('GET', '/api/notifications/unread-count');
+      const badge = document.getElementById('notifyBadgeSide');
+      if (badge) {
+        if (nc.count > 0) { badge.textContent = nc.count; badge.style.display = 'flex'; }
+        else { badge.style.display = 'none'; }
+      }
+    } catch {}
+  }
+  refreshNotifBadge();
+  setInterval(refreshNotifBadge, 15000);
+
+  try {
+    const bookings = await FlyWay.api('GET', '/api/bookings');
+    const txs = await FlyWay.api('GET', '/api/transactions');
+    const spent = txs.filter(t=>t.status==='paid').reduce((s,t)=>s+t.amount,0);
+    const confirmed = bookings.filter(b=>b.status==='confirmed').length;
+
+    document.getElementById('statBookings').textContent = bookings.length;
+    document.getElementById('statConfirmed').textContent = confirmed;
+    document.getElementById('statSpent').textContent = `$${FlyWay.fmt(spent)}`;
+    document.getElementById('statPoints').textContent = FlyWay.fmtInt(FlyWay.user.loyaltyPoints);
+
+    if (bookings.length > 0) {
+      document.getElementById('recentBookings').innerHTML = bookings.slice(0,5).map(b => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-family:var(--font-h);font-weight:700;font-size:16px">${b.outboundFlight?.from||'-'} → ${b.outboundFlight?.to||'-'}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">
+              ${b.ref} · ${b.outboundFlight?.flightNumber||''} · ${FlyWay.fmtDate(b.createdAt)}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${FlyWay.statusBadge(b.status)}
+            <div style="font-family:var(--font-h);font-weight:700;color:var(--cyan)">$${FlyWay.fmt(b.totalAmount)}</div>
+            <a href="/bookings" class="btn btn-ghost btn-sm">View</a>
+          </div>
+        </div>
+      `).join('') + (bookings.length===0?'':'');
+    }
+  } catch(e) { console.error(e); }
+
+  function updateUserUI(u) {
+    document.getElementById('statPoints').textContent = FlyWay.fmtInt(u.loyaltyPoints);
+    const pts = u.loyaltyPoints || 0;
+    document.getElementById('loyaltyPts').textContent = FlyWay.fmtInt(pts);
+    document.getElementById('loyaltyFill').style.width = `${Math.min(100,(pts/10000)*100)}%`;
+    const tier = pts >= 10000 ? '💎 Platinum' : pts >= 5000 ? '🥇 Gold' : pts >= 2000 ? '🥈 Silver' : '🥉 Bronze';
+    document.getElementById('loyaltyTier').textContent = `${tier} Member`;
+    document.getElementById('licenseDisplay').textContent = u.licenseKey || '-';
+
+    if (typeof FWLicense !== "undefined") { FWLicense.init(true); } else { checkLicenseExpiry(u); }
+    const sidebarName = document.getElementById('sidebarName');
+    const sidebarSub = document.getElementById('sidebarSub');
+    if (sidebarName) sidebarName.textContent = `${u.firstName||''} ${u.lastName||''}`.trim() || u.username;
+    if (sidebarSub) sidebarSub.textContent = `${FlyWay.fmtInt(u.loyaltyPoints)} pts · ${u.role}`;
+    const av = document.getElementById('sidebarAvatar');
+    if (av) { if (u.avatar) av.innerHTML = `<img src="${u.avatar}">`; else av.textContent = (u.firstName||u.username||'U')[0].toUpperCase(); }
+  }
+
+  updateUserUI(u);
+  var sidebarToggle = document.getElementById('sidebarToggle');
+  function updateSidebarToggleVisibility() {
+    if (!sidebarToggle) return;
+    sidebarToggle.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+  }
+  updateSidebarToggleVisibility();
+  window.addEventListener('resize', updateSidebarToggleVisibility);
+
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', function() {
+      var sidebar = document.querySelector('.site-sidebar');
+      var overlay = document.querySelector('.sidebar-overlay');
+      if (sidebar) sidebar.classList.toggle('open');
+      if (overlay) overlay.classList.toggle('active');
+    });
+  }
+});
+
+
+</script>
+<script>
+(function(){
+  function attachDashGlow(){
+    document.querySelectorAll('.dash-card-glow').forEach(function(el){
+      if(el.dataset.dg) return; el.dataset.dg='1';
+      el.addEventListener('mousemove',function(e){
+        var r=el.getBoundingClientRect();
+        el.style.setProperty('--mx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');
+        el.style.setProperty('--my',((e.clientY-r.top)/r.height*100).toFixed(1)+'%');
+      });
+    });
+  }
+  document.addEventListener('DOMContentLoaded',attachDashGlow);
+  var obs=new MutationObserver(attachDashGlow);
+  obs.observe(document.body,{childList:true,subtree:true});
+})();
+</script>
+
+<script src="/js/sidebar-toggle.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/license-system.js"></script>
+<script>
+// Legacy compat shims
+function checkLicenseExpiry(user) { /* now handled by FWLicense */ }
+function showLicenseRenewalModal(user, reason, daysLeft) {
+  if (typeof FWLicense !== 'undefined') FWLicense.showRenewalModal({ isExpired: reason==='expired', text: reason==='soon'?'Expires in '+daysLeft+' days':'Expired', urgency: reason==='expired'?'expired':'soon' });
+}
+function activateLicenseRenewal() {
+  if (typeof FWLicense !== 'undefined') FWLicense._renewActivate();
+}
+
+// FWLicense + Socket real-time init
+(function() {
+  if (typeof io === 'undefined') return;
+  var user = null;
+  try { var s = localStorage.getItem('fw_user'); if(s) user = JSON.parse(s); } catch(e){}
+  if (!user || !user.id) return;
+
+  var socket = io();
+  socket.on('connect', function(){ socket.emit('join_user', user.id); });
+  socket.emit('join_user', user.id);
+
+  socket.on('notification_' + user.id, function(note){
+    if(typeof FlyWay !== 'undefined' && FlyWay._incrementNotifBadge) FlyWay._incrementNotifBadge();
+    if(typeof FlyWay !== 'undefined' && FlyWay.toast) FlyWay.toast('info', note.title || 'Notification', note.message || '');
+  });
+  socket.on('booking_updated_' + user.id, function(){
+    if (typeof loadRecent === 'function') loadRecent();
+  });
+
+  if (typeof FWLicense !== 'undefined') FWLicense.connectSocket(socket);
+})();
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof FWLicense !== 'undefined') {
+    FWLicense.init(false);
+    FWLicense.startPolling(30000);
+    FWLicense.startCountdown();
+  }
+});
+</script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+<script src="/js/anime-labels.js"></script>
+</body>
+</html>
+

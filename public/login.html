@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - FlyWay</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/assets/css/responsive.css">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="copyright" content="FlyWay © 2025. All rights reserved. Unauthorized reproduction prohibited.">
+  <meta http-equiv="Cache-Control" content="no-store">
+</head>
+
+<body>
+  <script>
+    (function () {
+      var _c = console, _l = _c.log, _w = _c.warn, _e = _c.error, _i = _c.info, _d = _c.debug;
+      function _b() { _l = _w = _e = _i = _d = function () { }; }
+      try {
+        Object.defineProperty(_c, 'log', { get: function () { _b(); return function () { }; } });
+        Object.defineProperty(_c, 'warn', { get: function () { _b(); return function () { }; } });
+        Object.defineProperty(_c, 'error', { get: function () { _b(); return function () { }; } });
+      } catch (e) { }
+      var _dt = false;
+      var _thresh = 160;
+      (function _chk() {
+        var w = window.outerWidth - window.innerWidth;
+        var h = window.outerHeight - window.innerHeight;
+        if (w > _thresh || h > _thresh) {
+          if (!_dt) { _dt = true; document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#020812;color:#e0f0ff;font-family:sans-serif;flex-direction:column;gap:20px"><div style="font-size:48px">🔒</div><div style="font-size:24px;font-weight:700">Access Restricted</div><div style="color:#4a6080;text-align:center;max-width:400px">Developer tools detected. This application is protected.</div></div>'; }
+        } else { _dt = false; }
+        setTimeout(_chk, 800);
+      })();
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'U'].includes(e.key)) || (e.ctrlKey && e.key === 'U')) { e.preventDefault(); e.stopPropagation(); return false; }
+      }, true);
+      document.addEventListener('contextmenu', function (e) { e.preventDefault(); return false; });
+      (function _debug() {
+        var s = new Date(); var _ =debugger;
+        if (new Date() - s > 100) { document.location.reload(); }
+        setTimeout(_debug, 3000);
+      })();
+    })();
+  </script>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <div class="nav-logo-icon glow3d">✈</div><span class="nav-logo-text">FLY<span
+            style="color:var(--cyan)">WAY</span></span>
+      </a>
+    </div>
+  </nav>
+
+  <div
+    style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:90px 20px 40px;background:radial-gradient(ellipse at 30% 50%,rgba(0,212,255,0.06) 0%,transparent 60%),var(--navy);">
+    <div style="width:100%;max-width:460px">
+      <div class="card animate-in">
+        <div class="text-center mb-32">
+          <div style="font-size:48px;margin-bottom:8px">✈</div>
+          <h1 class="modal-title" style="font-size:28px">Welcome back</h1>
+          <p style="color:var(--muted);font-size:14px;margin-top:6px">Sign in to your FlyWay account</p>
+        </div>
+
+        <div id="errBox" class="hidden"
+          style="background:rgba(255,87,87,0.1);border:1px solid rgba(255,87,87,0.3);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--coral);margin-bottom:16px;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Username or Email</label>
+          <div class="input-group">
+            <span class="input-prefix">👤</span>
+            <input class="form-input" id="username" placeholder="Enter your username" autocomplete="username">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-group">
+            <span class="input-prefix">🔒</span>
+            <input class="form-input" type="password" id="password" placeholder="Enter your password"
+              autocomplete="current-password">
+            <span class="input-suffix" onclick="togglePw()">👁</span>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;font-size:13px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--muted);">
+            <input type="checkbox" id="remember"> Remember me
+          </label>
+          <a href="/forgot-password" style="color:var(--cyan)">Forgot password?</a>
+        </div>
+
+        <button class="btn btn-primary btn-full btn-lg" id="loginBtn" onclick="doLogin()">Sign In</button>
+
+        <div style="text-align:center;margin-top:20px;font-size:14px;color:var(--muted)">
+          Don't have an account? <a href="/register" style="color:var(--cyan);font-weight:600">Register here</a>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted);">
+        🔒 Secured with 256-bit SSL encryption
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+  <script src="/js/main.js"></script>
+  <script>
+
+    if (FlyWay.isLoggedIn()) window.location.href = '/dashboard';
+
+    function togglePw() {
+      const pw = document.getElementById('password');
+      pw.type = pw.type === 'password' ? 'text' : 'password';
+    }
+
+    async function doLogin() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('loginBtn');
+      const errBox = document.getElementById('errBox');
+      errBox.classList.add('hidden');
+
+      if (!username || !password) {
+        errBox.textContent = 'Please enter your username and password.';
+        errBox.classList.remove('hidden'); return;
+      }
+
+      FlyWay.setLoading(btn, true);
+      try {
+        const res = await FlyWay.api('POST', '/api/auth/login', { username, password });
+        localStorage.setItem('fw_token', res.token);
+        localStorage.setItem('fw_user', JSON.stringify(res.user));
+        FlyWay.token = res.token; FlyWay.user = res.user;
+
+        FlyWay.toast('success', 'Welcome back!', `Signed in as ${res.user.username}`);
+        setTimeout(() => {
+          if (res.user.role === 'admin') {
+            window.location.href = '/backdoor/dashboard';
+          } else {
+            window.location.href = '/dashboard';
+          }
+        }, 800);
+      } catch (err) {
+        errBox.textContent = err.message || 'Invalid credentials. Please try again.';
+        errBox.classList.remove('hidden');
+        FlyWay.setLoading(btn, false);
+      }
+    }
+
+    document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  </script>
+  <script src="/socket.io/socket.io.js"></script>
+</body>
+
+</html>

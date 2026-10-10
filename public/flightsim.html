@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>FlyWay - Professional Flight Replay System</title>
+<link rel="stylesheet" href="/assets/css/responsive.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;800&family=Syne:wght@400;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#020812;--sky:#00d4ff;--emerald:#00e396;
+  --amber:#f5c842;--red:#ff4757;--muted:#2a4060;
+  --panel:rgba(2,8,18,.88);--border:rgba(0,212,255,.16);
+  --glass:rgba(4,18,44,.72);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);
+  font-family:'Syne',sans-serif;color:#e0f0ff;user-select:none}
+canvas{display:block;position:fixed;inset:0;z-index:1}
+#sim-canvas{position:fixed;inset:0;z-index:1}
+#topbar{position:fixed;top:0;left:0;right:0;z-index:20;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,rgba(2,8,18,.98) 0%,transparent 100%);border-bottom:1px solid rgba(0,212,255,.06)}
+.logo{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;letter-spacing:1px}
+.logo em{color:var(--sky);font-style:normal}
+.flight-badge{display:flex;align-items:center;gap:10px;background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--sky);backdrop-filter:blur(20px)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--emerald);animation:pulse 1.4s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(1.5)}}
+.replay-badge{background:rgba(245,200,66,.1);border:1px solid rgba(245,200,66,.3);border-radius:20px;padding:4px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--amber);letter-spacing:1px;display:none}
+#backbtn{background:var(--glass);border:1px solid var(--border);border-radius:10px;color:#e0f0ff;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none;font-family:'Syne',sans-serif;backdrop-filter:blur(20px)}
+#backbtn:hover{background:rgba(0,212,255,.18)}
+#cam-panel{position:fixed;top:66px;right:20px;z-index:20;display:flex;flex-direction:column;gap:5px}
+.cam-btn{background:var(--glass);border:1px solid var(--border);border-radius:9px;color:#8aadcc;padding:6px 12px;font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.5px;backdrop-filter:blur(20px);font-family:'JetBrains Mono',monospace;text-align:right}
+.cam-btn.active{color:var(--sky);border-color:rgba(0,212,255,.4);background:rgba(0,212,255,.1)}
+.cam-btn:hover:not(.active){color:#e0f0ff;background:rgba(255,255,255,.06)}
+#status-badge{position:fixed;top:66px;left:20px;z-index:20;border-radius:20px;padding:5px 14px;font-size:11px;font-weight:700;border:1px solid;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;transition:all .4s;backdrop-filter:blur(20px)}
+.sb-flight{background:rgba(0,212,255,.08);color:var(--sky);border-color:rgba(0,212,255,.25)}
+.sb-land{background:rgba(0,227,150,.08);color:var(--emerald);border-color:rgba(0,227,150,.25)}
+.sb-board{background:rgba(245,200,66,.08);color:var(--amber);border-color:rgba(245,200,66,.25)}
+.sb-replay{background:rgba(245,200,66,.08);color:var(--amber);border-color:rgba(245,200,66,.25)}
+#route-bar{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:20;width:min(460px,88vw);background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:12px 16px;backdrop-filter:blur(24px)}
+.rb-airports{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.rb-code{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:800;color:#fff;letter-spacing:2px}
+.rb-sep{flex:1;text-align:center;font-size:11px;color:var(--muted)}
+.rb-track{position:relative;height:5px;background:rgba(255,255,255,.06);border-radius:3px;margin-bottom:7px;cursor:pointer;overflow:visible}
+.rb-track:hover{height:7px}
+.rb-fill{height:100%;background:linear-gradient(90deg,#0055cc,var(--sky));border-radius:3px;pointer-events:none;transition:width .1s linear}
+.rb-thumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;background:var(--sky);border:2px solid #020812;box-shadow:0 0 8px rgba(0,212,255,.6);pointer-events:none;transition:left .1s linear}
+.rb-plane{position:absolute;top:-10px;transform:translateX(-50%);font-size:16px;pointer-events:none;filter:drop-shadow(0 0 5px var(--sky));transition:left .1s linear}
+.rb-meta{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+#cockpit-hud{position:fixed;bottom:0;left:0;right:0;z-index:20;padding:14px 20px 18px;background:linear-gradient(0deg,rgba(2,8,18,.95) 0%,transparent 100%);display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.hud-card{background:var(--glass);border:1px solid var(--border);border-radius:11px;padding:10px 12px;text-align:center;backdrop-filter:blur(20px)}
+.hud-icon{font-size:16px;margin-bottom:3px}
+.hud-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;color:var(--sky);line-height:1}
+.hud-label{font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.8px}
+#replay-bar{position:fixed;bottom:118px;left:50%;transform:translateX(-50%);z-index:25;background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:10px 16px;backdrop-filter:blur(24px);display:flex;align-items:center;gap:8px;min-width:min(520px,92vw);box-shadow:0 8px 40px rgba(0,0,0,.4)}
+.rp-btn{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;color:#e0f0ff;padding:7px 11px;font-size:13px;cursor:pointer;transition:all .15s;line-height:1;flex-shrink:0}
+.rp-btn:hover{background:rgba(0,212,255,.18);border-color:rgba(0,212,255,.35)}
+.rp-btn.active{background:rgba(0,212,255,.2);border-color:rgba(0,212,255,.5);color:var(--sky)}
+.rp-timeline{flex:1;display:flex;flex-direction:column;gap:4px;padding:0 4px}
+.rp-track{position:relative;height:4px;background:rgba(255,255,255,.08);border-radius:4px;cursor:pointer}
+.rp-track:hover{height:6px}
+.rp-recorded{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,212,255,.15),rgba(0,212,255,.3));border-radius:4px;pointer-events:none}
+.rp-progress{position:absolute;top:0;left:0;height:100%;background:linear-gradient(90deg,#0044cc,var(--sky));border-radius:4px;pointer-events:none;transition:width .08s linear}
+.rp-head{position:absolute;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:var(--sky);border:2px solid #020812;box-shadow:0 0 8px rgba(0,212,255,.7);pointer-events:none}
+.rp-meta{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)}
+.speed-sel{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:7px;color:#e0f0ff;padding:6px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:600;cursor:pointer;outline:none;flex-shrink:0}
+.speed-sel option{background:#020812}
+.rp-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--sky);font-weight:600;flex-shrink:0;min-width:48px;text-align:center}
+#export-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:50;background:linear-gradient(135deg,rgba(2,8,18,.98),rgba(4,18,50,.98));border:1px solid var(--border);border-radius:18px;padding:28px;width:min(380px,90vw);backdrop-filter:blur(40px);box-shadow:0 30px 80px rgba(0,0,0,.6);display:none}
+.ep-title{font-size:18px;font-weight:800;margin-bottom:6px}
+.ep-sub{font-size:12px;color:var(--muted);margin-bottom:20px;font-family:'JetBrains Mono',monospace}
+.ep-stat{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(0,212,255,.05);border-radius:8px;margin-bottom:6px;font-family:'JetBrains Mono',monospace;font-size:11px}
+.ep-stat span:last-child{color:var(--sky);font-weight:700}
+.ep-btns{display:flex;gap:8px;margin-top:18px}
+.ep-btn{flex:1;background:linear-gradient(135deg,#0044cc,var(--sky));border:none;border-radius:10px;color:#fff;padding:11px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Syne',sans-serif;letter-spacing:.5px}
+.ep-btn:hover{transform:translateY(-1px);opacity:.9}
+.ep-btn.sec{background:rgba(255,255,255,.08);border:1px solid var(--border)}
+.ep-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;transition:color .2s}
+.ep-close:hover{color:#e0f0ff}
+#export-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49;display:none}
+#mem-bar{position:fixed;top:66px;left:50%;transform:translateX(-50%);margin-top:90px;z-index:19;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.mem-dot{width:5px;height:5px;border-radius:50%;background:var(--emerald)}
+.mem-dot.warn{background:var(--amber)}.mem-dot.crit{background:var(--red)}
+#snap-flash{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:0;background:rgba(0,212,255,.03);transition:opacity .15s}
+#snap-flash.on{opacity:1}
+#rec-indicator{position:fixed;top:66px;left:80px;z-index:21;display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)}
+.rec-dot{width:5px;height:5px;border-radius:50%;background:#ff4757;animation:recPulse 1s ease-in-out infinite}
+@keyframes recPulse{0%,100%{opacity:1}50%{opacity:.2}}
+.rp-tooltip{position:fixed;background:var(--glass);border:1px solid var(--border);border-radius:7px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--sky);pointer-events:none;z-index:99;display:none;backdrop-filter:blur(20px)}
+#shortcuts{position:fixed;bottom:118px;left:16px;z-index:20;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);line-height:1.8;opacity:.5}
+@media(max-width:900px){#cockpit-hud{grid-template-columns:repeat(3,1fr);padding:10px 14px 14px}#replay-bar{min-width:96vw;border-radius:12px 12px 0 0;bottom:106px}}
+@media(max-width:600px){#cockpit-hud{grid-template-columns:repeat(2,1fr);gap:6px;padding:8px 10px 12px}.hud-val{font-size:14px}.hud-icon{font-size:13px}.rp-btn{padding:6px 8px;font-size:11px}#cam-panel{top:auto;bottom:202px;right:10px}#shortcuts{display:none}}
+</style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<canvas id="sim-canvas"></canvas>
+
+<div id="topbar">
+  <div class="logo">FLY<em>WAY</em></div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="flight-badge"><div class="live-dot" id="liveDot"></div><span id="fiBadge">-</span></div>
+    <div class="replay-badge" id="replayBadge">⏪ REPLAY</div>
+  </div>
+  <a id="backbtn" href="/track">← Tracker</a>
+</div>
+
+<div id="rec-indicator"><div class="rec-dot"></div><span id="recCount">REC 0</span></div>
+<div id="status-badge" class="sb-flight">✈ IN FLIGHT</div>
+
+<div id="cam-panel">
+  <button class="cam-btn active" id="camFollow" onclick="setCameraMode('follow')">FOLLOW ▶</button>
+  <button class="cam-btn" id="camOrbit"  onclick="setCameraMode('orbit')">ORBIT ◎</button>
+  <button class="cam-btn" id="camTop"    onclick="setCameraMode('top')">TOP ▲</button>
+</div>
+
+<div id="route-bar">
+  <div class="rb-airports">
+    <div class="rb-code" id="rbFrom">-</div>
+    <div class="rb-sep">✦ ─── ✈ ─── ✦</div>
+    <div class="rb-code" id="rbTo">-</div>
+  </div>
+  <div class="rb-track" id="rbTrack">
+    <div class="rb-fill" id="rbFill"></div>
+    <div class="rb-plane" id="rbPlane">✈</div>
+    <div class="rb-thumb" id="rbThumb"></div>
+  </div>
+  <div class="rb-meta">
+    <span id="rbElapsed">-</span>
+    <span id="rbPct">0%</span>
+    <span id="rbRemain">-</span>
+  </div>
+</div>
+
+<div id="cockpit-hud">
+  <div class="hud-card"><div class="hud-icon">🏔</div><div class="hud-val" id="hudAlt">35,000</div><div class="hud-label">Altitude ft</div></div>
+  <div class="hud-card"><div class="hud-icon">💨</div><div class="hud-val" id="hudSpd">547</div><div class="hud-label">Speed mph</div></div>
+  <div class="hud-card"><div class="hud-icon">🧭</div><div class="hud-val" id="hudHdg">090°</div><div class="hud-label">Heading</div></div>
+  <div class="hud-card"><div class="hud-icon">📍</div><div class="hud-val" id="hudDist">-</div><div class="hud-label">Distance mi</div></div>
+  <div class="hud-card"><div class="hud-icon">⏱</div><div class="hud-val" id="hudETA">-</div><div class="hud-label">ETA</div></div>
+</div>
+
+<div id="replay-bar">
+  <button class="rp-btn" title="Rewind to start" onclick="startRewind()">⏮</button>
+  <button class="rp-btn" title="Step back 1s" onclick="stepBack()">⏪</button>
+  <button class="rp-btn active" id="btnPlay" title="Play / Pause  [Space]" onclick="togglePlay()">⏸</button>
+  <button class="rp-btn" title="Step forward 1s" onclick="stepForward()">⏩</button>
+  <button class="rp-btn" title="Jump to live" onclick="jumpToLive()">⏭</button>
+  <div class="rp-timeline">
+    <div class="rp-track" id="rpTrack">
+      <div class="rp-recorded" id="rpRecorded"></div>
+      <div class="rp-progress" id="rpProgress"></div>
+      <div class="rp-head" id="rpHead"></div>
+    </div>
+    <div class="rp-meta">
+      <span id="rpTimeLeft">00:00</span>
+      <span id="rpSnapshot">0 frames</span>
+      <span id="rpTimeRight">00:00</span>
+    </div>
+  </div>
+  <select class="speed-sel" id="speedSel" onchange="setSpeed(this.value)">
+    <option value="0.25">×¼</option>
+    <option value="0.5">×½</option>
+    <option value="1" selected>×1</option>
+    <option value="2">×2</option>
+    <option value="5">×5</option>
+    <option value="10">×10</option>
+    <option value="20">×20</option>
+    <option value="50">×50</option>
+    <option value="100">×100</option>
+  </select>
+  <div class="rp-time" id="rpCurrentTime">00:00</div>
+  <button class="rp-btn" title="Export replay" onclick="openExport()">📽</button>
+</div>
+
+<div id="snap-flash"></div>
+<div id="mem-bar"><div class="mem-dot" id="memDot"></div><span id="memText">MEM 0KB</span></div>
+
+<div id="export-overlay" onclick="closeExport()"></div>
+<div id="export-panel">
+  <button class="ep-close" onclick="closeExport()">✕</button>
+  <div class="ep-title">Export Replay</div>
+  <div class="ep-sub" id="epFlightInfo">-</div>
+  <div class="ep-stat"><span>Snapshots recorded</span><span id="epSnapshots">0</span></div>
+  <div class="ep-stat"><span>Timeline duration</span><span id="epDuration">0s</span></div>
+  <div class="ep-stat"><span>Memory used</span><span id="epMemory">0 KB</span></div>
+  <div class="ep-stat"><span>Sample interval</span><span>200ms</span></div>
+  <div class="ep-btns">
+    <button class="ep-btn" onclick="exportJSON()">⬇ Export JSON</button>
+    <button class="ep-btn sec" onclick="closeExport()">Cancel</button>
+  </div>
+</div>
+
+<div id="shortcuts">SPACE pause · ← → step · R rewind · L live · F/O/T camera</div>
+<div class="rp-tooltip" id="tooltip"></div>
+
+<script>
+'use strict';
+
+
+const params = new URLSearchParams(location.search);
+const FC = params.get('from')||'JFK', TC = params.get('to')||'LHR', FN = params.get('fn')||'FW-201';
+let SW = parseInt(params.get('sw')||'0')||0, DM = parseInt(params.get('dm')||'0')||26100000;
+if(DM<60000)DM=60000;
+
+const APT={JFK:{lat:40.6413,lng:-73.778,city:'New York'},LAX:{lat:33.9425,lng:-118.408,city:'Los Angeles'},LHR:{lat:51.470,lng:-0.454,city:'London'},NRT:{lat:35.765,lng:140.386,city:'Tokyo'},DXB:{lat:25.253,lng:55.366,city:'Dubai'},SIN:{lat:1.364,lng:103.991,city:'Singapore'},CDG:{lat:49.010,lng:2.548,city:'Paris'},ORD:{lat:41.974,lng:-87.907,city:'Chicago'},SFO:{lat:37.621,lng:-122.379,city:'San Francisco'},ATL:{lat:33.641,lng:-84.428,city:'Atlanta'},MIA:{lat:25.796,lng:-80.287,city:'Miami'},LOS:{lat:6.577,lng:3.321,city:'Lagos'},JNB:{lat:-26.136,lng:28.241,city:'Johannesburg'},GRU:{lat:-23.435,lng:-46.473,city:'Sao Paulo'},BOM:{lat:19.089,lng:72.865,city:'Mumbai'},DEL:{lat:28.556,lng:77.100,city:'Delhi'},SYD:{lat:-33.939,lng:151.175,city:'Sydney'},ICN:{lat:37.460,lng:126.440,city:'Seoul'},PEK:{lat:40.079,lng:116.603,city:'Beijing'},HKG:{lat:22.308,lng:113.918,city:'Hong Kong'},DOH:{lat:25.273,lng:51.608,city:'Doha'},FRA:{lat:50.037,lng:8.562,city:'Frankfurt'},AMS:{lat:52.308,lng:4.763,city:'Amsterdam'},MAD:{lat:40.493,lng:-3.566,city:'Madrid'},IST:{lat:40.976,lng:28.814,city:'Istanbul'},YYZ:{lat:43.677,lng:-79.624,city:'Toronto'},CAI:{lat:30.121,lng:31.405,city:'Cairo'},NBO:{lat:-1.319,lng:36.928,city:'Nairobi'}};
+
+
+const STORE_KEY='fw_sim_'+FC+'_'+TC;
+(function(){
+  if(params.get('sw')&&params.get('dm')){try{localStorage.setItem(STORE_KEY,JSON.stringify({flightCode:FN,from:FC,to:TC,startTime:SW,totalDuration:DM}));}catch(e){}}
+  else{try{const s=JSON.parse(localStorage.getItem(STORE_KEY)||'null');if(s&&s.startTime&&s.totalDuration){SW=s.startTime;DM=s.totalDuration;if((Date.now()-SW)/DM<1.5)return;}}catch(e){}if(!SW)SW=Date.now()-DM*0.4;try{localStorage.setItem(STORE_KEY,JSON.stringify({flightCode:FN,from:FC,to:TC,startTime:SW,totalDuration:DM}));}catch(e){}}
+  if(!SW)SW=Date.now()-DM*0.4;
+})();
+
+
+const SIM=(()=>{
+  const R=1.0,fr=APT[FC]||{lat:0,lng:0},to=APT[TC]||{lat:0,lng:0};
+  function v3(lat,lng,r){const phi=(90-lat)*Math.PI/180,theta=(lng+180)*Math.PI/180;return new THREE.Vector3(-r*Math.sin(phi)*Math.cos(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta));}
+  function hav(a,b,c,d){const dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)**2;return 3959*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+  const fv=v3(fr.lat,fr.lng,R),tv=v3(to.lat,to.lng,R);
+  const mid=new THREE.Vector3().addVectors(fv,tv).multiplyScalar(0.5);
+  mid.normalize().multiplyScalar(R+0.15+fv.distanceTo(tv)*0.15);
+  const curve=new THREE.QuadraticBezierCurve3(fv,mid,tv);
+  const totalDist=hav(fr.lat,fr.lng,to.lat,to.lng);
+  function altP(t){if(t<0.08)return Math.round(35000*(t/0.08));if(t>0.92)return Math.round(35000*((1-t)/0.08));return 34000+Math.round(Math.sin(t*Math.PI)*2200);}
+  function hdgAt(t){const t1=Math.min(t+0.01,1),p0=curve.getPoint(Math.max(0,t-0.01)),p1=curve.getPoint(t1);return Math.round((Math.atan2(p1.x-p0.x,p1.z-p0.z)*180/Math.PI+360)%360);}
+  function stateAt(elMs){
+    const t=Math.max(0,Math.min(1,elMs/DM)),isAir=t>0.06&&t<0.99,pos=curve.getPoint(t);
+    return{t,elapsedMs:elMs,position:pos,altitude:isAir?altP(t):0,speed:isAir?Math.round(520+Math.sin(t*Math.PI)*30):0,heading:hdgAt(t),distance:Math.round(totalDist*(1-t)),isAirborne:isAir,isLanded:t>=0.99,isBoarding:t<0.05,progress:t};
+  }
+  return{curve,totalDist,fv,tv,stateAt,R,v3};
+})();
+
+
+const RECORDER=(()=>{
+  const INTERVAL=200,MAX_BUF=600000,MAX_SNAPS=MAX_BUF/INTERVAL;
+  let timeline=[],lastSample=-Infinity,snapId=0;
+
+  function tick(elMs){
+    if(elMs-lastSample<INTERVAL)return false;
+    lastSample=elMs;
+    if(timeline.length>0){const last=timeline[timeline.length-1];if(Math.abs(last.time-elMs)<INTERVAL*0.5)return false;}
+    const s=SIM.stateAt(elMs);
+    timeline.push({id:++snapId,time:elMs,wallTime:Date.now(),position:s.position.clone(),altitude:s.altitude,speed:s.speed,heading:s.heading,progress:s.progress,distance:s.distance,isAirborne:s.isAirborne});
+    if(timeline.length>MAX_SNAPS)timeline.shift();
+    const f=document.getElementById('snap-flash');f.classList.add('on');setTimeout(()=>f.classList.remove('on'),80);
+    return true;
+  }
+
+  function findBounds(qTime){
+    const tl=timeline;if(!tl.length)return null;if(tl.length===1)return{s1:tl[0],s2:tl[0],alpha:0};
+    if(qTime<=tl[0].time)return{s1:tl[0],s2:tl[0],alpha:0};
+    if(qTime>=tl[tl.length-1].time)return{s1:tl[tl.length-1],s2:tl[tl.length-1],alpha:1};
+    let lo=0,hi=tl.length-1;
+    while(lo<hi-1){const mid=(lo+hi)>>1;if(tl[mid].time<=qTime)lo=mid;else hi=mid;}
+    const s1=tl[lo],s2=tl[hi],alpha=s2.time===s1.time?0:Math.max(0,Math.min(1,(qTime-s1.time)/(s2.time-s1.time)));
+    return{s1,s2,alpha};
+  }
+
+  function exportData(){return{metadata:{flightCode:FN,from:FC,to:TC,fromCity:APT[FC]?.city,toCity:APT[TC]?.city,totalDistanceMi:Math.round(SIM.totalDist),durationMs:DM,sampleIntervalMs:INTERVAL,exportedAt:new Date().toISOString(),version:'2.0-cinematic'},timeline:timeline.map(s=>({id:s.id,timeMs:s.time,progress:Math.round(s.progress*10000)/100,altitude:s.altitude,speedMph:s.speed,heading:s.heading,distanceMi:s.distance,position:{x:Math.round(s.position.x*10000)/10000,y:Math.round(s.position.y*10000)/10000,z:Math.round(s.position.z*10000)/10000}}))}}
+
+  return{tick,getTimeline:()=>timeline,getCount:()=>timeline.length,getFirst:()=>timeline[0]||null,getLast:()=>timeline[timeline.length-1]||null,getMemoryKB:()=>Math.round(timeline.length*200/1024),findBounds,exportData};
+})();
+
+
+const PLAYBACK=(()=>{
+  let currentTime=0,isPlaying=true,speed=1.0,direction=1,lastRaf=null,isLive=true,maxTime=0;
+
+  function update(raf){
+    if(lastRaf===null){lastRaf=raf;return;}
+    const wd=raf-lastRaf;lastRaf=raf;
+    const last=RECORDER.getLast();if(last)maxTime=last.time;
+    if(!isPlaying)return;
+    currentTime+=wd*speed*direction;
+    if(currentTime>=maxTime){currentTime=maxTime;if(isLive)currentTime=Date.now()-SW;}
+    if(currentTime<0){currentTime=0;if(direction===-1){direction=1;isPlaying=false;}}
+    if(isLive&&direction===1&&speed===1.0)currentTime=Math.max(0,Date.now()-SW);
+  }
+
+  function seek(t){currentTime=Math.max(0,Math.min(maxTime||t,t));isLive=(currentTime>=maxTime);}
+  function play(){isPlaying=true;direction=1;}
+  function pause(){isPlaying=false;}
+  function togglePlay(){if(isPlaying)pause();else play();return isPlaying;}
+  function rewind(){direction=-1;isPlaying=true;isLive=false;}
+  function setSpeed(s){speed=parseFloat(s);}
+  function stepForward(){pause();currentTime=Math.min(maxTime,currentTime+1000);isLive=false;}
+  function stepBack(){pause();currentTime=Math.max(0,currentTime-1000);isLive=false;}
+  function jumpToLive(){currentTime=Math.max(0,Date.now()-SW);isLive=true;isPlaying=true;direction=1;speed=1.0;document.getElementById('speedSel').value='1';}
+  function getState(){return{currentTime,isPlaying,speed,direction,isLive,maxTime};}
+
+  return{update,seek,play,pause,togglePlay,rewind,setSpeed,stepForward,stepBack,jumpToLive,getState};
+})();
+
+
+let W=window.innerWidth,H=window.innerHeight;
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('sim-canvas'),antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));renderer.setSize(W,H);renderer.setClearColor(0x020812,1);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,W/H,0.01,100);
+camera.position.set(0,0.3,2.6);
+scene.add(new THREE.AmbientLight(0x112244,1.2));
+const sun=new THREE.DirectionalLight(0x88aaff,1.9);sun.position.set(6,4,5);scene.add(sun);
+const rim=new THREE.DirectionalLight(0x00d4ff,0.5);rim.position.set(-5,-2,-3);scene.add(rim);
+const globe=new THREE.Mesh(new THREE.SphereGeometry(SIM.R,64,64),new THREE.MeshPhongMaterial({color:0x0c1e38,emissive:0x040d1a,specular:0x1a3366,shininess:16}));scene.add(globe);
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(SIM.R*1.065,64,64),new THREE.ShaderMaterial({transparent:true,side:THREE.FrontSide,vertexShader:'varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 vN;void main(){float i=pow(.68-dot(vN,vec3(0,0,1.)),2.8);gl_FragColor=vec4(0.,.38,.95,i*.72);}'})));
+const gm=new THREE.LineBasicMaterial({color:0x0d2244,transparent:true,opacity:0.4});
+function lv(lat,lng,r){const phi=(90-lat)*Math.PI/180,theta=(lng+180)*Math.PI/180;return new THREE.Vector3(-r*Math.sin(phi)*Math.cos(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta));}
+for(let lat=-75;lat<=75;lat+=15){const p=[];for(let lg=0;lg<=360;lg+=3)p.push(lv(lat,lg,SIM.R+0.001));scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),gm));}
+for(let lg=0;lg<360;lg+=15){const p=[];for(let lt=-90;lt<=90;lt+=3)p.push(lv(lt,lg,SIM.R+0.001));scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),gm));}
+const ldG=new THREE.SphereGeometry(0.003,4,4),ldM=new THREE.MeshBasicMaterial({color:0x1c4070});
+[[45,-100,26,36,600],[-12,-55,26,30,460],[52,15,13,17,320],[5,22,36,36,540],[48,85,26,46,720],[10,112,16,16,220],[-25,135,17,17,270]].forEach(r=>{for(let i=0;i<r[4];i++){const m=new THREE.Mesh(ldG,ldM);m.position.copy(lv(r[0]+(Math.random()-.5)*r[2]*2,r[1]+(Math.random()-.5)*r[3]*2,SIM.R+0.001));scene.add(m);}});
+const adG=new THREE.SphereGeometry(0.006,6,6),adM=new THREE.MeshBasicMaterial({color:0x00d4ff});
+Object.keys(APT).forEach(c=>{const m=new THREE.Mesh(adG,adM);m.position.copy(lv(APT[c].lat,APT[c].lng,SIM.R+0.009));scene.add(m);});
+scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(SIM.curve.getPoints(80)),new THREE.LineBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.14})));
+const orgDot=new THREE.Mesh(new THREE.SphereGeometry(0.012,8,8),new THREE.MeshBasicMaterial({color:0x00e396}));orgDot.position.copy(SIM.fv);scene.add(orgDot);
+const dstDot=new THREE.Mesh(new THREE.SphereGeometry(0.012,8,8),new THREE.MeshBasicMaterial({color:0xff6b6b}));dstDot.position.copy(SIM.tv);scene.add(dstDot);
+const trailMat=new THREE.LineBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.85});
+const trailLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([SIM.fv,SIM.fv]),trailMat);scene.add(trailLine);
+const planeMesh=new THREE.Mesh(new THREE.SphereGeometry(0.028,10,10),new THREE.MeshBasicMaterial({color:0xffffff,emissive:0xffffff}));scene.add(planeMesh);
+const glowMesh=new THREE.Mesh(new THREE.SphereGeometry(0.05,10,10),new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.28}));scene.add(glowMesh);
+const clouds=[];
+for(let ci=0;ci<20;ci++){const cM=new THREE.Mesh(new THREE.SphereGeometry(0.028+Math.random()*0.036,5,4),new THREE.MeshPhongMaterial({color:0x8aadcc,transparent:true,opacity:0.05+Math.random()*0.09}));const clat=(Math.random()-.5)*130,clng=Math.random()*360;cM.userData={lat:clat,lng:clng,dLng:(Math.random()-.5)*0.03};cM.position.copy(lv(clat,clng,SIM.R+0.04));scene.add(cM);clouds.push(cM);}
+const sp=[];for(let si=0;si<1200;si++){const s=new THREE.Vector3((Math.random()-.5)*80,(Math.random()-.5)*80,(Math.random()-.5)*80);if(s.length()>8)sp.push(s.x,s.y,s.z);}
+const sb2=new THREE.BufferGeometry();sb2.setAttribute('position',new THREE.Float32BufferAttribute(sp,3));
+scene.add(new THREE.Points(sb2,new THREE.PointsMaterial({color:0x88aacc,size:0.08,transparent:true,opacity:0.6})));
+
+
+const CAMERA=(()=>{
+  let mode='follow',orbitAngle=0;
+  let tGRX=0,tGRY=0,cGRX=0,cGRY=0,isDrag=false,px=0,py=0;
+  const camPos=new THREE.Vector3(0,0.3,2.6);
+
+  function setMode(m){
+    mode=m;
+    document.querySelectorAll('.cam-btn').forEach(b=>b.classList.remove('active'));
+    const el=document.getElementById(m==='follow'?'camFollow':m==='orbit'?'camOrbit':'camTop');
+    if(el)el.classList.add('active');
+  }
+
+  function update(planePos,rt){
+    cGRX+=(tGRX-cGRX)*0.055;cGRY+=(tGRY-cGRY)*0.055;
+    globe.rotation.x=cGRX;globe.rotation.y=cGRY;
+    if(mode==='follow'){
+      const ct=new THREE.Vector3().copy(planePos).normalize().multiplyScalar(2.2+Math.sin(rt*0.08)*0.05);
+      camera.position.lerp(ct,0.022);camera.lookAt(planePos);
+    }else if(mode==='orbit'){
+      orbitAngle+=0.003;
+      const op=new THREE.Vector3(2.4*Math.sin(orbitAngle),0.5*Math.sin(orbitAngle*0.3),2.4*Math.cos(orbitAngle));
+      camera.position.lerp(op,0.018);camera.lookAt(planePos);
+    }else{
+      camera.position.lerp(new THREE.Vector3(0,2.5,0.01),0.022);camera.lookAt(new THREE.Vector3(0,0,0));
+    }
+  }
+
+  document.addEventListener('mousedown',e=>{isDrag=true;px=e.clientX;py=e.clientY;});
+  document.addEventListener('mousemove',e=>{if(!isDrag)return;tGRY+=(e.clientX-px)*0.005;tGRX+=(e.clientY-py)*0.005;tGRX=Math.max(-1.2,Math.min(1.2,tGRX));px=e.clientX;py=e.clientY;});
+  document.addEventListener('mouseup',()=>{isDrag=false;});
+  document.addEventListener('wheel',e=>{camera.position.z=Math.max(1.3,Math.min(4.5,camera.position.z+e.deltaY*0.003));},{passive:true});
+  let lt=null;
+  document.addEventListener('touchstart',e=>{lt={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  document.addEventListener('touchmove',e=>{if(!lt)return;tGRY+=(e.touches[0].clientX-lt.x)*0.005;tGRX+=(e.touches[0].clientY-lt.y)*0.005;tGRX=Math.max(-1.2,Math.min(1.2,tGRX));lt={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  document.addEventListener('touchend',()=>{lt=null;},{passive:true});
+
+  return{setMode,update};
+})();
+
+
+function lerp(a,b,t){return a+(b-a)*t;}
+
+function interpolateState(qTime){
+  const b=RECORDER.findBounds(qTime);
+  if(!b)return SIM.stateAt(qTime);
+  const{s1,s2,alpha}=b;
+  const pos=new THREE.Vector3().lerpVectors(s1.position,s2.position,alpha).normalize().multiplyScalar(SIM.R);
+  let h1=s1.heading,h2=s2.heading,hd=h2-h1;
+  if(hd>180)hd-=360;if(hd<-180)hd+=360;
+  return{position:pos,altitude:Math.round(lerp(s1.altitude,s2.altitude,alpha)),speed:Math.round(lerp(s1.speed,s2.speed,alpha)),heading:Math.round((h1+hd*alpha+360)%360),distance:Math.round(lerp(s1.distance,s2.distance,alpha)),progress:lerp(s1.progress,s2.progress,alpha),isAirborne:s1.isAirborne||(alpha>0.5&&s2.isAirborne),isLanded:lerp(s1.progress,s2.progress,alpha)>=0.99,isBoarding:lerp(s1.progress,s2.progress,alpha)<0.05};
+}
+
+function fmtMs(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);if(h>0)return h+'h '+String(m%60).padStart(2,'0')+'m';return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+
+function syncUI(st,pb){
+  const pct=Math.round(st.progress*100),elMs=pb.currentTime,remMs=Math.max(0,DM-elMs);
+  document.getElementById('hudAlt').textContent=st.isAirborne?st.altitude.toLocaleString():'0';
+  document.getElementById('hudSpd').textContent=st.isAirborne?st.speed:'0';
+  document.getElementById('hudHdg').textContent=st.heading+'°';
+  document.getElementById('hudDist').textContent=st.distance.toLocaleString();
+  document.getElementById('hudETA').textContent=st.isLanded?'Arrived':(remMs<60000?Math.floor(remMs/1000)+'s':fmtMs(remMs));
+  const sb=document.getElementById('status-badge');
+  if(pb.direction===-1&&pb.isPlaying){sb.textContent='⏪ REWINDING';sb.className='sb-replay';}
+  else if(!pb.isPlaying){sb.textContent='⏸ PAUSED';sb.className='sb-board';}
+  else if(st.isLanded){sb.textContent='✅ LANDED';sb.className='sb-land';}
+  else if(st.isBoarding){sb.textContent='⏳ BOARDING';sb.className='sb-board';}
+  else{sb.textContent='✈ IN FLIGHT';sb.className='sb-flight';}
+  const tp=Math.min(96,pct);
+  document.getElementById('rbFill').style.width=pct+'%';
+  document.getElementById('rbPlane').style.left=tp+'%';
+  document.getElementById('rbThumb').style.left=pct+'%';
+  document.getElementById('rbPct').textContent=pct+'%';
+  document.getElementById('rbElapsed').textContent=fmtMs(elMs)+' elapsed';
+  document.getElementById('rbRemain').textContent=st.isLanded?'Arrived':fmtMs(remMs)+' left';
+  const first=RECORDER.getFirst(),last=RECORDER.getLast();
+  const tlSpan=(last&&first)?last.time-first.time:0;
+  const tlP=tlSpan>0?Math.max(0,Math.min(1,(elMs-(first?.time||0))/tlSpan)):0;
+  document.getElementById('rpProgress').style.width=(tlP*100)+'%';
+  document.getElementById('rpHead').style.left=(tlP*100)+'%';
+  document.getElementById('rpTimeLeft').textContent=first?fmtMs(first.time):'00:00';
+  document.getElementById('rpTimeRight').textContent=last?fmtMs(last.time):'00:00';
+  document.getElementById('rpCurrentTime').textContent=fmtMs(elMs);
+  document.getElementById('rpSnapshot').textContent=RECORDER.getCount()+' frames';
+  document.getElementById('btnPlay').textContent=(pb.isPlaying&&pb.direction===1)?'⏸':'▶';
+  document.getElementById('liveDot').style.background=pb.isLive?'#00e396':'#f5c842';
+  document.getElementById('replayBadge').style.display=pb.isLive?'none':'inline-block';
+  document.getElementById('recCount').textContent='REC '+RECORDER.getCount();
+  const mem=RECORDER.getMemoryKB();
+  document.getElementById('memText').textContent='MEM '+mem+'KB / ~600KB';
+  const md=document.getElementById('memDot');md.className='mem-dot'+(mem>500?' crit':mem>400?' warn':'');
+  const now=new Date();
+  document.getElementById('fiBadge').textContent=FN+' · '+FC+' → '+TC+'  UTC '+String(now.getUTCHours()).padStart(2,'0')+':'+String(now.getUTCMinutes()).padStart(2,'0')+':'+String(now.getUTCSeconds()).padStart(2,'0');
+}
+
+
+let rafT=0;
+function mainLoop(ts){
+  requestAnimationFrame(mainLoop);
+  rafT=ts*0.001;
+  PLAYBACK.update(ts);
+  const pb=PLAYBACK.getState();
+  RECORDER.tick(Math.max(0,Date.now()-SW));
+  const st=interpolateState(pb.currentTime);
+  planeMesh.position.copy(st.position);glowMesh.position.copy(st.position);
+  const gp=0.85+0.15*Math.sin(rafT*3.5);glowMesh.scale.setScalar(gp);glowMesh.material.opacity=0.14+0.1*gp;
+  const t0=Math.max(0,st.progress-0.18),tpts=[];
+  for(let i=0;i<=24;i++)tpts.push(SIM.curve.getPoint(t0+(st.progress-t0)*(i/24)));
+  trailLine.geometry.setFromPoints(tpts);trailLine.geometry.computeBoundingSphere();
+  CAMERA.update(st.position,rafT);
+  clouds.forEach(c=>{c.userData.lng+=c.userData.dLng;c.position.copy(lv(c.userData.lat,c.userData.lng,SIM.R+0.04));});
+  syncUI(st,pb);
+  renderer.render(scene,camera);
+}
+
+
+document.getElementById('rbFrom').textContent=FC;
+document.getElementById('rbTo').textContent=TC;
+document.getElementById('epFlightInfo').textContent=FN+' · '+FC+' → '+TC;
+
+
+document.getElementById('rbTrack').addEventListener('click',e=>{
+  const r=e.currentTarget.getBoundingClientRect(),p=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+  PLAYBACK.seek(p*DM);
+});
+
+
+const rpTrack=document.getElementById('rpTrack');
+let rpDrag=false;
+function rpSeek(e){const r=rpTrack.getBoundingClientRect(),p=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),f=RECORDER.getFirst(),l=RECORDER.getLast();if(f&&l)PLAYBACK.seek(f.time+p*(l.time-f.time));}
+rpTrack.addEventListener('mousedown',e=>{rpDrag=true;rpSeek(e);});
+document.addEventListener('mousemove',e=>{if(rpDrag)rpSeek(e);});
+document.addEventListener('mouseup',()=>{rpDrag=false;});
+rpTrack.addEventListener('touchstart',e=>{rpSeek(e.touches[0]);},{passive:true});
+rpTrack.addEventListener('touchmove',e=>{rpSeek(e.touches[0]);},{passive:true});
+
+
+rpTrack.addEventListener('mousemove',e=>{
+  const r=rpTrack.getBoundingClientRect(),p=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+  const f=RECORDER.getFirst(),l=RECORDER.getLast();
+  if(f&&l){const tip=document.getElementById('tooltip');tip.textContent=fmtMs(f.time+p*(l.time-f.time));tip.style.display='block';tip.style.left=(e.clientX-20)+'px';tip.style.top=(r.top-28)+'px';}
+});
+rpTrack.addEventListener('mouseleave',()=>{document.getElementById('tooltip').style.display='none';});
+
+window.addEventListener('resize',()=>{W=window.innerWidth;H=window.innerHeight;camera.aspect=W/H;camera.updateProjectionMatrix();renderer.setSize(W,H);});
+
+
+window.togglePlay=()=>PLAYBACK.togglePlay();
+window.startRewind=()=>PLAYBACK.rewind();
+window.stepForward=()=>PLAYBACK.stepForward();
+window.stepBack=()=>PLAYBACK.stepBack();
+window.jumpToLive=()=>PLAYBACK.jumpToLive();
+window.setSpeed=v=>PLAYBACK.setSpeed(v);
+window.setCameraMode=m=>CAMERA.setMode(m);
+
+window.openExport=()=>{
+  const d=RECORDER.exportData();
+  document.getElementById('epSnapshots').textContent=d.timeline.length;
+  document.getElementById('epDuration').textContent=Math.round(DM/1000)+'s';
+  document.getElementById('epMemory').textContent=RECORDER.getMemoryKB()+'KB';
+  document.getElementById('export-panel').style.display='block';
+  document.getElementById('export-overlay').style.display='block';
+};
+window.closeExport=()=>{document.getElementById('export-panel').style.display='none';document.getElementById('export-overlay').style.display='none';};
+window.exportJSON=()=>{
+  const d=RECORDER.exportData(),blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='flyway_'+FN+'_'+FC+'_'+TC+'_'+Date.now()+'.json';a.click();URL.revokeObjectURL(url);closeExport();
+};
+
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+  if(e.key===' '){e.preventDefault();PLAYBACK.togglePlay();}
+  if(e.key==='ArrowLeft'){e.preventDefault();PLAYBACK.stepBack();}
+  if(e.key==='ArrowRight'){e.preventDefault();PLAYBACK.stepForward();}
+  if(e.key==='r'||e.key==='R')PLAYBACK.rewind();
+  if(e.key==='l'||e.key==='L')PLAYBACK.jumpToLive();
+  if(e.key==='1'){PLAYBACK.setSpeed(1);document.getElementById('speedSel').value='1';}
+  if(e.key==='2'){PLAYBACK.setSpeed(2);document.getElementById('speedSel').value='2';}
+  if(e.key==='5'){PLAYBACK.setSpeed(5);document.getElementById('speedSel').value='5';}
+  if(e.key==='f'||e.key==='F')CAMERA.setMode('follow');
+  if(e.key==='o'||e.key==='O')CAMERA.setMode('orbit');
+  if(e.key==='t'||e.key==='T')CAMERA.setMode('top');
+});
+
+
+(function(){
+  const now=Math.max(0,Date.now()-SW);
+  for(let t=0;t<=now;t+=10000)RECORDER.tick(t);
+  RECORDER.tick(now);PLAYBACK.seek(now);
+})();
+
+requestAnimationFrame(mainLoop);
+</script>
+
+<script>document.addEventListener('contextmenu',e=>e.preventDefault());document.addEventListener('keydown',e=>{if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key)))e.preventDefault();},true);</script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

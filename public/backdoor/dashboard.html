@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin Panel - FlyWay</title>
+<link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/license-system.css">
+<link rel="stylesheet" href="/assets/css/responsive.css">
+<style>
+
+.adm-side{width:255px;background:linear-gradient(180deg,#080f1e 0%,#0a1628 100%);border-right:1px solid var(--border);position:fixed;top:0;bottom:0;left:0;display:flex;flex-direction:column;z-index:200;overflow-y:auto}
+.adm-logo{padding:22px 18px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.adm-logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--gold),var(--coral));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--navy);flex-shrink:0}
+.adm-nav{flex:1;padding:14px 10px;overflow-y:auto}
+.adm-nav-sect{margin-bottom:18px}
+.adm-nav-lbl{font-size:9px;font-weight:700;letter-spacing:1.8px;color:rgba(148,163,184,0.6);text-transform:uppercase;padding:0 8px;margin-bottom:6px;display:block}
+.adm-ni{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:9px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;transition:all 0.18s;margin-bottom:2px}
+.adm-ni:hover{background:rgba(255,255,255,0.05);color:var(--white)}
+.adm-ni.active{background:linear-gradient(135deg,rgba(245,200,66,0.12),rgba(255,107,107,0.06));color:var(--gold);border:1px solid rgba(245,200,66,0.18)}
+.adm-ni-icon{width:20px;text-align:center;font-size:15px;flex-shrink:0}
+.adm-ni-badge{margin-left:auto;background:var(--coral);color:white;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700}
+.adm-footer{padding:14px;border-top:1px solid var(--border)}
+.adm-main{margin-left:255px;padding:26px 28px;min-height:100vh}
+.adm-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;flex-wrap:wrap;gap:10px}
+.adm-stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:22px}
+.adm-stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden;transition:all 0.2s;cursor:default}
+.adm-stat:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.adm-stat-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.adm-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px}
+.adm-th{background:rgba(255,255,255,0.03);padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap}
+.adm-td{padding:11px 14px;border-top:1px solid var(--border);vertical-align:middle;font-size:12px}
+.adm-tr:hover .adm-td{background:rgba(255,255,255,0.015)}
+.proof-img{width:50px;height:50px;border-radius:7px;border:1px solid var(--border);object-fit:cover;cursor:pointer;transition:all 0.2s}
+.proof-img:hover{transform:scale(1.12);border-color:var(--cyan)}
+.cred-box{background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.12);border-radius:10px;padding:12px}
+.cred-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.cred-row:last-child{border:none}
+.cred-key{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0}
+.cred-val{font-family:var(--font-m);font-size:12px;color:var(--cyan);text-align:right;word-break:break-all}
+.notify-panel{background:linear-gradient(135deg,rgba(0,212,255,0.05),rgba(124,58,237,0.04));border:1px solid rgba(0,212,255,0.15);border-radius:14px;padding:20px}
+#adminGlobalLoader{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--purple));z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+#admMenuBtn{display:none}
+@media(max-width:900px){#admMenuBtn{display:flex;align-items:center;justify-content:center}}
+.adm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:199;backdrop-filter:blur(2px)}
+.adm-overlay.open{display:block}
+@media(max-width:900px){.adm-side{transform:translateX(-100%)}.adm-side.open{transform:translateX(0)}.adm-main{margin-left:0;padding:16px}}
+</style>
+</head>
+<body style="background:var(--navy);min-height:100vh">
+
+<script>
+(function(){
+  var tok=localStorage.getItem('fw_token');
+  var usr=localStorage.getItem('fw_user');
+  if(!tok||!usr){window.location.replace('/backdoor');return;}
+  try{var u=JSON.parse(usr);if(u.role!=='admin'){localStorage.clear();window.location.replace('/backdoor');}}
+  catch(e){localStorage.clear();window.location.replace('/backdoor');}
+})();
+</script>
+
+<div class="adm-overlay" id="admOverlay" onclick="toggleAdmSide()"></div>
+<div id="adminGlobalLoader"></div>
+<div id="toastContainer"></div>
+
+<aside class="adm-side" id="admSide">
+  <div class="adm-logo">
+    <div class="adm-logo-icon">&#x1F451;</div>
+    <div>
+      <div style="font-family:var(--font-h);font-weight:800;font-size:16px">FLY<span style="color:var(--cyan)">WAY</span></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">Admin Control Panel</div>
+    </div>
+  </div>
+  <nav class="adm-nav">
+    <div class="adm-nav-sect"><span class="adm-nav-lbl">Overview</span>
+      <div class="adm-ni active" onclick="AdminController.navigate('overview')" id="n_overview"><span class="adm-ni-icon">&#x1F4CA;</span>Dashboard</div>
+    </div>
+    <div class="adm-nav-sect"><span class="adm-nav-lbl">Operations</span>
+      <div class="adm-ni" onclick="AdminController.navigate('bookings')"     id="n_bookings"><span class="adm-ni-icon">&#x2708;</span>Bookings<span class="adm-ni-badge hidden" id="bd_bookings">0</span></div>
+      <div class="adm-ni" onclick="AdminController.navigate('payments')"     id="n_payments"><span class="adm-ni-icon">&#x1F4CE;</span>Payment Reviews<span class="adm-ni-badge hidden" id="bd_payments">0</span></div>
+      <div class="adm-ni" onclick="AdminController.navigate('transactions')" id="n_transactions"><span class="adm-ni-icon">&#x1F4B3;</span>Transactions</div>
+    </div>
+    <div class="adm-nav-sect"><span class="adm-nav-lbl">Users</span>
+      <div class="adm-ni" onclick="AdminController.navigate('users')"    id="n_users"><span class="adm-ni-icon">&#x1F465;</span>Users &amp; Credentials</div>
+      <div class="adm-ni" onclick="AdminController.navigate('notify')"   id="n_notify"><span class="adm-ni-icon">&#x1F514;</span>Notifications</div>
+      <div class="adm-ni" onclick="AdminController.navigate('messages')" id="n_messages"><span class="adm-ni-icon">&#x1F4AC;</span>Messages<span class="adm-ni-badge hidden" id="bd_messages">0</span></div>
+    </div>
+    <div class="adm-nav-sect"><span class="adm-nav-lbl">Settings</span>
+      <div class="adm-ni" onclick="AdminController.navigate('promos')"   id="n_promos"><span class="adm-ni-icon">&#x1F39F;</span>Promo Codes</div>
+      <div class="adm-ni" onclick="AdminController.navigate('licenses')" id="n_licenses"><span class="adm-ni-icon">&#x1F511;</span>License Keys</div>
+      <div class="adm-ni" onclick="AdminController.navigate('uploads')"  id="n_uploads"><span class="adm-ni-icon">&#x1F5C2;</span>Proof Files</div>
+    </div>
+    <div class="adm-nav-sect"><span class="adm-nav-lbl">Security</span>
+      <div class="adm-ni" onclick="AdminController.navigate('logs')" id="n_logs"><span class="adm-ni-icon">&#x1F510;</span>Access Logs</div>
+    </div>
+  </nav>
+  <div class="adm-footer">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--glass);border-radius:10px;border:1px solid var(--border)">
+      <div style="width:34px;height:34px;background:linear-gradient(135deg,var(--gold),var(--coral));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--navy)">A</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">Admin</div><div style="font-size:10px;color:var(--muted)">System Admin</div></div>
+      <button onclick="AdminController.signOut()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;white-space:nowrap">Sign Out</button>
+    </div>
+  </div>
+</aside>
+
+<main class="adm-main">
+  <div class="adm-topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button onclick="toggleAdmSide()" id="admMenuBtn" style="background:var(--glass);border:1px solid var(--border);color:white;padding:8px 12px;border-radius:8px;cursor:pointer">&#x2630;</button>
+      <div>
+        <h2 id="pgTitle" style="font-family:var(--font-h);font-size:22px;font-weight:800">Dashboard</h2>
+        <div id="pgSub" style="font-size:12px;color:var(--muted)">Loading&hellip;</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="badge badge-gold">&#x1F451; Admin</span>
+      <span id="liveClock" style="font-size:12px;color:var(--muted)"></span>
+      <button class="btn btn-ghost btn-sm" onclick="AdminController.refresh()">&#x1F504; Refresh</button>
+      <a href="/" class="btn btn-ghost btn-sm">&larr; Website</a>
+    </div>
+  </div>
+
+  
+  <div id="t_overview">
+    <div class="adm-stats-grid">
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--cyan),var(--purple))"></div><div style="font-size:24px;margin-bottom:8px">&#x1F465;</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_users">&mdash;</div><div style="font-size:11px;color:var(--muted)">Total Users</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--emerald),var(--cyan))"></div><div style="font-size:24px;margin-bottom:8px">&#x2708;</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_bookings">&mdash;</div><div style="font-size:11px;color:var(--muted)">Total Bookings</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--gold),var(--coral))"></div><div style="font-size:24px;margin-bottom:8px">&#x1F4B0;</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_revenue">&mdash;</div><div style="font-size:11px;color:var(--muted)">Total Revenue</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--gold),#f59e0b)"></div><div style="font-size:24px;margin-bottom:8px">&#x23F3;</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_pending">&mdash;</div><div style="font-size:11px;color:var(--muted)">Pending</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--coral),var(--gold))"></div><div style="font-size:24px;margin-bottom:8px">&#x1F4CE;</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_proofs">&mdash;</div><div style="font-size:11px;color:var(--muted)">Proofs to Review</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--purple),var(--cyan))"></div><div style="font-size:24px;margin-bottom:8px">&#x1F4AC;</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_msgs">&mdash;</div><div style="font-size:11px;color:var(--muted)">Unread Messages</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--emerald),var(--gold))"></div><div style="font-size:24px;margin-bottom:8px">&#x1F4C5;</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_today">&mdash;</div><div style="font-size:11px;color:var(--muted)">Today's Bookings</div></div>
+      <div class="adm-stat"><div class="adm-stat-bar" style="background:linear-gradient(90deg,var(--cyan),var(--emerald))"></div><div style="font-size:24px;margin-bottom:8px">&#x1F4B5;</div><div style="font-family:var(--font-h);font-size:26px;font-weight:800" id="st_todayrev">&mdash;</div><div style="font-size:11px;color:var(--muted)">Today's Revenue</div></div>
+    </div>
+    <div class="adm-card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+        <div style="font-family:var(--font-h);font-weight:700">&#x1F534; Live Feed</div>
+        <button class="btn btn-ghost btn-sm" onclick="AdminController.loadOverview()">Refresh</button>
+      </div>
+      <div id="liveFeed"></div>
+    </div>
+  </div>
+
+  
+  <div id="t_bookings" class="hidden">
+    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="trip-tab active" onclick="AdminController.filterBookings('all',this)">All</button>
+      <button class="trip-tab" onclick="AdminController.filterBookings('confirmed',this)">&#x2705; Confirmed</button>
+      <button class="trip-tab" onclick="AdminController.filterBookings('pending',this)">&#x23F3; Pending</button>
+      <button class="trip-tab" onclick="AdminController.filterBookings('cancelled',this)">&#x274C; Cancelled</button>
+    </div>
+    <div id="bookingsEl"></div>
+  </div>
+
+  
+  <div id="t_payments" class="hidden">
+    <div style="background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.2);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--gold);margin-bottom:18px">&#x26A0; Review payment proofs below. Approve with a note or reject with a clear reason &mdash; the user will be notified immediately.</div>
+    <div id="paymentsEl"></div>
+  </div>
+
+  
+  <div id="t_transactions" class="hidden">
+    <div class="adm-card"><div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr id="txHead"></tr></thead>
+        <tbody id="txBody"></tbody>
+      </table>
+    </div></div>
+  </div>
+
+  
+  <div id="t_users" class="hidden">
+    <div style="background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.15);border-radius:12px;padding:13px 16px;font-size:13px;margin-bottom:18px">&#x1F511; <strong>User Credentials</strong> &mdash; Passwords shown in plain text for admin reference. Keep this panel secure. <span style="color:var(--muted)">Blurred by default &mdash; click &#x1F441; to reveal.</span></div>
+    <div id="usersEl"></div>
+  </div>
+
+  
+  <div id="t_notify" class="hidden">
+    <div class="grid-2" style="gap:20px;align-items:start">
+      <div>
+        <div class="notify-panel mb-20">
+          <div style="font-family:var(--font-h);font-weight:700;font-size:16px;margin-bottom:16px">&#x1F4E8; Send to Specific User</div>
+          <div class="form-group"><label class="form-label">User</label><select class="form-input" id="notifyUsr"><option value="">Select user&hellip;</option></select></div>
+          <div class="form-group"><label class="form-label">Type</label>
+            <select class="form-input" id="notifyTyp">
+              <option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option>
+              <option value="booking_confirmed">Booking Confirmed</option><option value="payment_confirmed">Payment Confirmed</option>
+              <option value="booking_cancelled">Booking Cancelled</option><option value="promo">Promo</option><option value="admin">Admin Message</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="notifyTtl" placeholder="Notification title"></div>
+          <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" id="notifyMsg" rows="3" placeholder="Your message&hellip;" style="word-wrap:break-word;white-space:pre-wrap;resize:vertical"></textarea></div>
+          <button class="btn btn-primary btn-full" onclick="AdminController.sendNotification()">Send Notification</button>
+        </div>
+        <div class="notify-panel" style="background:linear-gradient(135deg,rgba(245,200,66,0.07),rgba(255,87,87,0.04));border-color:rgba(245,200,66,0.2)">
+          <div style="font-family:var(--font-h);font-weight:700;color:var(--gold);margin-bottom:16px">Broadcast to All Users</div>
+          <div class="form-group"><label class="form-label">Type</label><select class="form-input" id="bcTyp"><option value="broadcast">Broadcast</option><option value="promo">Promo</option><option value="info">Info</option><option value="warning">Warning</option></select></div>
+          <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="bcTtl" placeholder="e.g. Flash Sale - 24 hours only!"></div>
+          <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" id="bcMsg" rows="3" placeholder="Message to all users&hellip;" style="word-wrap:break-word;white-space:pre-wrap;resize:vertical"></textarea></div>
+          <button class="btn btn-gold btn-full" onclick="AdminController.broadcastNotification()">Broadcast to ALL Users</button>
+        </div>
+      </div>
+      <div class="adm-card">
+        <div style="font-family:var(--font-h);font-weight:700;margin-bottom:12px">How Notifications Work</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.8">
+          Notifications appear instantly on the user's <strong style="color:var(--white)">notification bell</strong> in their dashboard navigation.<br><br>
+          They also see them in a <strong style="color:var(--white)">notification panel</strong> with full message, timestamp, and type icon.<br><br>
+          When you approve or reject a booking, the user is automatically notified with your note/reason.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="t_messages" class="hidden"></div>
+
+  
+  <div id="t_promos" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-family:var(--font-h);font-weight:700;font-size:18px">Promo Codes</div>
+      <button class="btn btn-primary btn-sm" onclick="FlyWay.showModal('newPromoM')">+ Create Code</button>
+    </div>
+    <div id="promosEl"></div>
+  </div>
+
+  
+  <div id="t_licenses" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div style="font-family:var(--font-h);font-weight:700;font-size:18px">🔑 License Keys</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="AdminController.revokeAllExpired()" style="color:#ff5757;border-color:rgba(255,87,87,0.3)">🗑 Revoke Expired</button>
+        <button class="btn btn-primary btn-sm" onclick="openNewLicModal()">+ New Key</button>
+      </div>
+    </div>
+    <div class="adm-card"><div id="licensesEl"></div></div>
+  </div>
+
+  
+  <div id="t_uploads" class="hidden"><div id="uploadsEl"></div></div>
+
+  
+  <div id="t_logs" class="hidden">
+    <div style="background:rgba(255,87,87,0.07);border:1px solid rgba(255,87,87,0.2);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--coral);margin-bottom:16px">Sensitive &mdash; Admin only. Shows all user actions, logins, and system events.</div>
+    <div class="adm-card"><div id="logsEl"></div></div>
+  </div>
+</main>
+
+
+<div class="overlay hidden" id="bdModal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><div class="modal-title" id="bdTitle">Booking</div><button class="modal-close" onclick="FlyWay.hideModal('bdModal')">&times;</button></div>
+    <div id="bdContent"></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="imgM">
+  <div style="position:relative;max-width:90vw">
+    <button onclick="FlyWay.hideModal('imgM')" style="position:absolute;top:-12px;right:-12px;width:30px;height:30px;background:var(--coral);border:none;border-radius:50%;color:white;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">&times;</button>
+    <img id="imgMSrc" style="max-width:90vw;max-height:88vh;border-radius:12px;object-fit:contain;display:block">
+  </div>
+</div>
+
+<div class="overlay hidden" id="newPromoM">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><div class="modal-title">Create Promo Code</div><button class="modal-close" onclick="FlyWay.hideModal('newPromoM')">&times;</button></div>
+    <div class="form-group"><label class="form-label">Code</label><input class="form-input" id="pc_code" placeholder="SUMMER25" style="text-transform:uppercase;font-family:var(--font-m)"></div>
+    <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="pc_desc" placeholder="25% off bookings"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Type</label><select class="form-input" id="pc_type"><option value="percentage">% Percentage</option><option value="fixed">$ Fixed</option></select></div>
+      <div class="form-group"><label class="form-label">Value</label><input class="form-input" type="number" id="pc_val" placeholder="25"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Max Discount $</label><input class="form-input" type="number" id="pc_max" placeholder="500"></div>
+      <div class="form-group"><label class="form-label">Usage Limit</label><input class="form-input" type="number" id="pc_limit" placeholder="100"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Valid Until</label><input class="form-input" type="date" id="pc_expiry" value="2027-12-31"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-ghost" onclick="FlyWay.hideModal('newPromoM')">Cancel</button>
+      <button class="btn btn-primary" onclick="AdminController.createPromo()">Create Promo Code</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="newLicM">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header"><div class="modal-title">🔑 Create License Key</div><button class="modal-close" onclick="FlyWay.hideModal('newLicM')">&times;</button></div>
+    <div style="padding:20px;display:grid;gap:14px">
+      <div>
+        <label class="form-label">License Key</label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="lic_key" placeholder="FLY-XXXX-XXXX-XXXX" style="flex:1;font-family:var(--font-m);text-transform:uppercase;letter-spacing:1px">
+          <button class="btn btn-ghost btn-sm" onclick="AdminController.generateLicenseKey()">🎲 Auto</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label class="form-label">Type</label>
+          <select class="form-input form-select" id="lic_type">
+            <option value="standard">Standard</option>
+            <option value="family">Family</option>
+            <option value="business">Business</option>
+            <option value="solo">Solo</option>
+            <option value="holiday">Holiday</option>
+            <option value="adventure">Adventure</option>
+            <option value="student">Student</option>
+            <option value="senior">Senior</option>
+            <option value="couple">Couple</option>
+            <option value="group">Group</option>
+            <option value="honeymoon">Honeymoon</option>
+            <option value="cargo">Cargo</option>
+            <option value="temporary">Temporary</option>
+            <option value="renewable">Renewable</option>
+            <option value="lifetime">Lifetime</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Max Users</label>
+          <input class="form-input" type="number" id="lic_max" value="1" min="1" max="100">
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Expiry Date &amp; Time</label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" type="date" id="lic_exp" style="flex:1.6">
+          <input class="form-input" type="time" id="lic_exp_time" style="flex:1" title="Expiry time (local)">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Expiry is at the specified local time on the chosen date. Use 2099 for lifetime.</div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="FlyWay.hideModal('newLicM')">Cancel</button>
+        <button class="btn btn-primary" onclick="AdminController.createLicense()">🔑 Create License</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="/js/main.js"></script>
+<script src="/backdoor/adminState.js"></script>
+<script src="/js/barcode-gen.js"></script>
+  <script src="/backdoor/adminAPI.js"></script>
+<script src="/backdoor/adminUI.js"></script>
+<script src="/backdoor/adminController.js"></script>
+
+<script>
+  // Initialise the Create License modal with the admin's current local date & time
+  function openNewLicModal() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const dateEl = document.getElementById('lic_exp');
+    const timeEl = document.getElementById('lic_exp_time');
+    if (dateEl) dateEl.value = dateStr;
+    if (timeEl) timeEl.value = timeStr;
+    FlyWay.showModal('newLicM');
+  }
+
+  function toggleAdmSide() {
+    var side = document.getElementById('admSide');
+    var overlay = document.getElementById('admOverlay');
+    side.classList.toggle('open');
+    overlay.classList.toggle('open');
+  }
+  function closeAdmSide() {
+    document.getElementById('admSide').classList.remove('open');
+    document.getElementById('admOverlay').classList.remove('open');
+  }
+document.addEventListener('DOMContentLoaded', function () {
+  AdminController.init();
+  // Auto-close sidebar on nav click (mobile UX)
+  document.querySelectorAll('.adm-ni').forEach(function(el) {
+    el.addEventListener('click', function() {
+      if (window.innerWidth < 900) closeAdmSide();
+    });
+  });
+});
+</script>
+
+<script src="/socket.io/socket.io.js" onerror="void 0"></script>
+
+</body>
+</html>

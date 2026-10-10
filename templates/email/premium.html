@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>FlyWay — Your {{ticketLabel}}</title>
+</head>
+<body style="margin:0;padding:0;background:#050c1a;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#050c1a;padding:36px 16px;">
+  <tr><td align="center">
+  <table width="660" cellpadding="0" cellspacing="0" style="max-width:660px;width:100%;">
+
+    <!-- LOGO -->
+    <tr>
+      <td style="padding-bottom:22px;" align="center">
+        <table cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#3a6a9a;padding-right:16px;border-right:1px solid #1e3a5a;">✈ FLYWAY</td>
+            <td style="padding-left:16px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#2a4a6a;">Premium {{ticketLabel}}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- MAIN CARD -->
+    <tr>
+      <td style="background:linear-gradient(180deg,#07142a 0%,#0c1e3a 50%,#111e35 100%);border-radius:24px;overflow:hidden;border:1px solid rgba(0,180,255,0.12);box-shadow:0 40px 100px rgba(0,0,0,0.6);">
+
+        <!-- HERO -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="background:linear-gradient(135deg,rgba(8,55,130,0.9) 0%,rgba(14,78,180,0.85) 50%,rgba(10,55,120,0.9) 100%);padding:42px 48px 38px;border-bottom:1px solid rgba(0,150,255,0.12);">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td valign="bottom">
+                    <div style="display:inline-block;background:rgba(0,180,255,0.15);border:1px solid rgba(0,180,255,0.3);border-radius:999px;padding:5px 16px;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#60c8ff;margin-bottom:16px;">✦ FlyWay {{ticketLabel}}</div>
+                    <h1 style="margin:0 0 12px;font-size:34px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">{{route}}</h1>
+                    <p style="margin:0;font-size:14px;color:#7ab8e8;line-height:1.7;">
+                      Dear <strong style="color:#cde8ff;">{{userName}}</strong>, your premium {{ticketLabel}} is enclosed.<br>
+                      Fly confidently — everything you need is below.
+                    </p>
+                  </td>
+                  <td width="120" valign="top" align="right" style="padding-left:20px;">
+                    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,180,255,0.2);border-radius:16px;padding:16px;text-align:center;">
+                      <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#4a90c8;margin-bottom:8px;">Booking Ref</div>
+                      <div style="font-size:14px;font-weight:800;color:#60c8ff;letter-spacing:1px;">{{bookingRef}}</div>
+                      <div style="margin-top:12px;height:1px;background:rgba(0,180,255,0.15);"></div>
+                      <div style="font-size:9px;color:#3a5a7a;margin-top:8px;text-transform:uppercase;letter-spacing:0.1em;">{{purchaseDate}}</div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ROUTE VISUAL -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:28px 48px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(0,0,0,0.25);border-radius:16px;border:1px solid rgba(0,150,255,0.1);overflow:hidden;">
+                <tr>
+                  <td style="padding:22px 24px;" width="38%">
+                    <div style="font-size:10px;color:#3a6a9a;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px;">Departure</div>
+                    <div style="font-size:22px;font-weight:800;color:#e8f4ff;">{{departureTime}}</div>
+                    <div style="font-size:12px;color:#5a8ab0;margin-top:4px;">{{departureDate}}</div>
+                  </td>
+                  <td align="center" style="padding:22px 0;" width="24%">
+                    <div style="font-size:11px;color:#1a4a7a;margin-bottom:6px;">✈</div>
+                    <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(0,180,255,0.4),transparent);"></div>
+                    <div style="font-size:10px;color:#2a5a8a;margin-top:6px;text-transform:uppercase;letter-spacing:0.08em;">{{flightNumber}}</div>
+                  </td>
+                  <td style="padding:22px 24px;text-align:right;" width="38%">
+                    <div style="font-size:10px;color:#3a6a9a;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px;">Arrival</div>
+                    <div style="font-size:22px;font-weight:800;color:#e8f4ff;">{{arrivalTime}}</div>
+                    <div style="font-size:12px;color:#5a8ab0;margin-top:4px;">Estimated</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- DETAILS GRID -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:0 48px 28px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <!-- LEFT COL -->
+                  <td width="48%" valign="top" style="background:rgba(0,0,0,0.2);border-radius:16px;border:1px solid rgba(255,255,255,0.06);padding:22px;">
+                    <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#3a6a9a;margin-bottom:16px;">Flight Info</div>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="font-size:12px;color:#5a8ab0;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">Flight</td>
+                        <td style="font-size:13px;font-weight:600;color:#b8d8f8;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">{{flightNumber}}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:12px;color:#5a8ab0;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">Class</td>
+                        <td style="font-size:13px;font-weight:600;color:#b8d8f8;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">{{travelClass}}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:12px;color:#5a8ab0;padding:8px 0;">Passenger(s)</td>
+                        <td style="font-size:12px;font-weight:600;color:#b8d8f8;text-align:right;padding:8px 0;">{{passengerNames}}</td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td width="4%"></td>
+                  <!-- RIGHT COL -->
+                  <td width="48%" valign="top" style="background:rgba(0,0,0,0.2);border-radius:16px;border:1px solid rgba(255,255,255,0.06);padding:22px;">
+                    <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#3a6a9a;margin-bottom:16px;">Booking Info</div>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="font-size:12px;color:#5a8ab0;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">Reference</td>
+                        <td style="font-size:13px;font-weight:700;color:#60c8ff;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">{{bookingRef}}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:12px;color:#5a8ab0;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">Method</td>
+                        <td style="font-size:13px;font-weight:600;color:#b8d8f8;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">{{paymentMethod}}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:12px;color:#5a8ab0;padding:8px 0;">Booked</td>
+                        <td style="font-size:12px;font-weight:600;color:#b8d8f8;text-align:right;padding:8px 0;">{{purchaseDate}}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- TOTAL BAND -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:0 48px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,rgba(10,60,140,0.8),rgba(20,90,200,0.6));border-radius:16px;border:1px solid rgba(0,180,255,0.2);">
+                <tr>
+                  <td style="padding:22px 26px;font-size:13px;color:#7ab8e8;">Total Amount Charged</td>
+                  <td style="padding:22px 26px;font-size:26px;font-weight:800;color:#ffffff;text-align:right;letter-spacing:-0.5px;">{{amount}}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ATTACHMENT NOTE -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:0 48px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,200,0,0.06);border-radius:12px;border:1px solid rgba(255,200,0,0.18);">
+                <tr>
+                  <td style="padding:14px 20px;font-size:12px;color:#c8a840;line-height:1.7;">
+                    📎 <strong style="color:#f0d060;">Your {{ticketLabel}} image is attached to this email.</strong> Please save it and present it at check-in. Keep your booking reference <strong>{{bookingRef}}</strong> handy.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- FOOTER BAR -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="background:rgba(0,0,0,0.3);border-top:1px solid rgba(255,255,255,0.06);padding:22px 48px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-size:12px;color:#3a5a7a;line-height:1.7;">
+                    Support: <a href="mailto:{{supportEmail}}" style="color:#3a8abf;text-decoration:none;">{{supportEmail}}</a>
+                  </td>
+                  <td style="text-align:right;font-size:11px;color:#2a4a6a;">© {{currentYear}} FlyWay</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+
+    <!-- OUTER FOOTER -->
+    <tr>
+      <td style="padding:24px 0 0;" align="center">
+        <p style="margin:0;font-size:11px;color:#2a4a6a;line-height:1.8;">
+          This email was sent because you made a booking on FlyWay.<br>
+          © {{currentYear}} FlyWay Global — All rights reserved.
+        </p>
+      </td>
+    </tr>
+
+  </table>
+  </td></tr>
+</table>
+</body>
+</html>

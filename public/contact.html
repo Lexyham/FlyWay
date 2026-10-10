@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Contact & Support - FlyWay</title>
+<link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/assets/css/responsive.css">
+<style>
+.chat-fab{position:fixed;bottom:28px;right:28px;z-index:999;width:64px;height:64px;border:none;cursor:pointer;background:transparent;padding:0;}
+.chat-fab-inner{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#0044cc,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;position:relative;overflow:visible;box-shadow:0 8px 32px rgba(0,212,255,0.45);animation:chatFabFloat 3s ease-in-out infinite,chatFabPulse 2s ease infinite;}
+@keyframes chatFabFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}
+@keyframes chatFabPulse{0%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 0 rgba(0,212,255,.4)}70%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 16px rgba(0,212,255,0)}100%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 0 rgba(0,212,255,0)}}
+.chat-fab-ring{position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(0,212,255,.45);animation:chatRing 2.5s linear infinite;}
+.chat-fab-ring2{position:absolute;inset:-12px;border-radius:50%;border:1.5px solid rgba(124,58,237,.3);animation:chatRing 4s linear infinite reverse;}
+@keyframes chatRing{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.chat-fab-icon{font-size:28px;z-index:2;position:relative;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
+.badge-dot{position:absolute;top:0;right:0;width:15px;height:15px;border-radius:50%;background:#ff4757;border:2px solid #020812;font-size:8px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;z-index:3;}
+</style>
+</head>
+<body>
+<nav class="navbar" id="mainNav">
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+      <a href="/" class="nav-logo"><div class="nav-logo-icon glow3d">✈</div><span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span></a>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/booking" class="nav-link">Book Flight</a>
+      <a href="/track" class="nav-link">Track Flight</a>
+      <a href="/flightmap" class="nav-link">3D Map</a>
+      <a href="/flightgame" class="nav-link">Have Fun</a>
+      <a href="/contact" class="nav-link active">Contact</a>
+      <a href="/dashboard" class="nav-link hidden" id="navDashBtn">My Account</a>
+    </div>
+    <div class="nav-actions">
+      <span id="navUserChip" class="badge badge-cyan hidden"></span>
+      <a href="/login" class="btn btn-secondary btn-sm" id="navLoginBtn">Sign In</a>
+      <button class="btn btn-ghost btn-sm hidden" id="navLogoutBtn" onclick="FlyWay.logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/" class="nav-link">Home</a>
+    <a href="/booking" class="nav-link">Book Flight</a>
+    <a href="/track" class="nav-link">Track Flight</a>
+    <a href="/flightmap" class="nav-link">3D Map</a>
+    <a href="/contact" class="nav-link">Contact</a>
+    <a href="/dashboard" class="nav-link">My Account</a>
+    <a href="/login" class="nav-link">Sign In</a>
+  </div>
+</nav>
+<div style="margin-top:70px;padding:60px 0">
+  <div class="container" style="max-width:960px">
+    <div class="text-center mb-32">
+      <div class="badge badge-cyan badge-lg mb-16">💬 We're Here 24/7</div>
+      <h1 class="display-3">Contact &amp; Support</h1>
+      <p style="color:var(--muted);margin-top:12px;font-size:14px">Average response: under minute</p>
+    </div>
+    <div class="contact-methods mb-32">
+      <a href="mailto:platinumtrack.noreply@gmail.com" class="contact-card"><div class="contact-icon">✉</div><div class="contact-name">Email</div><div class="contact-val">platinumtrack.noreply@gmail.com</div></a>
+      <a href="https://wa.me/15550000000" target="_blank" class="contact-card"><div class="contact-icon">💬</div><div class="contact-name">WhatsApp</div><div class="contact-val">+1 (555) 000-0000</div></a>
+      <a href="tel:+15550000000" class="contact-card"><div class="contact-icon">📞</div><div class="contact-name">Phone</div><div class="contact-val">+1 (555) 000-0000</div></a>
+      <div class="contact-card" onclick="document.getElementById('chatFab').click()" style="cursor:pointer"><div class="contact-icon">🤖</div><div class="contact-name">AI Chat</div><div class="contact-val">Zephyr - Instant Replies</div></div>
+    </div>
+    <div class="grid-2" style="align-items:start;gap:24px">
+      <div class="card">
+        <div style="font-family:var(--font-h);font-weight:700;font-size:18px;margin-bottom:20px">📝 Send a Message</div>
+        <div id="msgSuccess" class="hidden" style="background:rgba(0,227,150,0.1);border:1px solid rgba(0,227,150,0.3);border-radius:12px;padding:24px;text-align:center">
+          <div style="font-size:36px;margin-bottom:10px">✅</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:6px">Message Sent!</div>
+          <div style="font-size:13px;color:var(--muted)">Our support team will reply within 1-2 hours. For urgent help, use WhatsApp.</div>
+          <button class="btn btn-ghost btn-sm mt-16" onclick="document.getElementById('msgSuccess').classList.add('hidden');document.getElementById('msgForm').classList.remove('hidden')">Send Another</button>
+        </div>
+        <div id="msgForm">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Name *</label><input class="form-input" id="msgName" placeholder="Your name"></div>
+            <div class="form-group"><label class="form-label">Email *</label><input class="form-input" id="msgEmail" type="email" placeholder="you@example.com"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Subject</label>
+            <select class="form-input" id="msgSubject">
+              <option>Booking Help</option><option>Payment Issue</option><option>Flight Tracking</option>
+              <option>Promo Code Request</option><option>Cancellation &amp; Refund</option>
+              <option>Technical Issue</option><option>License Key Request</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Message *</label>
+            <textarea class="form-input" id="msgBody" rows="5" placeholder="Describe your issue. Include booking reference if applicable."></textarea>
+          </div>
+          <button class="btn btn-primary btn-full btn-lg" id="sendBtn" onclick="sendMsg()">📤 Send Message</button>
+          <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:8px">Messages appear for immediate review.</div>
+        </div>
+      </div>
+      <div>
+        <div class="card mb-20">
+          <div style="font-family:var(--font-h);font-weight:700;font-size:18px;margin-bottom:16px">❓ Frequently Asked</div>
+          <div id="faqEl"></div>
+        </div>
+        <div class="card" style="background:linear-gradient(135deg,rgba(0,212,255,0.04),rgba(124,58,237,0.03))">
+          <div style="font-weight:700;margin-bottom:12px">🚀 Quick Links</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <a href="/booking" class="btn btn-ghost btn-sm" style="justify-content:flex-start">✈ Book a Flight</a>
+            <a href="/track" class="btn btn-ghost btn-sm" style="justify-content:flex-start">📡 Track Flight</a>
+            <a href="/bookings" class="btn btn-ghost btn-sm" style="justify-content:flex-start">🗓 My Bookings</a>
+            <a href="/notifications" class="btn btn-ghost btn-sm" style="justify-content:flex-start">🔔 Notifications</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<button class="chat-fab" id="chatFab">🤖<span class="badge-dot">1</span></button>
+<div class="chat-window" id="chatWindow" style="display:none">
+  <div class="chat-header"><div class="chat-avatar">🤖</div><div><div style="font-weight:700;font-size:14px">Zephyr - AI Assistant</div><div style="font-size:12px;color:var(--muted)">Online</div></div><button id="chatClose" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">×</button></div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div class="chat-input-row"><textarea id="chatInput" class="chat-input" placeholder="Ask anything..." rows="1"></textarea><button id="chatSend" class="chat-send">Send</button></div>
+</div>
+<div id="toastContainer"></div>
+<script src="/js/main.js"></script>
+<script>
+
+const FAQS = [
+  ['How do I get a promo code?', 'Promo codes are exclusive to loyalty members and special campaigns. Contact our support team to check eligibility, or watch your email for campaign announcements.'],
+  ['How long do refunds take?', 'Refunds are processed within 5-7 business days after cancellation is confirmed. You will receive a notification when the refund is initiated.'],
+  ['Can I change my booking?', 'Currently you can cancel and rebook. For date or name changes, contact our support team directly and we will assist you manually.'],
+  ['How do I get a license key?', 'License keys are issued per account type. Contact support via email or WhatsApp and our team will generate one for you. Available types: Solo, Student, Senior, Couple, Family, Group, Honeymoon, Adventure, Holiday, Business.'],
+  ['Can Zephyr show admin or system-only data?', 'No. Zephyr does not share admin-only, internal, or privileged information in public chat. For anything that needs special support, contact our team directly.'],
+  ['When is payment approved?', 'Gift card and crypto payments are reviewed within 1-2 hours of proof submission. Card payments process instantly. You get a notification either way.'],
+  ['What payment methods are accepted?', 'We currently accept Gift Cards (Amazon, iTunes, Google Play, Steam, Walmart, Visa, Mastercard, etc.) and Cryptocurrency (BTC, ETH, USDT). Card entry is available. Bank transfer and mobile wallets are temporarily under maintenance.'],
+  ['How do I track my flight?', 'Use Track Flight in the menu. Enter your flight number like FW-101 or your booking reference. You will see live status, gate, terminal, and weather info.'],
+  ['What discounts are available?', 'Infant under 2: 90% off. Child under 12: 25% off. Senior 60+: 15% off. Applied automatically. Promo codes add further savings.'],
+];
+
+const faqEl = document.getElementById('faqEl');
+faqEl.innerHTML = FAQS.map(function(item) {
+  var q = item[0], a = item[1];
+  return '<details style="margin-bottom:8px;border:1px solid var(--border);border-radius:10px;overflow:hidden">' +
+    '<summary style="padding:13px 16px;cursor:pointer;font-weight:600;font-size:14px;list-style:none;display:flex;justify-content:space-between;align-items:center;user-select:none">' +
+    '<span>' + q + '</span><span style="color:var(--cyan);font-size:18px">+</span></summary>' +
+    '<div style="padding:0 16px 14px;font-size:13px;color:var(--muted);line-height:1.8;border-top:1px solid var(--border)">' + a + '</div>' +
+    '</details>';
+}).join('');
+
+async function sendMsg() {
+  var name = document.getElementById('msgName').value.trim();
+  var email = document.getElementById('msgEmail').value.trim();
+  var subject = document.getElementById('msgSubject').value;
+  var body = document.getElementById('msgBody').value.trim();
+  if (!name) { FlyWay.toast('error','Name required'); return; }
+  if (!email || !email.includes('@')) { FlyWay.toast('error','Valid email required'); return; }
+  if (body.length < 10) { FlyWay.toast('error','Message too short','Please describe your issue'); return; }
+  var btn = document.getElementById('sendBtn');
+  FlyWay.setLoading(btn, true);
+  try {
+    await FlyWay.api('POST', '/api/messages', { name:name, email:email, subject:subject, message:body, userId:FlyWay.user ? FlyWay.user.id : null });
+    document.getElementById('msgForm').classList.add('hidden');
+    document.getElementById('msgSuccess').classList.remove('hidden');
+    FlyWay.toast('success','Message sent!');
+  } catch(e) {
+    FlyWay.toast('error','Failed to send', e.message);
+    FlyWay.setLoading(btn, false);
+  }
+}
+</script>
+<script src="/socket.io/socket.io.js"></script>
+</body>
+</html>
+

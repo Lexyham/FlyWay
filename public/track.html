@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Flight Tracker - FlyWay</title>
+<link rel="stylesheet" href="/css/main.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈</text></svg>">
+  <link rel="stylesheet" href="/assets/css/responsive.css">
+<style>
+.sky-canvas{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.cloud{position:absolute;background:rgba(255,255,255,0.04);border-radius:50px;animation:cloudFloat linear infinite}
+.flying-plane{position:absolute;font-size:28px;animation:planePass linear infinite;white-space:nowrap}
+@keyframes cloudFloat{from{transform:translateX(-200px)}to{transform:translateX(calc(100vw + 200px))}}
+@keyframes planePass{0%{transform:translateX(-120px) translateY(0px) rotate(-5deg);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(calc(100vw + 120px)) translateY(-30px) rotate(3deg);opacity:0}}
+.track-card-in{animation:slideInUp 0.5s ease forwards}
+@keyframes slideInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.progress-plane{transition:left 2s ease;position:absolute;top:-14px;transform:translateX(-50%);font-size:22px;filter:drop-shadow(0 0 6px rgba(0,212,255,0.8))}
+.progress-track{position:relative;height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:visible;margin:24px 0 12px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:2px;transition:width 1.5s ease}
+.airport-card{text-align:center;min-width:100px}
+.airport-big{font-family:var(--font-h);font-size:40px;font-weight:800;color:var(--cyan)}
+.track-stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:20px}
+.track-stat{background:var(--navy3);border-radius:10px;padding:14px;text-align:center;border:1px solid var(--border);transition:all 0.3s cubic-bezier(.22,1,.36,1)}
+.track-stat:hover{transform:translateY(-3px);border-color:rgba(0,212,255,0.3);box-shadow:0 8px 24px rgba(0,212,255,0.1)}
+.how-item{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
+.how-num{width:32px;height:32px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--navy);flex-shrink:0}
+.see-item{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+#globe3d-wrap{position:relative;width:100%;margin-top:20px;border-radius:16px;overflow:hidden;background:#020812;border:1px solid rgba(0,180,255,0.18)}
+#globe3d-wrap canvas{display:block;width:100%!important;border-radius:16px}
+#globe3d-header{position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,rgba(2,8,18,0.90) 0%,transparent 100%);z-index:20;pointer-events:none}
+#globe3d-footer{position:absolute;bottom:0;left:0;right:0;padding:10px 16px;background:linear-gradient(0deg,rgba(2,8,18,0.88) 0%,transparent 100%);z-index:20;pointer-events:none;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.g3d-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.25);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;color:#00d4ff;letter-spacing:.5px}
+.g3d-live-dot{width:6px;height:6px;border-radius:50%;background:#00e396;animation:g3dPulse 1.4s ease-in-out infinite}
+@keyframes g3dPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.4)}}
+.g3d-stat{display:flex;align-items:center;gap:7px;background:rgba(2,8,18,0.6);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:6px 11px;font-size:12px}
+.g3d-stat-val{font-family:monospace;font-weight:700;color:#00d4ff}
+#globe3d-controls{position:absolute;top:50%;right:14px;transform:translateY(-50%);display:flex;flex-direction:column;gap:7px;z-index:20}
+.g3d-ctrl{width:32px;height:32px;background:rgba(4,14,34,0.85);border:1px solid rgba(0,180,255,0.2);border-radius:8px;color:#e0f0ff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;pointer-events:auto}
+.g3d-ctrl:hover{background:rgba(0,212,255,0.2)}
+.review-infinite-wrap{overflow:hidden;position:relative;mask-image:linear-gradient(90deg,transparent 0%,black 6%,black 94%,transparent 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,black 6%,black 94%,transparent 100%)}
+.review-infinite-track{display:flex;gap:16px;width:max-content;will-change:transform}
+.review-card-v2{min-width:310px;max-width:340px;flex-shrink:0;background:rgba(4,14,34,0.8);backdrop-filter:blur(16px);border:1px solid rgba(0,212,255,0.15);border-radius:18px;padding:22px;transition:all 0.35s cubic-bezier(.22,1,.36,1)}
+.review-card-v2:hover{transform:translateY(-4px);border-color:rgba(0,212,255,0.35);box-shadow:0 16px 40px rgba(0,0,0,0.4)}
+.chat-fab{position:fixed;bottom:28px;right:28px;z-index:999;width:64px;height:64px;border:none;cursor:pointer;background:transparent;padding:0}
+.chat-fab-inner{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#0044cc,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;position:relative;overflow:visible;box-shadow:0 8px 32px rgba(0,212,255,0.45);animation:chatFabFloat 3s ease-in-out infinite,chatFabPulse 2s ease infinite}
+@keyframes chatFabFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}
+@keyframes chatFabPulse{0%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 0 rgba(0,212,255,.4)}70%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 16px rgba(0,212,255,0)}100%{box-shadow:0 8px 32px rgba(0,212,255,.45),0 0 0 0 rgba(0,212,255,0)}}
+.chat-fab-ring{position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(0,212,255,.45);animation:chatRing 2.5s linear infinite}
+.chat-fab-ring2{position:absolute;inset:-12px;border-radius:50%;border:1.5px solid rgba(124,58,237,.3);animation:chatRing 4s linear infinite reverse}
+@keyframes chatRing{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.chat-fab-icon{font-size:28px;z-index:2;position:relative;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
+.badge-dot{position:absolute;top:0;right:0;width:15px;height:15px;border-radius:50%;background:#ff4757;border:2px solid #020812;font-size:8px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;z-index:3}
+.award-anim-card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+  min-width: 160px;
+  animation: awardPop 0.6s ease both;
+  /* perspective so rotateX/rotateY look 3-D */
+  transform-style: preserve-3d;
+  perspective: 800px;
+  cursor: pointer;
+  will-change: transform;
+  /* no CSS :hover transform — anime.js owns this */
+}
+/* Award icon: anime.js drives the spin, CSS just provides the shape */
+.award-icon-wrap{
+  width:60px; height:60px; border-radius:50%;
+  background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(124,58,237,0.1));
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 14px; font-size:28px;
+  /* animation:awardSpin removed — anime.js handles rotation */
+  will-change: transform;
+}
+@keyframes awardSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes awardPop{from{opacity:0;transform:translateY(30px) scale(0.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+/* Award value text: has gradient clip, so .fw-char children must be opaque */
+.award-val{
+  font-family:var(--font-h); font-size:26px; font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+  display: inline-block; cursor: pointer;
+}
+/* Fix: fw-char spans inside .award-val inherit transparent fill → make visible */
+.award-val .fw-char{
+  -webkit-text-fill-color: var(--cyan);
+  color: var(--cyan);
+  background: none;
+}
+.award-lbl{font-size:12px;color:var(--muted);margin-top:4px;transition:color 0.3s}
+</style>
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Cache-Control" content="no-store">
+</head>
+<body>
+<script>
+(function(){
+var _dt=false,_thresh=160;
+(function _chk(){
+  var w=window.outerWidth-window.innerWidth,h=window.outerHeight-window.innerHeight;
+  if(w>_thresh||h>_thresh){if(!_dt){_dt=true;document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#020812;color:#e0f0ff;font-family:sans-serif;flex-direction:column;gap:20px"><div style="font-size:48px">🔒</div><div style="font-size:24px;font-weight:700">Access Restricted</div></div>';}}else{_dt=false;}
+  setTimeout(_chk,800);
+})();
+document.addEventListener('keydown',function(e){if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C','U'].includes(e.key))||(e.ctrlKey&&e.key==='U')){e.preventDefault();return false;}},true);
+document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
+})();
+</script>
+
+<nav class="navbar" id="mainNav">
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+      <a href="/" class="nav-logo"><div class="nav-logo-icon glow3d">✈</div><span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span></a>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/booking" class="nav-link">Book Flight</a>
+      <a href="/track" class="nav-link active">Track Flight</a>
+      <a href="/flightmap" class="nav-link">3D Map</a>
+      <a href="/flightgame" class="nav-link">Have Fun</a>
+      <a href="/contact" class="nav-link">Contact</a>
+      <a href="/dashboard" class="nav-link hidden" id="navDashBtn">My Account</a>
+    </div>
+    <div class="nav-actions">
+      <span id="navUserChip" class="badge badge-cyan hidden"></span>
+      <a href="/login" class="btn btn-secondary btn-sm" id="navLoginBtn">Sign In</a>
+      <button class="btn btn-ghost btn-sm hidden" id="navLogoutBtn" onclick="FlyWay.logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/" class="nav-link">Home</a>
+    <a href="/booking" class="nav-link">Book Flight</a>
+    <a href="/track" class="nav-link">Track Flight</a>
+    <a href="/flightmap" class="nav-link">3D Map</a>
+    <a href="/flightgame" class="nav-link">Have Fun</a>
+    <a href="/contact" class="nav-link">Contact</a>
+    <a href="/dashboard" class="nav-link">My Account</a>
+    <a href="/login" class="nav-link">Sign In</a>
+  </div>
+</nav>
+
+<div class="track-hero" style="position:relative;min-height:280px;display:flex;align-items:center">
+  <div class="sky-canvas" id="skyCanvas"></div>
+  <div class="container" style="position:relative;z-index:2;padding-top:40px;padding-bottom:40px">
+    <div class="badge badge-cyan badge-lg mb-16">📡 Real-Time Flight Tracking</div>
+    <h1 class="display-2 text-center mb-16">Track Any Flight<br><span class="text-gradient fw-anime-label fw-section-phrase" id="phraseLive">Live &amp; Accurate</span></h1>
+    <p style="color:var(--muted);font-size:clamp(13px,2vw,16px);text-align:center;max-width:520px;margin:0 auto 32px">Enter your flight number for real-time status, gate info, and live 3D tracking.</p>
+    <div style="max-width:560px;margin:0 auto">
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="form-group" style="flex:1;min-width:200px;margin:0">
+          <input class="form-input" id="trackInput" placeholder="Enter flight number (e.g. FW-XXX)" style="font-family:var(--font-m);letter-spacing:1px;font-size:15px;text-transform:uppercase" onkeydown="if(event.key==='Enter')trackFlight()">
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="trackFlight()">🔍 Track Flight</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="trust-score-section">
+  <div class="container">
+    <div class="trust-pills" id="trustPills"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container" style="max-width:860px">
+
+    <div id="trackResult" class="hidden track-card-in">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-bottom:24px">
+        <div style="padding:22px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-family:var(--font-h);font-size:22px;font-weight:800" id="trFlightNum">-</div>
+            <div style="color:var(--muted);font-size:13px" id="trAirline">-</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="flight-status-badge" id="trStatusBadge" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3)">
+              <div class="status-dot inflight" id="trStatusDot"></div>
+              <span id="trStatusText">-</span>
+            </div>
+            <span id="trLastUpdated" style="font-size:11px;color:var(--muted)"></span>
+          </div>
+        </div>
+        <div style="padding:28px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:8px">
+            <div class="airport-card">
+              <div class="airport-big" id="trFrom">-</div>
+              <div style="color:var(--muted);font-size:13px" id="trFromCity">-</div>
+              <div style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px" id="trDepTime">-</div>
+            </div>
+            <div style="flex:1;min-width:140px;padding:0 16px">
+              <div style="text-align:center;font-size:30px" id="trPlane">✈</div>
+              <div class="progress-track">
+                <div class="progress-fill" id="trProgressFill" style="width:0%"></div>
+                <div class="progress-plane" id="trProgressPlane" style="left:0%">✈</div>
+              </div>
+              <div id="trDuration" style="font-size:12px;color:var(--muted);text-align:center">-</div>
+            </div>
+            <div class="airport-card" style="text-align:right">
+              <div class="airport-big" id="trTo">-</div>
+              <div style="color:var(--muted);font-size:13px" id="trToCity">-</div>
+              <div style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px" id="trArrTime">-</div>
+            </div>
+          </div>
+          <div class="track-stat-grid">
+            <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">🚪</div><div style="font-size:10px;color:var(--muted)">GATE</div><div style="font-family:var(--font-h);font-weight:700" id="trGate">-</div></div>
+            <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">🏢</div><div style="font-size:10px;color:var(--muted)">TERMINAL</div><div style="font-family:var(--font-h);font-weight:700" id="trTerminal">-</div></div>
+            <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">✈</div><div style="font-size:10px;color:var(--muted)">AIRCRAFT</div><div style="font-family:var(--font-h);font-weight:700;font-size:11px" id="trAircraft">-</div></div>
+            <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">📊</div><div style="font-size:10px;color:var(--muted)">PROGRESS</div><div style="font-family:var(--font-h);font-weight:700" id="trProgress">-</div></div>
+            <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">🏔</div><div style="font-size:10px;color:var(--muted)">ALTITUDE</div><div style="font-family:var(--font-h);font-weight:700;font-size:12px" id="trAlt">-</div></div>
+            <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">💨</div><div style="font-size:10px;color:var(--muted)">AIRSPEED</div><div style="font-family:var(--font-h);font-weight:700;font-size:12px" id="trSpd">-</div></div>
+            <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">🌡</div><div style="font-size:10px;color:var(--muted)">DEP WEATHER</div><div style="font-family:var(--font-h);font-weight:700;font-size:11px" id="trWeatherDep">-</div></div>
+            <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">🌡</div><div style="font-size:10px;color:var(--muted)">ARR WEATHER</div><div style="font-family:var(--font-h);font-weight:700;font-size:11px" id="trWeatherArr">-</div></div>
+          </div>
+
+          <div id="globe3d-wrap" style="height:clamp(220px,45vw,340px);margin-top:20px">
+            <canvas id="globe3d-canvas"></canvas>
+            <div id="globe3d-header">
+              <div class="g3d-badge"><div class="g3d-live-dot"></div>3D LIVE MAP</div>
+              <div style="display:flex;gap:8px;pointer-events:auto">
+                <div class="g3d-badge" id="g3dFlightLabel" style="background:rgba(0,0,0,0.4)">-</div>
+              </div>
+            </div>
+            <div id="globe3d-controls">
+              <button class="g3d-ctrl" id="g3dZoomIn" title="Zoom In">＋</button>
+              <button class="g3d-ctrl" id="g3dZoomOut" title="Zoom Out">－</button>
+              <button class="g3d-ctrl" id="g3dReset" title="Reset">⌖</button>
+            </div>
+            <div id="globe3d-footer">
+              <div class="g3d-stat"><span>📍</span><span class="g3d-stat-val" id="g3dProgress">0%</span><span style="color:var(--muted);font-size:10px">progress</span></div>
+              <div class="g3d-stat"><span>🏔</span><span class="g3d-stat-val" id="g3dAlt">-</span><span style="color:var(--muted);font-size:10px">altitude</span></div>
+              <div class="g3d-stat"><span>💨</span><span class="g3d-stat-val" id="g3dSpeed">-</span><span style="color:var(--muted);font-size:10px">airspeed</span></div>
+              <div class="g3d-stat"><span>⏱</span><span class="g3d-stat-val" id="g3dETA">-</span><span style="color:var(--muted);font-size:10px">remaining</span></div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+            <button onclick="launch3dSim()" style="flex:1;min-width:200px;padding:13px 20px;background:linear-gradient(135deg,rgba(0,68,204,0.9),rgba(0,212,255,0.8));border:1px solid rgba(0,212,255,0.4);border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform 0.15s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,212,255,0.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+              <span style="font-size:20px">🌍</span> View Realistic 3D Live Simulation
+            </button>
+          </div>
+
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="copyTrackLink()">🔗 Copy Tracking Link</button>
+            <button class="btn btn-ghost" onclick="trackFlight()">🔄 Refresh</button>
+            <a href="/booking" class="btn btn-primary">✈ Book a Flight</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="haveFunWrap" style="margin-top:32px;text-align:center;padding:28px;background:linear-gradient(135deg,rgba(124,58,237,0.08),rgba(0,212,255,0.05));border:1px solid rgba(124,58,237,0.2);border-radius:16px">
+      <div style="font-size:32px;margin-bottom:8px">🎮</div>
+      <div style="font-weight:700;font-size:16px;margin-bottom:6px">Take a Break?</div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:16px">While you wait for your flight, try our 3D Sky Ace flight game!</div>
+      <button onclick="window.location.href='/flightgame'" style="padding:13px 32px;background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:transform 0.15s,box-shadow 0.2s;box-shadow:0 4px 20px rgba(124,58,237,0.3)" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 30px rgba(124,58,237,0.5)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(124,58,237,0.3)'">
+        🕹 HAVE FUN
+      </button>
+    </div>
+
+    <div id="trackEmpty">
+      <div class="grid-2 mb-32">
+        <div class="card"><div style="font-family:var(--font-h);font-weight:700;font-size:17px;margin-bottom:16px">📡 How it works</div><div id="howItWorks"></div></div>
+        <div class="card"><div style="font-family:var(--font-h);font-weight:700;font-size:17px;margin-bottom:16px">✅ What you'll see</div><div id="whatYoullSee"></div></div>
+      </div>
+      <div class="text-center mb-24">
+        <h2 class="display-3">What Passengers Say About<br><span class="text-gradient">FlyWay Tracking</span></h2>
+        <p style="color:var(--muted);margin-top:8px;font-size:14px">Non-stop reviews from real travelers - always moving</p>
+      </div>
+      <div class="review-infinite-wrap" id="reviewsContainer" style="height:220px;overflow:hidden"></div>
+    </div>
+  </div>
+</div>
+
+<div style="background:var(--navy2);border-top:1px solid var(--border);padding:60px 0;overflow:hidden">
+  <div class="container text-center">
+    <div class="badge badge-gold badge-lg mb-16">🏆 Industry Recognised</div>
+    <h2 class="display-3 mb-24">Trusted <span class="text-gradient">Worldwide</span></h2>
+    <div id="awardCards" style="display:flex;justify-content:center;gap:clamp(10px,2.5vw,20px);flex-wrap:wrap;margin-bottom:24px"></div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+<button class="chat-fab" id="chatFab" title="Chat with Zephyr">
+  <div class="chat-fab-inner">
+    <div class="chat-fab-ring"></div>
+    <div class="chat-fab-ring2"></div>
+    <span class="chat-fab-icon">🤖</span>
+    <span class="badge-dot" id="chatDot">1</span>
+  </div>
+</button>
+<div class="chat-window" id="chatWindow" style="display:none">
+  <div class="chat-header"><div class="chat-avatar">🤖</div><div><div style="font-weight:700;font-size:14px">Zephyr</div><div style="font-size:12px;color:var(--muted)">AI Assistant</div></div><button id="chatClose" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">×</button></div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div class="chat-input-row"><textarea id="chatInput" class="chat-input" placeholder="Ask about tracking..." rows="1"></textarea><button id="chatSend" class="chat-send">Send</button></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/js/main.js"></script>
+<script>
+var FLIGHTS=[
+  {fn:'FW-001',airline:'Fly Way Express1',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 05m',isDemo:true,canRestart:true},
+  {fn:'FW-002',airline:'Fly Way Express2',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 10m',isDemo:true,canRestart:true},
+  {fn:'FW-003',airline:'Fly Way Express3',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 20m',isDemo:true,canRestart:true},
+  {fn:'FW-004',airline:'Fly Way Express4',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 30m',isDemo:true,canRestart:true},
+  {fn:'FW-100',airline:'Fly Way Airlines',ac:'Boeing 737-800',from:'JFK',to:'LAX',dep:'08:00',arr:'11:30',dur:'5h 30m'},
+  {fn:'FW-101',airline:'Fly Way Airlines',ac:'Airbus A320',from:'LAX',to:'JFK',dep:'14:00',arr:'22:30',dur:'5h 30m'},
+  {fn:'FW-102',airline:'Fly Way Airlines',ac:'Boeing 777-300ER',from:'JFK',to:'LHR',dep:'21:30',arr:'08:45',dur:'7h 15m'},
+  {fn:'FW-103',airline:'Fly Way Airlines',ac:'Boeing 777-300ER',from:'LHR',to:'JFK',dep:'11:00',arr:'14:15',dur:'8h 15m'},
+  {fn:'FW-104',airline:'Fly Way Airlines',ac:'Boeing 787',from:'LAX',to:'NRT',dep:'11:00',arr:'15:00',dur:'12h 00m'},
+  {fn:'FW-105',airline:'Fly Way Airlines',ac:'Boeing 787',from:'NRT',to:'LAX',dep:'18:00',arr:'14:00',dur:'11h 00m'},
+  {fn:'FW-106',airline:'Fly Way Airlines',ac:'Airbus A350-900',from:'DXB',to:'JFK',dep:'02:30',arr:'09:15',dur:'14h 45m'},
+  {fn:'FW-107',airline:'Fly Way Airlines',ac:'Airbus A350-900',from:'JFK',to:'DXB',dep:'22:00',arr:'18:00',dur:'12h 00m'},
+  {fn:'FW-108',airline:'Fly Way Airlines',ac:'Airbus A321',from:'SFO',to:'ORD',dep:'07:15',arr:'13:30',dur:'4h 15m'},
+  {fn:'FW-109',airline:'Fly Way Airlines',ac:'Boeing 737 MAX',from:'ATL',to:'MIA',dep:'09:00',arr:'10:30',dur:'1h 30m'},
+  {fn:'FW-110',airline:'Fly Way Airlines',ac:'Airbus A380',from:'LHR',to:'DXB',dep:'22:00',arr:'08:00',dur:'7h 00m'},
+  {fn:'FW-111',airline:'Fly Way Airlines',ac:'Boeing 787',from:'SIN',to:'LHR',dep:'00:30',arr:'06:45',dur:'13h 15m'},
+  {fn:'FW-112',airline:'Fly Way Airlines',ac:'Boeing 777',from:'JFK',to:'CDG',dep:'19:00',arr:'08:30',dur:'7h 30m'},
+  {fn:'FW-113',airline:'Fly Way Airlines',ac:'Boeing 787',from:'SIN',to:'NRT',dep:'10:00',arr:'18:00',dur:'7h 00m'},
+  {fn:'FW-114',airline:'Fly Way Airlines',ac:'Boeing 777',from:'JNB',to:'LHR',dep:'20:00',arr:'07:00',dur:'11h 00m'},
+];
+
+var HOW=[['1','Enter flight number or booking reference','Type any FW-XXX flight number or your booking reference from the confirmation page.'],['2','Get live real-time status','See live countdown, current status, gate, terminal, weather, altitude and speed.'],['3','Share with family','Copy the tracking link to share with anyone. They can track live too.']];
+var SEE=[['📍','Live flight progress and percentage complete'],['🚪','Gate and terminal numbers'],['⏱','Real-time elapsed + remaining time'],['🌤','Weather at departure and arrival airports'],['📊','Altitude and airspeed when in flight'],['✅','Live status: Scheduled / Boarding / In Flight / Landed']];
+document.getElementById('howItWorks').innerHTML=HOW.map(function(i){return'<div class="how-item"><div class="how-num">'+i[0]+'</div><div><div style="font-weight:600;font-size:14px;margin-bottom:3px">'+i[1]+'</div><div style="font-size:12px;color:var(--muted);line-height:1.6">'+i[2]+'</div></div></div>';}).join('');
+document.getElementById('whatYoullSee').innerHTML=SEE.map(function(i){return'<div class="see-item"><span>'+i[0]+'</span><span>'+i[1]+'</span></div>';}).join('');
+document.getElementById('trustPills').innerHTML=['<div class="trust-pill"><span style="color:var(--gold)">&#9733;&#9733;&#9733;&#9733;&#9733;</span><span><strong>Trustpilot</strong> 4.9/5</span></div>','<div class="trust-pill"><span>&#127942;</span><span><strong>TripAdvisor</strong> Excellent</span></div>','<div class="trust-pill"><span>&#9989;</span><span><strong>99%</strong> Satisfaction</span></div>','<div class="trust-pill"><span>&#128225;</span><span><strong>Live</strong> Real-time tracking</span></div>'].join('');
+
+(function(){
+  /* ── Award card data with per-card palette IDs ── */
+  var awards = [
+    {icon:'⭐', val:'4.9/5',   lbl:'Trustpilot',      delay:'0s',   pid:'awardVal0'},
+    {icon:'🏆', val:'Excellent',lbl:'TripAdvisor 2024',delay:'.12s', pid:'awardVal1'},
+    {icon:'✅', val:'99%',     lbl:'Satisfaction',    delay:'.24s', pid:'awardVal2'},
+    {icon:'🌍', val:'180+',    lbl:'Destinations',    delay:'.36s', pid:'awardVal3'},
+    {icon:'✈',  val:'2.4M+',  lbl:'Flights Booked',  delay:'.48s', pid:'awardVal4'},
+    {icon:'💎', val:'Platinum',lbl:'Premium Service', delay:'.6s',  pid:'awardVal5'},
+  ];
+
+  /* Register palette entries for each val element ID so anime-labels.js picks them up */
+  var CARD_PALETTES = {
+    awardVal0: ['#f5c842','#fbbf24','#fb923c','#ff6b6b','#fcd34d'],   /* gold – Trustpilot   */
+    awardVal1: ['#f5c842','#fbbf24','#fb923c','#e879f9','#d97706'],   /* amber – TripAdvisor */
+    awardVal2: ['#00e396','#34d399','#6ee7b7','#00d4ff','#10b981'],   /* emerald – Satisf.   */
+    awardVal3: ['#38bdf8','#00d4ff','#818cf8','#7c3aed','#60a5fa'],   /* blue – Destinations */
+    awardVal4: ['#00d4ff','#22d3ee','#00e396','#7c3aed','#38bdf8'],   /* cyan – Flights      */
+    awardVal5: ['#a78bfa','#7c3aed','#e879f9','#c4b5fd','#818cf8'],   /* purple – Premium    */
+  };
+
+  /* Inject palettes into the global FWAnime namespace so anime-labels.js uses them.
+     If anime-labels hasn't loaded yet, stash and merge when it does. */
+  function injectPalettes() {
+    if (window._FWAnimePendingPalettes) {
+      Object.assign(window._FWAnimePendingPalettes, CARD_PALETTES);
+    } else {
+      window._FWAnimePendingPalettes = Object.assign({}, CARD_PALETTES);
+    }
+  }
+  injectPalettes();
+
+  /* Build HTML – val element carries fw-anime-label fw-section-phrase */
+  document.getElementById('awardCards').innerHTML = awards.map(function(a) {
+    return '<div class="award-anim-card fw-award-card" id="awardCard_' + a.pid + '" style="animation-delay:' + a.delay + '">'
+      + '<div class="award-icon-wrap fw-award-icon">' + a.icon + '</div>'
+      + '<div class="award-val fw-anime-label fw-section-phrase" id="' + a.pid + '">' + a.val + '</div>'
+      + '<div class="award-lbl fw-award-lbl">' + a.lbl + '</div>'
+      + '</div>';
+  }).join('');
+
+  /* Once anime.js & anime-labels.js are ready, reattach each val element */
+  function reattachAll() {
+    if (!window.anime || !window.FWAnime) { setTimeout(reattachAll, 80); return; }
+    awards.forEach(function(a) {
+      var el = document.getElementById(a.pid);
+      if (el) window.FWAnime.reattach(el);
+    });
+    startCardAnimations();
+  }
+  setTimeout(reattachAll, 200);
+
+  /* ── Card-level continuous idle + hover animations ── */
+  function startCardAnimations() {
+    if (!window.anime) return;
+    var cards = document.querySelectorAll('.fw-award-card');
+
+    /* Continuous idle: each card floats at a different phase */
+    cards.forEach(function(card, i) {
+      anime({
+        targets: card,
+        translateY: [0, -(5 + i * 1.5)],
+        duration: 1800 + i * 250,
+        delay: i * 180,
+        direction: 'alternate',
+        loop: true,
+        easing: 'easeInOutSine',
+      });
+
+      /* Icon spin/pulse loop */
+      var icon = card.querySelector('.fw-award-icon');
+      if (icon) {
+        anime({
+          targets: icon,
+          rotate: [0, (i % 2 === 0 ? 1 : -1) * 12],
+          scale: [1, 1.08 + (i % 3) * 0.04],
+          duration: 2200 + i * 200,
+          delay: i * 120,
+          direction: 'alternate',
+          loop: true,
+          easing: 'easeInOutQuad',
+        });
+      }
+    });
+
+    /* Hover: explosive multi-stage card animation */
+    var HOVER_PALETTES = Object.values(CARD_PALETTES);
+    cards.forEach(function(card, i) {
+      var palette   = HOVER_PALETTES[i] || HOVER_PALETTES[0];
+      var icon      = card.querySelector('.fw-award-icon');
+      var lbl       = card.querySelector('.fw-award-lbl');
+      var isHovered = false;
+
+      card.addEventListener('mouseenter', function() {
+        if (isHovered) return;
+        isHovered = true;
+
+        /* Stage 1 – Card tilt + glow burst */
+        anime({
+          targets: card,
+          rotateY: [0, (i % 2 === 0 ? 12 : -12)],
+          rotateX: [-4, 4],
+          scale: [1, 1.08],
+          boxShadow: ['0 4px 20px rgba(0,212,255,0.1)', '0 20px 60px rgba(0,212,255,0.5)'],
+          duration: 380,
+          easing: 'easeOutBack',
+        });
+
+        /* Stage 2 – Icon wild spin + scale */
+        if (icon) {
+          anime.remove(icon);
+          anime({
+            targets: icon,
+            rotate: [0, 720 + (i * 90)],
+            scale: [1, 1.8, 0.6, 1.4, 1],
+            duration: 900,
+            easing: 'easeOutElastic(1, .5)',
+          });
+        }
+
+        /* Stage 3 – Label shake + color flash */
+        if (lbl) {
+          anime({
+            targets: lbl,
+            translateX: [0, -8, 8, -5, 5, 0],
+            color: [palette[0], palette[2], palette[4] || palette[0]],
+            duration: 500,
+            easing: 'easeInOutSine',
+          });
+        }
+      });
+
+      card.addEventListener('mouseleave', function() {
+        isHovered = false;
+
+        /* Snap card back */
+        anime({
+          targets: card,
+          rotateY: 0, rotateX: 0, scale: 1,
+          boxShadow: '0 4px 20px rgba(0,212,255,0.1)',
+          duration: 600,
+          easing: 'spring(1, 80, 14, 0)',
+          complete: function() {
+            /* Restart idle float after reset */
+            anime({
+              targets: card,
+              translateY: [0, -(5 + i * 1.5)],
+              duration: 1800 + i * 250,
+              direction: 'alternate',
+              loop: true,
+              easing: 'easeInOutSine',
+            });
+          },
+        });
+
+        /* Icon back to gentle spin */
+        if (icon) {
+          anime.remove(icon);
+          anime({
+            targets: icon,
+            rotate: 0, scale: 1,
+            duration: 500,
+            easing: 'easeOutBack',
+            complete: function() {
+              anime({
+                targets: icon,
+                rotate: [0, (i % 2 === 0 ? 1 : -1) * 12],
+                scale: [1, 1.08 + (i % 3) * 0.04],
+                duration: 2200 + i * 200,
+                direction: 'alternate',
+                loop: true,
+                easing: 'easeInOutQuad',
+              });
+            },
+          });
+        }
+
+        /* Label back */
+        if (lbl) {
+          anime({ targets: lbl, translateX: 0, color: '', duration: 400, easing: 'easeOutQuad' });
+        }
+      });
+    });
+  }
+})();
+
+
+function buildSky(){
+  var cv=document.getElementById('skyCanvas');if(!cv)return;
+  for(var i=0;i<6;i++){var cl=document.createElement('div');cl.className='cloud';var w=Math.floor(Math.random()*200)+80;cl.style.cssText='width:'+w+'px;height:'+Math.floor(w*0.4)+'px;top:'+(Math.random()*80+5)+'%;animation-duration:'+(Math.random()*25+20)+'s;animation-delay:-'+(Math.random()*25)+'s;opacity:'+(Math.random()*0.4+0.15);cv.appendChild(cl);}
+  for(var j=0;j<4;j++){var pl=document.createElement('div');pl.className='flying-plane';pl.textContent=['✈','🛩','🛫','🛬'][j%4];pl.style.cssText='top:'+(Math.random()*60+10)+'%;animation-duration:'+(Math.random()*20+15)+'s;animation-delay:-'+(Math.random()*20)+'s;opacity:0.12;font-size:'+(Math.floor(Math.random()*20)+16)+'px';cv.appendChild(pl);}
+}
+buildSky();
+
+var urlCode=new URLSearchParams(window.location.search).get('code')||'';
+if(urlCode&&urlCode.length>1){
+  document.getElementById('trackInput').value=urlCode.toUpperCase();
+  // Auto-track after a short delay (so page has finished rendering)
+  setTimeout(function(){trackFlight();},600);
+}
+
+var liveInterval=null,currentFlight=null;
+var cachedGate='',cachedTerminal='',cachedWeatherDep='',cachedWeatherArr='';
+var WEATHERS=[{dep:'☀ 22°C Clear',arr:'⛅ 18°C Cloudy'},{dep:'🌤 26°C Sunny',arr:'🌧 14°C Rainy'},{dep:'⛅ 17°C Overcast',arr:'☀ 28°C Clear'},{dep:'🌧 13°C Rainy',arr:'🌤 22°C Sunny'},{dep:'❄ 2°C Cold',arr:'☀ 23°C Clear'},{dep:'🌫 16°C Foggy',arr:'⛅ 19°C Cloudy'}];
+
+function calcProg(flight){
+  if(flight.isDemo){
+    var key='fw_demo_start_v2_'+String(flight.fn||'demo').replace(/[^A-Z0-9]/gi,'');
+    var ds=parseInt(localStorage.getItem(key)||'0');
+    var durMs=60000;
+    if(!ds){
+      ds=Date.now();
+      localStorage.setItem(key,ds);
+    }
+    if(flight.canRestart && Date.now() - ds >= durMs){
+      ds = Date.now();
+      localStorage.setItem(key,ds);
+    }
+    var elMs=Date.now()-ds;
+    var prog=Math.min(100,(elMs/durMs)*100);
+    var status2 = prog>=100 ? 'Landed' : prog>85 ? 'Approaching' : prog>5 ? 'In Flight' : 'Boarding';
+    return {prog:parseFloat(prog.toFixed(2)),status:status2,el:elMs/60000,durMins:1};
+  }
+  var now=new Date();
+  var p=(flight.dep||'08:00').split(':');
+  var dH=parseInt(p[0])||8,dM=parseInt(p[1])||0;
+  var dm=(flight.dur||'4h').match(/(\d+)h\s*(\d+)?/);
+  var durMins=dm?parseInt(dm[1])*60+(parseInt(dm[2])||0):240;
+  var dt;
+  if(flight.departureDate){
+    var pad=function(n){return String(n).padStart(2,'0');};
+    dt=new Date(flight.departureDate+'T'+pad(dH)+':'+pad(dM)+':00');
+    if(dt>now)return{prog:0,status:'Scheduled',el:0,durMins:durMins};
+    // Check if flight has already fully landed
+    var elTotal=(now-dt)/60000;
+    if(elTotal>=durMins+25)return{prog:100,status:'Landed',el:elTotal,durMins:durMins};
+  }else{
+    dt=new Date(now);dt.setHours(dH,dM,0,0);
+    if(dt>now)return{prog:0,status:'Scheduled',el:0,durMins:durMins};
+    var hoursDiff=(now-dt)/3600000;
+    // If more than 24h ago with no date reference, treat as completed/landed
+    if(hoursDiff>24){return{prog:100,status:'Landed',el:hoursDiff*60,durMins:durMins};}
+  }
+  var el=(now-dt)/60000;
+  if(el<0)return{prog:0,status:'Scheduled',el:0,durMins:durMins};
+  if(el<25)return{prog:parseFloat((el/durMins*4).toFixed(2)),status:'Boarding',el:el,durMins:durMins};
+  if(el<55)return{prog:parseFloat((el/durMins*10).toFixed(2)),status:'Departed',el:el,durMins:durMins};
+  var prog=parseFloat(Math.min(100,el/durMins*100).toFixed(2));
+  if(prog>=100)return{prog:100,status:'Landed',el:el,durMins:durMins};
+  if(prog>=88)return{prog:prog,status:'Approaching',el:el,durMins:durMins};
+  return{prog:prog,status:'In Flight',el:el,durMins:durMins};
+}
+
+async function trackFlight(){
+  var code=document.getElementById('trackInput').value.trim().toUpperCase();
+  if(!code){FlyWay.toast('error','Enter flight number or booking reference');return;}
+  try{
+    var r=await fetch('/api/track/'+code).then(function(x){return x.json();}).catch(function(){return{found:false};});
+    if(r.found){startTracking({fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,bookingRef:r.bookingRef});return;}
+  }catch(e){}
+  var f=FLIGHTS.find(function(x){return x.fn===code||x.fn.replace('-','')===code.replace('-','');});
+  if(f){startTracking(f);return;}
+  FlyWay.toast('error','Not found','No flight or booking found for "'+code+'". Try FW-XXX or your booking reference.');
+}
+
+function startTracking(f){
+  currentFlight=f;
+  var w=WEATHERS[Math.floor(Math.random()*WEATHERS.length)];
+  cachedGate=String.fromCharCode(65+Math.floor(Math.random()*4))+(Math.floor(Math.random()*20)+1);
+  cachedTerminal='Terminal '+(Math.floor(Math.random()*3)+1);
+  cachedWeatherDep=w.dep;cachedWeatherArr=w.arr;
+  if(liveInterval)clearInterval(liveInterval);
+  renderFull(f);
+  liveInterval=setInterval(function(){renderLive(f);},1000);
+  document.getElementById('trackResult').classList.remove('hidden');
+  document.getElementById('trackEmpty').classList.add('hidden');
+  window.scrollTo({top:document.getElementById('trackResult').offsetTop-80,behavior:'smooth'});
+}
+
+function S(id,v){var el=document.getElementById(id);if(el)el.textContent=v||'-';}
+
+function renderFull(f){
+  var fa=FlyWay.airports.find(function(a){return a.code===f.from;})||{city:f.from,flag:'🌍'};
+  var ta=FlyWay.airports.find(function(a){return a.code===f.to;})||{city:f.to,flag:'🌍'};
+  var fNum=(f.fn||f.flightNumber||'-');
+  if(f.bookingRef)fNum+=' · Ref: '+f.bookingRef;
+  S('trFlightNum',fNum);
+  S('trAirline',(f.airline||'Fly Way Airlines')+' · '+(f.ac||f.aircraft||'-'));
+  S('trFrom',f.from);S('trFromCity',(fa.flag||'')+' '+(fa.city||''));
+  S('trDepTime',f.dep||f.depTime||'-');
+  S('trTo',f.to);S('trToCity',(ta.flag||'')+' '+(ta.city||''));
+  S('trArrTime',f.arr||f.arrTime||'-');
+  S('trGate',cachedGate);S('trTerminal',cachedTerminal);
+  S('trAircraft',f.ac||f.aircraft||'-');
+  S('trWeatherDep',cachedWeatherDep);S('trWeatherArr',cachedWeatherArr);
+  renderLive(f);
+}
+
+function renderLive(f){
+  var r=calcProg(f),prog=r.prog,status=r.status;
+  
+  // Check for stops and update status accordingly
+  var stopInfo = checkFlightStops(f, prog);
+  if (stopInfo) {
+    status = stopInfo.status;
+  }
+  
+  var ST={'Scheduled':{bg:'rgba(245,200,66,0.12)',border:'rgba(245,200,66,0.4)',dot:'scheduled'},'Boarding':{bg:'rgba(0,212,255,0.1)',border:'rgba(0,212,255,0.3)',dot:'scheduled'},'Departed':{bg:'rgba(0,212,255,0.1)',border:'rgba(0,212,255,0.3)',dot:'inflight'},'In Flight':{bg:'rgba(0,212,255,0.1)',border:'rgba(0,212,255,0.3)',dot:'inflight'},'Approaching':{bg:'rgba(0,227,150,0.1)',border:'rgba(0,227,150,0.3)',dot:'landed'},'Landed':{bg:'rgba(0,227,150,0.1)',border:'rgba(0,227,150,0.3)',dot:'landed'}};
+  var sc=ST[status]||ST['In Flight'];
+  var sb=document.getElementById('trStatusBadge');if(sb){sb.style.background=sc.bg;sb.style.borderColor=sc.border;}
+  var sd=document.getElementById('trStatusDot');if(sd)sd.className='status-dot '+sc.dot;
+  S('trStatusText',status==='In Flight'?'In Flight ✈':status==='Landed'?'Landed ✅':status);
+  var pf=document.getElementById('trProgressFill');if(pf)pf.style.width=prog+'%';
+  var pp=document.getElementById('trProgressPlane');if(pp)pp.style.left=Math.min(95,prog)+'%';
+  var isAir=status==='In Flight'||status==='Departed'||status==='Approaching';
+  var elH=Math.floor(r.el/60),elM=Math.floor(r.el%60);
+  var remMins=Math.max(0,r.durMins-r.el),remH=Math.floor(remMins/60),remM=Math.floor(remMins%60);
+  var remain=prog>=100?'Arrived':(remH>0?remH+'h '+String(remM).padStart(2,'0')+'m remaining':Math.floor(remMins)+'m remaining');
+  S('trDuration',(f.dur||'-')+' · '+prog.toFixed(1)+'% · '+remain);
+  S('trProgress',prog.toFixed(1)+'%');
+  var altEl=document.getElementById('trAlt');if(altEl)altEl.textContent=isAir?(28000+Math.floor(prog*80)).toLocaleString()+' ft':'0 ft';
+  var spdEl=document.getElementById('trSpd');if(spdEl)spdEl.textContent=isAir?(455+Math.floor(prog*0.3))+' mph':'0 mph';
+  S('trLastUpdated','Live: '+new Date().toLocaleTimeString());
+}
+
+function checkFlightStops(flight, progress) {
+  if (!flight.stops || flight.stops.length === 0) return null;
+  
+  // For Direct flights - stop around 40-60% progress
+  if (flight.type === 'Direct') {
+    var stopProgress = 45 + Math.sin(Date.now() / 30000) * 10; // Varies between 35-55%
+    if (progress >= stopProgress - 2 && progress <= stopProgress + 8) {
+      var stop = flight.stops[0];
+      return {
+        status: '🛑 Stopped at ' + stop.airport + ' - ' + stop.reason
+      };
+    }
+  }
+  
+  // For Connecting flights - layover around 50% progress
+  if (flight.type === 'Connecting') {
+    if (progress >= 48 && progress <= 65) {
+      var stop = flight.stops[0];
+      return {
+        status: '🔄 Layover at ' + stop.airport + ' - Connecting to ' + stop.connectingFlight
+      };
+    }
+  }
+  
+  return null;
+}
+
+function copyTrackLink(){
+  var input=document.getElementById('trackInput');
+  var code=(currentFlight && (currentFlight.fn || currentFlight.flightNumber) || (input && input.value) || '').toString().trim();
+  if(!code)return;
+  code = code.toUpperCase();
+  navigator.clipboard.writeText(window.location.origin+'/track/'+encodeURIComponent(code)).then(function(){FlyWay.toast('success','Link copied!','Share with family to track live');});
+}
+
+var Globe3D=(function(){
+'use strict';
+var APT={JFK:{lat:40.6413,lng:-73.778},LAX:{lat:33.9425,lng:-118.408},LHR:{lat:51.470,lng:-0.454},NRT:{lat:35.765,lng:140.386},DXB:{lat:25.253,lng:55.366},SIN:{lat:1.364,lng:103.991},CDG:{lat:49.010,lng:2.548},ORD:{lat:41.974,lng:-87.907},SFO:{lat:37.621,lng:-122.379},ATL:{lat:33.641,lng:-84.428},MIA:{lat:25.796,lng:-80.287},LOS:{lat:6.577,lng:3.321},JNB:{lat:-26.136,lng:28.241},GRU:{lat:-23.435,lng:-46.473},BOM:{lat:19.089,lng:72.865},DEL:{lat:28.556,lng:77.100},SYD:{lat:-33.939,lng:151.175},ICN:{lat:37.460,lng:126.440}};
+var R=1.0,scene,camera,renderer,globe,gridG,landG,flightG,cloudG;
+var planeMesh,glowMesh,trailLine,currentArc=null;
+var cZ=2.8,tZ=2.8,eX=0.25,eY=0,tX=0.25,tY=0;
+var drag=false,pm={x:0,y:0},initialized=false;
+
+function v3(lat,lng,r){var phi=(90-lat)*Math.PI/180,theta=(lng+180)*Math.PI/180;return new THREE.Vector3(-r*Math.sin(phi)*Math.cos(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta));}
+function save(k,d){try{localStorage.setItem('fw_fl_'+k,JSON.stringify(d));}catch(e){}}
+function load(k){try{var r=localStorage.getItem('fw_fl_'+k);return r?JSON.parse(r):null;}catch(e){return null;}}
+
+function build(){
+  var cv=document.getElementById('globe3d-canvas'),wp=document.getElementById('globe3d-wrap');
+  if(!cv||!wp)return false;
+  var W=wp.clientWidth||680,H=wp.clientHeight||360;
+  if(W<10)W=680;if(H<10)H=360;
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(W,H,false);
+  renderer.setClearColor(0x000000,0);
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(42,W/H,0.1,500);
+  camera.position.set(0,0,cZ);
+  scene.add(new THREE.AmbientLight(0x223355,1.0));
+  var sun=new THREE.DirectionalLight(0x7799dd,1.6);sun.position.set(5,3,5);scene.add(sun);
+  var gGeo=new THREE.SphereGeometry(R,56,56);
+  globe=new THREE.Mesh(gGeo,new THREE.MeshPhongMaterial({color:0x0c1e38,emissive:0x040d1a,specular:0x1a3366,shininess:14}));scene.add(globe);
+  var aGeo=new THREE.SphereGeometry(R*1.065,56,56);
+  scene.add(new THREE.Mesh(aGeo,new THREE.ShaderMaterial({transparent:true,side:THREE.FrontSide,vertexShader:'varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 vN;void main(){float i=pow(.68-dot(vN,vec3(0,0,1.)),2.8);gl_FragColor=vec4(0.,.38,.95,i*.7);}'})));
+  gridG=new THREE.Group();
+  var gm=new THREE.LineBasicMaterial({color:0x0d2244,transparent:true,opacity:0.5});
+  for(var lat=-75;lat<=75;lat+=15){var pp=[];for(var lg=0;lg<=360;lg+=4)pp.push(v3(lat,lg,R+0.001));gridG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pp),gm));}
+  for(var lg2=0;lg2<360;lg2+=15){var pp2=[];for(var lt=-90;lt<=90;lt+=3)pp2.push(v3(lt,lg2,R+0.001));gridG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pp2),gm));}
+  scene.add(gridG);
+  landG=new THREE.Group();
+  var ldM=new THREE.MeshBasicMaterial({color:0x1c4070}),ldG=new THREE.SphereGeometry(0.003,4,4);
+  [[45,-100,26,36,680],[-12,-55,26,30,500],[52,15,13,17,340],[5,22,36,36,580],[48,85,26,46,760]].forEach(function(reg){for(var i=0;i<reg[4];i++){var m=new THREE.Mesh(ldG,ldM);m.position.copy(v3(reg[0]+(Math.random()-.5)*reg[2]*2,reg[1]+(Math.random()-.5)*reg[3]*2,R+0.001));landG.add(m);}});
+  scene.add(landG);
+  var aptG=new THREE.Group(),adG=new THREE.SphereGeometry(0.006,6,6),adM=new THREE.MeshBasicMaterial({color:0x00d4ff});
+  Object.keys(APT).forEach(function(code){var m=new THREE.Mesh(adG,adM);m.position.copy(v3(APT[code].lat,APT[code].lng,R+0.009));aptG.add(m);});
+  scene.add(aptG);
+  flightG=new THREE.Group();scene.add(flightG);
+  cloudG=new THREE.Group();
+  for(var ci=0;ci<18;ci++){var cGeo=new THREE.SphereGeometry(0.028+Math.random()*0.034,5,4),cMt=new THREE.MeshPhongMaterial({color:0x8aadcc,transparent:true,opacity:0.06+Math.random()*0.09}),cM=new THREE.Mesh(cGeo,cMt),clat=(Math.random()-.5)*130,clng=Math.random()*360;cM.position.copy(v3(clat,clng,R+0.04));cM.userData={lat:clat,lng:clng,dLng:(Math.random()-.5)*0.035};cloudG.add(cM);}
+  scene.add(cloudG);
+  document.getElementById('g3dZoomIn').onclick=function(){tZ=Math.max(1.5,tZ-0.25);};
+  document.getElementById('g3dZoomOut').onclick=function(){tZ=Math.min(4.5,tZ+0.25);};
+  document.getElementById('g3dReset').onclick=function(){tX=0.25;tY=0;tZ=2.8;};
+  cv.addEventListener('mousedown',function(e){drag=true;pm={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mousemove',function(e){if(!drag)return;tY+=(e.clientX-pm.x)*0.005;tX+=(e.clientY-pm.y)*0.005;tX=Math.max(-1.2,Math.min(1.2,tX));pm={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mouseup',function(){drag=false;});
+  cv.addEventListener('touchstart',function(e){drag=true;pm={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  cv.addEventListener('touchmove',function(e){if(!drag)return;tY+=(e.touches[0].clientX-pm.x)*0.007;tX+=(e.touches[0].clientY-pm.y)*0.007;tX=Math.max(-1.2,Math.min(1.2,tX));pm={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  cv.addEventListener('touchend',function(){drag=false;});
+  cv.addEventListener('wheel',function(e){e.preventDefault();tZ=Math.max(1.5,Math.min(4.5,tZ+e.deltaY*0.003));},{passive:false});
+  window.addEventListener('resize',function(){var W2=wp.clientWidth||680,H2=wp.clientHeight||360;camera.aspect=W2/H2;camera.updateProjectionMatrix();renderer.setSize(W2,H2,false);});
+  initialized=true;return true;
+}
+
+function buildArc(fc,tc){
+  while(flightG.children.length)flightG.remove(flightG.children[0]);
+  planeMesh=null;glowMesh=null;trailLine=null;currentArc=null;
+  var fr=APT[fc]||{lat:0,lng:0},to=APT[tc]||{lat:0,lng:0};
+  var fv=v3(fr.lat,fr.lng,R),tv=v3(to.lat,to.lng,R);
+  var mid=new THREE.Vector3().addVectors(fv,tv).multiplyScalar(0.5);
+  mid.normalize().multiplyScalar(R+0.15+fv.distanceTo(tv)*0.15);
+  var curve=new THREE.QuadraticBezierCurve3(fv,mid,tv);
+  currentArc={curve:curve,fc:fc,tc:tc};
+  flightG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(80)),new THREE.LineBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.14})));
+  var od=new THREE.Mesh(new THREE.SphereGeometry(0.011,8,8),new THREE.MeshBasicMaterial({color:0x00e396}));od.position.copy(fv);flightG.add(od);
+  var td=new THREE.Mesh(new THREE.SphereGeometry(0.011,8,8),new THREE.MeshBasicMaterial({color:0xff6b6b}));td.position.copy(tv);flightG.add(td);
+  trailLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([fv,fv]),new THREE.LineBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.9}));flightG.add(trailLine);
+  planeMesh=new THREE.Mesh(new THREE.SphereGeometry(0.014,8,8),new THREE.MeshBasicMaterial({color:0xffffff}));flightG.add(planeMesh);
+  glowMesh=new THREE.Mesh(new THREE.SphereGeometry(0.026,8,8),new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.22}));flightG.add(glowMesh);
+}
+
+function updateTrail(t){
+  if(!currentArc||!trailLine)return;
+  var t0=Math.max(0,t-0.18),pts=[];
+  for(var i=0;i<=24;i++)pts.push(currentArc.curve.getPoint(t0+(t-t0)*(i/24)));
+  trailLine.geometry.setFromPoints(pts);trailLine.geometry.computeBoundingSphere();
+}
+
+var _raf=null,_sw=0,_dm=0,_sp=520;
+
+function runLoop(sw,dm){
+  if(_raf)cancelAnimationFrame(_raf);
+  _sw=sw;_dm=dm;
+  (function loop(ts){
+    _raf=requestAnimationFrame(loop);
+    var t3=ts*0.001;
+    eX+=(tX-eX)*0.055;eY+=(tY-eY)*0.055;cZ+=(tZ-cZ)*0.065;
+    camera.position.z=cZ;
+    globe.rotation.x=eX;globe.rotation.y=eY;
+    gridG.rotation.x=eX;gridG.rotation.y=eY;
+    landG.rotation.x=eX;landG.rotation.y=eY;
+    flightG.rotation.x=eX;flightG.rotation.y=eY;
+    cloudG.rotation.x=eX;cloudG.rotation.y=eY;
+    cloudG.children.forEach(function(c){c.userData.lng+=c.userData.dLng;c.position.copy(v3(c.userData.lat,c.userData.lng,R+0.04));});
+    if(glowMesh){var gp=0.85+0.15*Math.sin(t3*3.5);glowMesh.scale.setScalar(gp);glowMesh.material.opacity=0.14+0.1*gp;}
+    var el2=Date.now()-_sw,t2=Math.max(0,Math.min(1,el2/_dm));
+    if(currentArc&&planeMesh){var pos=currentArc.curve.getPoint(t2);planeMesh.position.copy(pos);glowMesh.position.copy(pos);updateTrail(t2);}
+    var pct=Math.round(t2*100),isAir=t2>0.06&&t2<0.99;
+    var alt=isAir?(28000+Math.round(Math.sin(t2*Math.PI)*2200)):0;
+    var spd=isAir?Math.round(_sp+Math.sin(t2*Math.PI)*28):0;
+    var remMs=Math.max(0,_dm-el2),remH=Math.floor(remMs/3600000),remM=Math.floor((remMs%3600000)/60000);
+    var eta=t2>=0.99?'Arrived':(remH>0?remH+'h '+String(remM).padStart(2,'0')+'m':remM+'m');
+    var ep=document.getElementById('g3dProgress');if(ep)ep.textContent=pct+'%';
+    var ea=document.getElementById('g3dAlt');if(ea)ea.textContent=isAir?alt.toLocaleString()+' ft':'Ground';
+    var es=document.getElementById('g3dSpeed');if(es)es.textContent=isAir?spd+' mph':'0 mph';
+    var ee=document.getElementById('g3dETA');if(ee)ee.textContent=eta;
+    renderer.render(scene,camera);
+  })(0);
+}
+
+return{
+  attach:function(flight,calcProgFn){
+    if(!initialized){if(!build())return;}
+    var fc=flight.from,tc=flight.to;
+    var fn=(flight.fn||flight.flightNumber||'').replace(/[^A-Z0-9]/gi,'');
+    var r=calcProgFn(flight),durMs=r.durMins*60000;
+    var sw=Date.now()-(r.el*60000);
+    var stored=load(fn);
+    if(stored&&Math.abs(stored.sw-sw)<180000){sw=stored.sw;durMs=stored.dm||durMs;}
+    else{save(fn,{sw:sw,dm:durMs,fc:fc,tc:tc});}
+    buildArc(fc,tc);
+    tX=((APT[fc]&&APT[tc])?((APT[fc].lat+APT[tc].lat)/2)*Math.PI/180*0.45:0.25);
+    tY=-(APT[fc]&&APT[tc]?(APT[fc].lng+APT[tc].lng)/2*Math.PI/180:0);
+    tZ=2.5;
+    var lbl=document.getElementById('g3dFlightLabel');if(lbl)lbl.textContent=(flight.fn||'-')+'  '+fc+' → '+tc;
+    _sp=520+Math.floor(Math.random()*40);
+    runLoop(sw,durMs);
+  },
+  destroy:function(){if(_raf)cancelAnimationFrame(_raf);}
+};
+})();
+
+function launch3dSim(){
+  var f=currentFlight;if(!f){FlyWay.toast('error','No flight tracked','Track a flight first');return;}
+  // Use booking ref if available (direct unified lookup), otherwise use from/to params
+  var code=(f.bookingRef||f.fn||f.flightNumber||'').trim().toUpperCase();
+  if(code){
+    window.open('/flightmap?code='+encodeURIComponent(code),'_blank');
+  } else if(f.from&&f.to){
+    window.open('/flightmap?from='+encodeURIComponent(f.from)+'&to='+encodeURIComponent(f.to),'_blank');
+  } else {
+    FlyWay.toast('error','Cannot open 3D map','Missing flight route data');
+  }
+}
+
+var _origStartTracking=startTracking;
+startTracking=function(f){_origStartTracking(f);Globe3D.attach(f,calcProg);};
+
+(function buildInfiniteReviews(){
+  var NAMES=['James K.','Sofia L.','Amara O.','David M.','Fatima H.','Chen W.','Maria G.','Ahmed R.','Sarah T.','Luke P.','Priya N.','Carlos M.','Yuki T.','Olga S.','Mohammed A.','Emma J.','Kwame B.','Lena R.','Dmitri V.','Camille B.'];
+  var ROUTES=['JFK→LHR','DXB→NRT','LAX→CDG','SIN→LHR','ORD→MIA','ATL→LOS','YYZ→LHR','DEL→DXB','SYD→SIN','GRU→LIS','ICN→JFK','BOM→LHR','CDG→JFK','NRT→SIN','DXB→LHR'];
+  var TEXTS=['Absolutely seamless tracking experience! Watched my flight live the whole way.','The real-time 3D globe is stunning - nothing like it anywhere else.','Shared the tracking link with my family - they loved watching my progress.','Gate info and weather were spot-on. Knew exactly when to head to the airport.','Best flight tracker I have ever used. The altitude readout is a nice touch.','Tracked my partner\'s flight from London. The live map was incredibly accurate.','Premium feel, zero lag. The 3D globe kept refreshing smoothly for hours.','Reliable, fast, and beautiful. FlyWay tracking is genuinely impressive.','My whole family tracked my return flight. The ETA countdown was perfect.','Incredible platform! Live weather at both airports is such a useful feature.','Easy to share, easy to read. My parents tracked me for the first time ever.','The progress bar updating live gave me real peace of mind during delays.'];
+  var SOURCES=['Trustpilot','Google Reviews','TripAdvisor','App Store','Play Store'];
+  var AVATARS=['👨‍💼','👩‍💼','🧑‍✈️','👨‍💻','👩‍🔬','🧑‍🎨','👨','👩','🧔','👱‍♀️','🧕','👳'];
+
+  function genCard(i){
+    var name=NAMES[i%NAMES.length],route=ROUTES[i%ROUTES.length],text=TEXTS[i%TEXTS.length],src=SOURCES[i%SOURCES.length],av=AVATARS[i%AVATARS.length];
+    var stars='★★★★★'.slice(0,4+Math.round(Math.random()));
+    var daysAgo=Math.floor(Math.random()*28)+1;
+    var el=document.createElement('div');
+    el.className='review-card-v2';
+    el.innerHTML='<div style="color:#f5c842;font-size:16px;margin-bottom:8px">'+stars+'</div><div style="font-size:13px;line-height:1.7;color:rgba(224,240,255,0.85);margin-bottom:14px">"'+text+'"</div><div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(124,58,237,0.2));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+av+'</div><div><div style="font-weight:700;font-size:13px">'+name+'</div><div style="font-size:11px;color:var(--muted)">'+src+' · '+daysAgo+'d ago</div><div style="font-size:11px;color:var(--cyan);margin-top:1px">✈ '+route+'</div></div></div>';
+    return el;
+  }
+
+  var container=document.getElementById('reviewsContainer');
+  if(!container)return;
+  var track=document.createElement('div');
+  track.className='review-infinite-track';
+  var COUNT=20;
+  for(var i=0;i<COUNT;i++)track.appendChild(genCard(i));
+  var clones=[];
+  for(var j=0;j<COUNT;j++){var c=genCard(j);clones.push(c);track.appendChild(c);}
+  container.appendChild(track);
+
+  var pos=0,speed=0.6,paused=false,raf=null;
+  container.addEventListener('mouseenter',function(){paused=true;});
+  container.addEventListener('mouseleave',function(){paused=false;});
+
+  function measure(){return track.scrollWidth/2;}
+
+  function tick(){
+    raf=requestAnimationFrame(tick);
+    if(paused)return;
+    pos+=speed;
+    var half=measure();
+    if(pos>=half)pos=0;
+    track.style.transform='translateX(-'+pos.toFixed(2)+'px)';
+  }
+  tick();
+
+  setInterval(function(){
+    var newCard=genCard(Math.floor(Math.random()*100));
+    newCard.style.opacity='0';newCard.style.transition='opacity 0.5s';
+    track.appendChild(newCard);
+    requestAnimationFrame(function(){newCard.style.opacity='1';});
+    if(track.children.length>COUNT*2+8){track.removeChild(track.children[0]);}
+  },5000);
+})();
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+<script src="/js/anime-labels.js"></script>
+</body>
+</html>

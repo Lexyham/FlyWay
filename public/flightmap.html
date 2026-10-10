@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlyWay - Flight Tracker</title>
+<link rel="stylesheet" href="/assets/css/responsive.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --bg:     #020812;
+  --navy:   #040e22;
+  --panel:  rgba(4, 14, 34, 0.93);
+  --border: rgba(0, 180, 255, 0.18);
+  --cyan:   #00d4ff;
+  --emerald:#00e396;
+  --gold:   #f5c842;
+  --red:    #ff4757;
+  --muted:  #4a6080;
+  --muted2: #1e2d44;
+  --white:  #e8f4ff;
+  --font:   'Rajdhani', sans-serif;
+  --mono:   'Share Tech Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+
+#stars-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+#globe-canvas  { position: fixed; inset: 0; z-index: 1; }
+#ui            { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
+
+
+#loading {
+  position: fixed; inset: 0; z-index: 300;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  transition: opacity 0.8s;
+}
+.ld-logo     { font-size: 52px; font-weight: 700; letter-spacing: 4px; }
+.ld-logo span{ color: var(--cyan); }
+.ld-sub      { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 2px; margin-top: -10px; }
+.ld-bar      { width: 280px; height: 2px; background: var(--muted2); border-radius: 2px; overflow: hidden; }
+.ld-fill     { height: 100%; background: linear-gradient(90deg, #0055ff, var(--cyan)); width: 0%; animation: ldFill 2.2s cubic-bezier(.4,0,.2,1) forwards; }
+@keyframes ldFill { to { width: 100%; } }
+.ld-msg      { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 1.5px; min-height: 16px; }
+
+
+#header {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 12px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(180deg, rgba(2,8,18,.97) 0%, transparent 100%);
+  pointer-events: auto; z-index: 20;
+}
+.logo      { font-size: 24px; font-weight: 700; letter-spacing: 2px; }
+.logo span { color: var(--cyan); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.utc-clock    { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.utc-clock b  { color: var(--cyan); }
+.live-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(0,227,150,.08); border: 1px solid rgba(0,227,150,.3);
+  border-radius: 20px; padding: 4px 12px;
+  font-size: 11px; font-weight: 700; color: var(--emerald); letter-spacing: 1px;
+}
+.live-dot { width: 6px; height: 6px; background: var(--emerald); border-radius: 50%; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.3);} }
+
+
+#top-nav {
+  position: absolute; top: 50px; left: 0; right: 0;
+  padding: 0 24px;
+  display: flex; align-items: center; gap: 6px;
+  pointer-events: auto; z-index: 19; flex-wrap: wrap;
+}
+.nav-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 12px;
+  color: var(--white); font-family: var(--font); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .2s; backdrop-filter: blur(16px); white-space: nowrap;
+}
+.nav-btn:hover  { background: rgba(0,212,255,.12); border-color: var(--cyan); }
+.nav-btn.active { border-color: var(--cyan); color: var(--cyan); }
+.back-btn {
+  color: var(--cyan); text-decoration: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--panel); border: 1px solid rgba(0,212,255,.35);
+  border-radius: 8px; padding: 6px 12px;
+  font-family: var(--font); font-size: 13px; font-weight: 600;
+  transition: all .2s; backdrop-filter: blur(16px);
+}
+.back-btn:hover { background: rgba(0,212,255,.15); }
+.nav-sep { flex: 1; }
+
+
+#left-panel { position: absolute; top: 98px; left: 24px; width: 296px; pointer-events: auto; }
+#search-panel {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px; backdrop-filter: blur(20px);
+}
+.panel-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+  color: var(--cyan); margin-bottom: 12px; text-transform: uppercase;
+}
+.code-input-wrap { position: relative; margin-bottom: 10px; }
+#flightCodeInput {
+  width: 100%;
+  background: rgba(0,212,255,.06); border: 1px solid var(--border); border-radius: 9px;
+  padding: 11px 13px;
+  color: var(--white); font-family: var(--mono); font-size: 16px; font-weight: 700;
+  letter-spacing: 2px; outline: none; transition: border-color .2s; text-transform: uppercase;
+}
+#flightCodeInput:focus { border-color: var(--cyan); background: rgba(0,212,255,.10); }
+#flightCodeInput.error { border-color: var(--red); animation: shake .4s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);} }
+
+.launch-btn {
+  width: 100%; padding: 12px;
+  background: linear-gradient(135deg, #0055ff, var(--cyan));
+  border: none; border-radius: 9px;
+  color: #fff; font-family: var(--font); font-size: 14px; font-weight: 700;
+  letter-spacing: 1px; cursor: pointer; transition: opacity .2s, transform .15s; margin-top: 10px;
+}
+.launch-btn:hover    { opacity: .9; transform: translateY(-1px); }
+.launch-btn:active   { transform: translateY(0); }
+.launch-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+#routePreview {
+  margin-top: 12px; padding: 11px;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+  border-radius: 9px; display: none;
+}
+.rp-row  { display: flex; align-items: center; justify-content: space-between; }
+.rp-ap   { font-family: var(--mono); font-size: 18px; font-weight: 700; }
+.rp-city { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.rp-dur  { font-family: var(--mono); font-size: 11px; color: var(--gold); text-align: center; margin-top: 8px; }
+#errorMsg {
+  display: none; padding: 9px 11px;
+  background: rgba(255,71,87,.1); border: 1px solid rgba(255,71,87,.3);
+  border-radius: 8px; color: var(--red); font-size: 13px; font-weight: 600;
+  margin-top: 8px; text-align: center;
+}
+
+
+#booked-panel {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px; backdrop-filter: blur(20px);
+  display: none; margin-top: 8px; max-height: 320px; overflow-y: auto;
+}
+.booked-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: border-color .2s;
+}
+.booked-item:hover { border-color: rgba(0,212,255,.35); }
+.bi-code { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--cyan); }
+.bi-route { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.bi-status {
+  margin-left: auto; flex-shrink: 0;
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 10px;
+}
+.bi-status.approved { background: rgba(0,227,150,.12); color: var(--emerald); border: 1px solid rgba(0,227,150,.3); }
+.bi-status.pending  { background: rgba(245,200,66,.1); color: var(--gold); border: 1px solid rgba(245,200,66,.3); }
+.no-bookings { font-size: 13px; color: var(--muted); text-align: center; padding: 16px 0; }
+
+
+#globe-controls { position: absolute; bottom: 28px; right: 24px; display: flex; flex-direction: column; gap: 5px; pointer-events: auto; }
+.ctrl-btn {
+  width: 36px; height: 36px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--white); font-size: 15px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .2s; backdrop-filter: blur(10px);
+}
+.ctrl-btn:hover { background: rgba(0,212,255,.15); }
+
+
+#flight-panel {
+  position: absolute; bottom: 76px; left: 50%; transform: translateX(-50%);
+  width: min(780px, calc(100vw - 48px));
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 18px; padding: 16px 22px; backdrop-filter: blur(24px);
+  pointer-events: auto; transition: opacity .5s; opacity: 0;
+}
+.fp-hdr   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.fp-id    { font-family: var(--mono); font-size: 13px; color: var(--cyan); background: rgba(0,212,255,.08); padding: 3px 9px; border-radius: 5px; }
+.fp-status { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 18px; }
+.s-cruise  { background: rgba(0,227,150,.1); color: var(--emerald); border: 1px solid rgba(0,227,150,.3); }
+.s-boarding{ background: rgba(245,200,66,.1); color: var(--gold);   border: 1px solid rgba(245,200,66,.3); }
+.s-landed  { background: rgba(0,212,255,.1);  color: var(--cyan);   border: 1px solid rgba(0,212,255,.3); }
+
+.route-row { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 12px; }
+.ap-blk    { text-align: center; }
+.ap-code   { font-family: var(--mono); font-size: 24px; font-weight: 700; letter-spacing: 2px; line-height: 1; }
+.ap-city   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.ap-time   { font-family: var(--mono); font-size: 11px; color: var(--cyan); margin-top: 3px; }
+.arc-mid   { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.arc-line  { width: 100%; height: 2px; background: linear-gradient(90deg, var(--muted2), var(--cyan), var(--muted2)); border-radius: 2px; position: relative; }
+.arc-fill  { position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(90deg, rgba(0,212,255,.5), var(--cyan)); border-radius: 2px; transition: width 1s linear; }
+.arc-pct   { font-family: var(--mono); font-size: 11px; color: var(--cyan); }
+
+.stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+.stat-card  {
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+  border-radius: 9px; padding: 9px 7px; text-align: center;
+}
+.stat-icon { font-size: 14px; margin-bottom: 3px; }
+.stat-val  { font-family: var(--mono); font-size: 12px; font-weight: 700; line-height: 1; }
+.stat-lbl  { font-size: 9px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+
+
+#timeline-bar {
+  position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+  width: min(780px, calc(100vw - 48px));
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 11px; padding: 9px 18px; backdrop-filter: blur(16px);
+  pointer-events: auto; opacity: 0; transition: opacity .5s;
+}
+.tl-inner { position: relative; height: 5px; background: var(--muted2); border-radius: 5px; }
+.tl-fill  { position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(90deg, #0055ff, var(--cyan)); border-radius: 5px; transition: width .3s linear; }
+.tl-plane { position: absolute; top: 50%; transform: translate(-50%,-50%); font-size: 14px; pointer-events: none; transition: left .3s linear; }
+.tl-lbls  { display: flex; justify-content: space-between; margin-top: 5px; }
+.tl-lbl   { font-family: var(--mono); font-size: 9px; color: var(--muted); }
+
+
+#tooltip {
+  position: fixed;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 9px; padding: 8px 13px;
+  font-size: 12px; pointer-events: none; z-index: 100;
+  backdrop-filter: blur(16px); display: none;
+}
+.tt-code { font-family: var(--mono); font-weight: 700; color: var(--cyan); font-size: 13px; }
+.tt-city { color: var(--muted); font-size: 11px; margin-top: 1px; }
+
+
+#api-error {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: var(--panel); border: 1px solid rgba(255,71,87,.3);
+  border-radius: 14px; padding: 28px 32px; text-align: center;
+  backdrop-filter: blur(20px); pointer-events: auto; display: none; max-width: 340px;
+}
+#api-error .err-icon { font-size: 36px; margin-bottom: 10px; }
+#api-error .err-title { font-size: 18px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
+#api-error .err-msg   { font-size: 13px; color: var(--muted); line-height: 1.5; }
+#api-error .err-retry {
+  margin-top: 16px; padding: 8px 20px;
+  background: rgba(255,71,87,.15); border: 1px solid rgba(255,71,87,.4);
+  border-radius: 8px; color: var(--red); font-family: var(--font); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+#api-error .err-retry:hover { background: rgba(255,71,87,.25); }
+
+
+#poll-badge {
+  position: absolute; top: 12px; right: 120px;
+  font-family: var(--mono); font-size: 10px;
+  padding: 3px 8px; border-radius: 12px;
+  background: rgba(0,212,255,.08); color: var(--muted); border: 1px solid var(--border);
+  transition: all .4s; display: none;
+}
+#poll-badge.syncing { color: var(--cyan); border-color: rgba(0,212,255,.4); }
+
+
+@media (max-width: 768px) {
+  #left-panel { width: calc(100vw - 48px); }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  #flight-panel { bottom: 56px; }
+  #timeline-bar { bottom: 10px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="stars-canvas"></canvas>
+<canvas id="globe-canvas"></canvas>
+
+
+<div id="loading">
+  <div class="ld-logo">FLY<span>WAY</span></div>
+  <div class="ld-sub">LIVE FLIGHT TRACKER</div>
+  <div class="ld-bar"><div class="ld-fill"></div></div>
+  <div class="ld-msg" id="ldMsg">INITIALIZING...</div>
+</div>
+
+<div id="ui">
+
+  
+  <div id="header">
+    <div class="logo">FLY<span>WAY</span></div>
+    <div class="header-top">
+      <div id="poll-badge">SYNCING</div>
+      <div class="utc-clock">UTC <b id="utcTime">00:00:00</b></div>
+      <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    </div>
+  </div>
+
+  
+  <div id="top-nav">
+    <a href="/track" class="back-btn">← Tracker</a>
+    <button class="nav-btn active" id="btnSearch" onclick="UI.showPanel('search')">✈ Flight Search</button>
+    <button class="nav-btn" id="btnBooked" onclick="UI.showPanel('booked')">🎫 My Flights</button>
+    <button class="nav-btn" id="btnPause" onclick="Engine.togglePause()">⏸ Pause</button>
+    <button class="nav-btn" id="btnCam" onclick="Globe.cycleMode()">📷 Follow</button>
+    <div class="nav-sep"></div>
+    <button class="nav-btn" id="btnAutoRot" onclick="Globe.toggleAutoRotate()">⟳ Rotate</button>
+    <button class="nav-btn" id="btnHideUI" onclick="UI.toggleAllElements()" title="Hide/Show all UI panels">👁 Hide UI</button>
+  </div>
+
+  
+  <div id="left-panel">
+    
+    <div id="search-panel">
+      <div class="panel-label">✈ Track a Flight</div>
+      <div class="code-input-wrap">
+        <input type="text" id="flightCodeInput" placeholder="Booking ref or FW-XXX"
+               maxlength="20" autocomplete="off" spellcheck="false">
+      </div>
+      <div id="routePreview">
+        <div class="rp-row">
+          <div><div class="rp-ap" id="rpFrom">---</div><div class="rp-city" id="rpFromCity"></div></div>
+          <div style="color:var(--cyan);font-size:20px">→</div>
+          <div style="text-align:right"><div class="rp-ap" id="rpTo">---</div><div class="rp-city" id="rpToCity" style="text-align:right"></div></div>
+        </div>
+        <div class="rp-dur" id="rpDur"></div>
+      </div>
+      <div id="errorMsg"></div>
+      <button class="launch-btn" id="launchBtn" onclick="UI.onLaunch()">
+        <span id="launchBtnIcon">🔍</span> <span id="launchBtnText">TRACK FLIGHT</span>
+      </button>
+    </div>
+
+    
+    <div id="booked-panel">
+      <div class="panel-label">🎫 Your Booked Flights</div>
+      <div id="bookedList"></div>
+    </div>
+  </div>
+
+  
+  <div id="globe-controls">
+    <button class="ctrl-btn" title="Reset View" onclick="Globe.resetView()">⌖</button>
+  </div>
+
+  
+  <div id="flight-panel">
+    <div class="fp-hdr">
+      <span class="fp-id" id="fp-id">FW----</span>
+      <span class="fp-status s-cruise" id="fp-status">● LIVE</span>
+    </div>
+    <div class="route-row">
+      <div class="ap-blk">
+        <div class="ap-code" id="fp-from">---</div>
+        <div class="ap-city" id="fp-fromCity"></div>
+        <div class="ap-time" id="fp-dep">--:--</div>
+      </div>
+      <div class="arc-mid">
+        <div style="font-size:18px">✈</div>
+        <div class="arc-line"><div class="arc-fill" id="fp-arcFill" style="width:0%"></div></div>
+        <div class="arc-pct" id="fp-pct">0%</div>
+      </div>
+      <div class="ap-blk">
+        <div class="ap-code" id="fp-to">---</div>
+        <div class="ap-city" id="fp-toCity"></div>
+        <div class="ap-time" id="fp-arr">--:--</div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon">🕐</div><div class="stat-val" id="st-eta">--</div><div class="stat-lbl">ETA</div></div>
+      <div class="stat-card"><div class="stat-icon">📡</div><div class="stat-val" id="st-alt">--</div><div class="stat-lbl">Altitude</div></div>
+      <div class="stat-card"><div class="stat-icon">💨</div><div class="stat-val" id="st-spd">--</div><div class="stat-lbl">Speed kts</div></div>
+      <div class="stat-card"><div class="stat-icon">📍</div><div class="stat-val" id="st-dist">--</div><div class="stat-lbl">Dist km</div></div>
+      <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-val" id="st-class">--</div><div class="stat-lbl">Class</div></div>
+    </div>
+  </div>
+
+  
+  <div id="timeline-bar">
+    <div class="tl-inner">
+      <div class="tl-fill" id="tl-fill" style="width:0%"></div>
+      <div class="tl-plane" id="tl-plane" style="left:0%">✈</div>
+    </div>
+    <div class="tl-lbls">
+      <span class="tl-lbl" id="tl-from">DEP</span>
+      <span class="tl-lbl" id="tl-mid">0%</span>
+      <span class="tl-lbl" id="tl-to">ARR</span>
+    </div>
+  </div>
+
+  
+  <div id="api-error">
+    <div class="err-icon">📡</div>
+    <div class="err-title">Connection Error</div>
+    <div class="err-msg" id="err-msg">Unable to reach the flight data service.</div>
+    <button class="err-retry" onclick="UI.retryLoad()">↺ Retry</button>
+  </div>
+
+  
+  <div id="tooltip">
+    <div class="tt-code" id="ttCode"></div>
+    <div class="tt-city" id="ttCity"></div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+
+
+
+
+
+const AIRPORTS = [
+  {code:'JFK',city:'New York',  country:'USA',        flag:'🇺🇸',lat:40.641,  lng:-73.778},
+  {code:'LAX',city:'Los Angeles',country:'USA',       flag:'🇺🇸',lat:33.942,  lng:-118.408},
+  {code:'ORD',city:'Chicago',   country:'USA',        flag:'🇺🇸',lat:41.974,  lng:-87.907},
+  {code:'ATL',city:'Atlanta',   country:'USA',        flag:'🇺🇸',lat:33.640,  lng:-84.428},
+  {code:'SFO',city:'San Francisco',country:'USA',     flag:'🇺🇸',lat:37.621,  lng:-122.379},
+  {code:'MIA',city:'Miami',     country:'USA',        flag:'🇺🇸',lat:25.795,  lng:-80.287},
+  {code:'BOS',city:'Boston',    country:'USA',        flag:'🇺🇸',lat:42.365,  lng:-71.010},
+  {code:'LHR',city:'London',    country:'UK',         flag:'🇬🇧',lat:51.470,  lng:-0.454},
+  {code:'CDG',city:'Paris',     country:'France',     flag:'🇫🇷',lat:49.010,  lng:2.548},
+  {code:'FRA',city:'Frankfurt', country:'Germany',    flag:'🇩🇪',lat:50.038,  lng:8.562},
+  {code:'AMS',city:'Amsterdam', country:'Netherlands',flag:'🇳🇱',lat:52.309,  lng:4.764},
+  {code:'MAD',city:'Madrid',    country:'Spain',      flag:'🇪🇸',lat:40.494,  lng:-3.567},
+  {code:'FCO',city:'Rome',      country:'Italy',      flag:'🇮🇹',lat:41.800,  lng:12.239},
+  {code:'IST',city:'Istanbul',  country:'Turkey',     flag:'🇹🇷',lat:40.977,  lng:28.815},
+  {code:'DXB',city:'Dubai',     country:'UAE',        flag:'🇦🇪',lat:25.253,  lng:55.366},
+  {code:'DOH',city:'Doha',      country:'Qatar',      flag:'🇶🇦',lat:25.273,  lng:51.608},
+  {code:'SIN',city:'Singapore', country:'Singapore',  flag:'🇸🇬',lat:1.364,   lng:103.992},
+  {code:'BKK',city:'Bangkok',   country:'Thailand',   flag:'🇹🇭',lat:13.690,  lng:100.750},
+  {code:'HKG',city:'Hong Kong', country:'Hong Kong',  flag:'🇭🇰',lat:22.308,  lng:113.919},
+  {code:'NRT',city:'Tokyo',     country:'Japan',      flag:'🇯🇵',lat:35.765,  lng:140.386},
+  {code:'ICN',city:'Seoul',     country:'S. Korea',   flag:'🇰🇷',lat:37.460,  lng:126.441},
+  {code:'PEK',city:'Beijing',   country:'China',      flag:'🇨🇳',lat:40.080,  lng:116.603},
+  {code:'PVG',city:'Shanghai',  country:'China',      flag:'🇨🇳',lat:31.143,  lng:121.805},
+  {code:'DEL',city:'Delhi',     country:'India',      flag:'🇮🇳',lat:28.556,  lng:77.100},
+  {code:'BOM',city:'Mumbai',    country:'India',      flag:'🇮🇳',lat:19.090,  lng:72.866},
+  {code:'SYD',city:'Sydney',    country:'Australia',  flag:'🇦🇺',lat:-33.940, lng:151.175},
+  {code:'MEL',city:'Melbourne', country:'Australia',  flag:'🇦🇺',lat:-37.669, lng:144.841},
+  {code:'JNB',city:'Johannesburg',country:'S. Africa',flag:'🇿🇦',lat:-26.137, lng:28.241},
+  {code:'NBO',city:'Nairobi',   country:'Kenya',      flag:'🇰🇪',lat:-1.319,  lng:36.928},
+  {code:'CAI',city:'Cairo',     country:'Egypt',      flag:'🇪🇬',lat:30.122,  lng:31.406},
+  {code:'YYZ',city:'Toronto',   country:'Canada',     flag:'🇨🇦',lat:43.678,  lng:-79.625},
+  {code:'GRU',city:'Sao Paulo', country:'Brazil',     flag:'🇧🇷',lat:-23.436, lng:-46.473},
+  {code:'MEX',city:'Mexico City',country:'Mexico',    flag:'🇲🇽',lat:19.436,  lng:-99.072},
+  {code:'EZE',city:'Buenos Aires',country:'Argentina',flag:'🇦🇷',lat:-34.822, lng:-58.536},
+  {code:'YVR',city:'Vancouver', country:'Canada',     flag:'🇨🇦',lat:49.197,  lng:-123.182},
+  {code:'ZRH',city:'Zurich',    country:'Switzerland',flag:'🇨🇭',lat:47.465,  lng:8.549},
+  {code:'CPH',city:'Copenhagen',country:'Denmark',    flag:'🇩🇰',lat:55.618,  lng:12.651},
+];
+
+const FLIGHTS = [
+  {fn:'FW-001',airline:'Fly Way Express1',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 05m',isDemo:true,canRestart:true},
+  {fn:'FW-002',airline:'Fly Way Express2',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 10m',isDemo:true,canRestart:true},
+  {fn:'FW-003',airline:'Fly Way Express3',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 20m',isDemo:true,canRestart:true},
+  {fn:'FW-004',airline:'Fly Way Express4',ac:'Boeing 777',from:'JFK',to:'LHR',dep:'DE:MO',arr:'DE:MO',dur:'0h 30m',isDemo:true,canRestart:true},
+  {fn:'FW-100',airline:'Fly Way Airlines',ac:'Boeing 737-800',from:'JFK',to:'LAX',dep:'08:00',arr:'11:30',dur:'5h 30m'},
+  {fn:'FW-101',airline:'Fly Way Airlines',ac:'Airbus A320',from:'LAX',to:'JFK',dep:'14:00',arr:'22:30',dur:'5h 30m'},
+  {fn:'FW-102',airline:'Fly Way Airlines',ac:'Boeing 777-300ER',from:'JFK',to:'LHR',dep:'21:30',arr:'08:45',dur:'7h 15m'},
+  {fn:'FW-103',airline:'Fly Way Airlines',ac:'Boeing 777-300ER',from:'LHR',to:'JFK',dep:'11:00',arr:'14:15',dur:'8h 15m'},
+  {fn:'FW-104',airline:'Fly Way Airlines',ac:'Boeing 787',from:'LAX',to:'NRT',dep:'11:00',arr:'15:00',dur:'12h 00m'},
+  {fn:'FW-105',airline:'Fly Way Airlines',ac:'Boeing 787',from:'NRT',to:'LAX',dep:'18:00',arr:'14:00',dur:'11h 00m'},
+  {fn:'FW-106',airline:'Fly Way Airlines',ac:'Airbus A350-900',from:'DXB',to:'JFK',dep:'02:30',arr:'09:15',dur:'14h 45m'},
+  {fn:'FW-107',airline:'Fly Way Airlines',ac:'Airbus A350-900',from:'JFK',to:'DXB',dep:'22:00',arr:'18:00',dur:'12h 00m'},
+  {fn:'FW-108',airline:'Fly Way Airlines',ac:'Airbus A321',from:'SFO',to:'ORD',dep:'07:15',arr:'13:30',dur:'4h 15m'},
+  {fn:'FW-109',airline:'Fly Way Airlines',ac:'Boeing 737 MAX',from:'ATL',to:'MIA',dep:'09:00',arr:'10:30',dur:'1h 30m'},
+  {fn:'FW-110',airline:'Fly Way Airlines',ac:'Airbus A380',from:'LHR',to:'DXB',dep:'22:00',arr:'08:00',dur:'7h 00m'},
+  {fn:'FW-111',airline:'Fly Way Airlines',ac:'Boeing 787',from:'SIN',to:'LHR',dep:'00:30',arr:'06:45',dur:'13h 15m'},
+  {fn:'FW-112',airline:'Fly Way Airlines',ac:'Boeing 777',from:'JFK',to:'CDG',dep:'19:00',arr:'08:30',dur:'7h 30m'},
+  {fn:'FW-113',airline:'Fly Way Airlines',ac:'Boeing 787',from:'SIN',to:'NRT',dep:'10:00',arr:'18:00',dur:'7h 00m'},
+  {fn:'FW-114',airline:'Fly Way Airlines',ac:'Boeing 777',from:'JNB',to:'LHR',dep:'20:00',arr:'07:00',dur:'11h 00m'},
+];
+
+const MapState = {
+  flights:   [],   // normalized active flights from API
+  loading:   false,
+  error:     null,
+  activeFlight: null,  // currently tracked flight object
+  paused:    false,
+  pollTimer: null,
+};
+
+
+function normalizeBookingFlight(raw) {
+  if (!raw || !raw.found) return null;
+  const fromAP = AIRPORTS.find(a => a.code === raw.from);
+  const toAP   = AIRPORTS.find(a => a.code === raw.to);
+  if (!fromAP || !toAP) return null;
+
+  const durMs    = raw.durMs   || 5 * 3600000;
+  const progress = raw.progress != null
+    ? Math.min(0.999, Math.max(0.001, raw.progress))
+    : 0.001;
+
+  return {
+    id:          raw.flightCode || raw.bookingRef || raw.flightNumber || '?',
+    origin:      raw.from,
+    destination: raw.to,
+    fromAP,
+    toAP,
+    latitude:    fromAP.lat + (toAP.lat - fromAP.lat) * progress,
+    longitude:   fromAP.lng + (toAP.lng - fromAP.lng) * progress,
+    progress,
+    status:      raw.paymentStatus === 'approved' ? 'active' : (raw.status || 'active'),
+    durMs,
+    startTime:   raw.startTime || (Date.now() - progress * durMs),
+    depTime:     raw.depTime   || '--:--',
+    arrTime:     raw.arrTime   || '--:--',
+    travelClass: raw.travelClass || '',
+    airline:     raw.airline   || 'FlyWay Airlines',
+    aircraft:    raw.aircraft  || '',
+    passengers:  raw.passengers || 1,
+    bookingRef:  raw.bookingRef || raw.flightCode,
+    source:      raw.source    || 'booking',
+  };
+}
+
+function normalizeBookingsList(bookings) {
+  return (bookings || [])
+    .filter(b => b.outboundFlight && b.outboundFlight.from && b.outboundFlight.to)
+    .map(b => {
+      const f   = b.outboundFlight;
+      const durMs = parseDurStr(f.duration) || 5 * 3600000;
+      let progress = 0.001;
+      if (f.departureDate && f.depTime) {
+        try {
+          const dep = new Date(`${f.departureDate}T${f.depTime}`);
+          if (!isNaN(dep)) progress = Math.min(0.999, Math.max(0.001, (Date.now() - dep.getTime()) / durMs));
+        } catch(_) {}
+      }
+      const fromAP = AIRPORTS.find(a => a.code === f.from);
+      const toAP   = AIRPORTS.find(a => a.code === f.to);
+      if (!fromAP || !toAP) return null;
+      return {
+        id:          b.ref,
+        origin:      f.from,
+        destination: f.to,
+        fromAP, toAP,
+        latitude:    fromAP.lat + (toAP.lat - fromAP.lat) * progress,
+        longitude:   fromAP.lng + (toAP.lng - fromAP.lng) * progress,
+        progress,
+        status:      b.paymentStatus === 'approved' ? 'active' : (b.status || 'pending'),
+        durMs,
+        startTime:   Date.now() - progress * durMs,
+        depTime:     f.depTime  || '--:--',
+        arrTime:     f.arrTime  || '--:--',
+        travelClass: b.travelClass || '',
+        airline:     f.airline  || 'FlyWay Airlines',
+        aircraft:    f.aircraft || '',
+        passengers:  (b.passengers || []).length,
+        bookingRef:  b.ref,
+        source:      'booking',
+      };
+    })
+    .filter(Boolean);
+}
+
+function parseDurStr(s) {
+  if (!s) return null;
+  const m = String(s).match(/(\d+)h\s*(\d+)?m?/);
+  return m ? ((parseInt(m[1]||0)*60) + parseInt(m[2]||0)) * 60000 : null;
+}
+
+const DataService = (() => {
+  function getToken() {
+    try { return localStorage.getItem('fw_token') || null; }
+    catch(_) { return null; }
+  }
+
+  function headers() {
+    const h = { 'Content-Type': 'application/json' };
+    const t = getToken();
+    if (t) h['Authorization'] = 'Bearer ' + t;
+    return h;
+  }
+
+  async function fetchFlight(code) {
+    const res = await fetch('/api/flightmap/' + encodeURIComponent(code), { headers: headers() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  async function fetchBookings() {
+    const t = getToken();
+    if (!t) return [];
+    const res = await fetch('/api/bookings', { headers: headers() });
+    if (!res.ok) return [];
+    return res.json();
+  }
+
+  async function fetchTrack(code) {
+    const res = await fetch('/api/track/' + encodeURIComponent(code), { headers: headers() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  return { fetchFlight, fetchBookings, fetchTrack };
+})();
+
+
+const Engine = (() => {
+  function tick() {
+    const f = MapState.activeFlight;
+    if (!f || MapState.paused) return;
+
+    const elapsed  = Date.now() - f.startTime;
+    const progress = Math.min(0.999, Math.max(0, elapsed / f.durMs));
+
+    if (f.isDemo && f.canRestart && progress >= 0.999) {
+      f.startTime = Date.now();
+      f.progress  = 0.001;
+      f.latitude  = f.fromAP.lat;
+      f.longitude = f.fromAP.lng;
+      return;
+    }
+
+    f.progress  = progress;
+    f.latitude  = f.fromAP.lat + (f.toAP.lat - f.fromAP.lat) * progress;
+    f.longitude = f.fromAP.lng + (f.toAP.lng - f.fromAP.lng) * progress;
+  }
+
+  function setFlight(flight) {
+    MapState.activeFlight = flight;
+    if (flight) {
+      Globe.launchFlight(flight);
+      document.getElementById('flight-panel').style.opacity = '1';
+      document.getElementById('timeline-bar').style.opacity = '1';
+    }
+  }
+
+  function togglePause() {
+    MapState.paused = !MapState.paused;
+    const f = MapState.activeFlight;
+    if (!MapState.paused && f) {
+
+      f.startTime = Date.now() - f.progress * f.durMs;
+    }
+    const btn = document.getElementById('btnPause');
+    if (btn) btn.textContent = MapState.paused ? '▶ Resume' : '⏸ Pause';
+  }
+
+  return { tick, setFlight, togglePause };
+})();
+
+const Globe = (() => {
+  const R = 1.0;
+  let scene, camera, renderer;
+  let flightGroup, airportMeshes = [];
+  let userObj = null;
+  let autoRot = true, drag = false, pm = { x: 0, y: 0 };
+  let euler   = new THREE.Euler(0.3, 0, 0);
+  let target  = new THREE.Euler(0.3, 0, 0);
+  let cz = 3.2;
+  const CZ_MIN = 1.4, CZ_MAX = 6.0;
+  let camMode = 'follow', orb = 0;
+
+  function ll(lat, lng, r) {
+    const phi   = (90 - lat) * Math.PI / 180;
+    const theta = (lng + 180) * Math.PI / 180;
+    return new THREE.Vector3(
+      -r * Math.sin(phi) * Math.cos(theta),
+       r * Math.cos(phi),
+       r * Math.sin(phi) * Math.sin(theta)
+    );
+  }
+
+  function buildCurve(fc, tc) {
+    const f = AIRPORTS.find(a => a.code === fc);
+    const t = AIRPORTS.find(a => a.code === tc);
+    if (!f || !t) return null;
+    const fv  = ll(f.lat, f.lng, R);
+    const tv  = ll(t.lat, t.lng, R);
+    const mid = new THREE.Vector3().addVectors(fv, tv).multiplyScalar(0.5);
+    mid.normalize().multiplyScalar(R + 0.18 + fv.distanceTo(tv) * 0.12);
+    return new THREE.QuadraticBezierCurve3(fv, mid, tv);
+  }
+
+  function removeUserObj() {
+    if (!userObj) return;
+    [userObj.arcLine, userObj.trailLine, userObj.plane, userObj.glow].forEach(m => {
+      if (m) flightGroup.remove(m);
+    });
+    userObj = null;
+  }
+
+  function createAirplaneSprite() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.font = 'bold 400px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#FFD700';
+    ctx.fillText('✈', canvas.width / 2, canvas.height / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    const material = new THREE.SpriteMaterial({ 
+      map: texture,
+      sizeAttenuation: true,
+      transparent: true
+    });
+    const sprite = new THREE.Sprite(material);
+
+    sprite.scale.set(0.08, 0.08, 1);
+    
+    return sprite;
+  }
+
+  function launchFlight(flight) {
+    removeUserObj();
+    const curve = buildCurve(flight.origin, flight.destination);
+    if (!curve) return;
+
+    const col  = new THREE.Color(0xffd700);
+    const pts  = curve.getPoints(80);
+
+    const arcLine = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.25 })
+    );
+    flightGroup.add(arcLine);
+
+    const trailLine = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([pts[0], pts[0]]),
+      new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.9 })
+    );
+    flightGroup.add(trailLine);
+
+    const plane = createAirplaneSprite();
+    flightGroup.add(plane);
+
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.08, 16, 16),
+      new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.7 })
+    );
+    flightGroup.add(glow);
+
+    userObj = { arcLine, trailLine, plane, glow, curve, pts };
+
+    const fAP = AIRPORTS.find(a => a.code === flight.origin);
+    if (fAP) target.y = -fAP.lng * Math.PI / 180;
+  }
+
+  function updateTrail() {
+    if (!userObj) return;
+    const f = MapState.activeFlight;
+    if (!f) return;
+    const t   = Math.min(f.progress, 0.999);
+    const t0  = Math.max(0, t - 0.20);
+    const pts = [];
+    for (let i = 0; i <= 24; i++) pts.push(userObj.curve.getPoint(t0 + (t - t0) * (i / 24)));
+    userObj.trailLine.geometry.setFromPoints(pts);
+    userObj.trailLine.geometry.computeBoundingSphere();
+    const pos = userObj.curve.getPoint(t);
+
+    const outward = pos.clone().normalize().multiplyScalar(1.15);
+    userObj.plane.position.copy(outward);
+    userObj.glow.position.copy(pos);
+  }
+
+  function getHeading() {
+    if (!userObj || !MapState.activeFlight) return '---°';
+    const t  = Math.min(MapState.activeFlight.progress, 0.999);
+    const p0 = userObj.curve.getPoint(Math.max(0, t - 0.005));
+    const p1 = userObj.curve.getPoint(Math.min(1, t + 0.005));
+    return String(Math.round((Math.atan2(p1.x - p0.x, p1.z - p0.z) * 180 / Math.PI + 360) % 360))
+             .padStart(3, '0') + '°';
+  }
+
+  function dotCloud(cLat, cLng, dLat, dLng, n) {
+    const p = [];
+    for (let i = 0; i < n; i++)
+      p.push({ lat: cLat + (Math.random() - .5) * dLat * 2, lng: cLng + (Math.random() - .5) * dLng * 2 });
+    return p;
+  }
+
+  function init() {
+    const canvas = document.getElementById('globe-canvas');
+    const W = window.innerWidth, H = window.innerHeight;
+
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(W, H);
+    renderer.setClearColor(0x000000, 0);
+
+    scene  = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 1000);
+    camera.position.set(0, 0, 3.2);
+
+    scene.add(new THREE.AmbientLight(0x223355, 0.8));
+    const sun = new THREE.DirectionalLight(0x6699ff, 1.4); sun.position.set(5, 3, 5); scene.add(sun);
+    const rim = new THREE.DirectionalLight(0x00d4ff, 0.3); rim.position.set(-5, -2, -3); scene.add(rim);
+
+    scene.add(new THREE.Mesh(
+      new THREE.SphereGeometry(R, 64, 64),
+      new THREE.MeshPhongMaterial({ color: 0x0a1628, emissive: 0x040b1a, specular: 0x112244, shininess: 15 })
+    ));
+
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.07, 64, 64), new THREE.ShaderMaterial({
+      transparent: true, side: THREE.FrontSide,
+      vertexShader: `varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+      fragmentShader: `varying vec3 vN;void main(){float i=pow(.65-dot(vN,vec3(0,0,1.)),3.);gl_FragColor=vec4(0.,.4,1.,i*.7);}`,
+    })));
+
+    const gGrp = new THREE.Group();
+    const gm   = new THREE.LineBasicMaterial({ color: 0x112244, transparent: true, opacity: 0.4 });
+    for (let lat = -75; lat <= 75; lat += 15) {
+      const p = []; for (let lng = 0; lng <= 360; lng += 4) p.push(ll(lat, lng, R + 0.001));
+      gGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(p), gm));
+    }
+    for (let lng = 0; lng < 360; lng += 15) {
+      const p = []; for (let lat = -90; lat <= 90; lat += 3) p.push(ll(lat, lng, R + 0.001));
+      gGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(p), gm));
+    }
+    scene.add(gGrp);
+
+    const lGrp  = new THREE.Group();
+    const ldGeo = new THREE.SphereGeometry(0.003, 4, 4);
+    const ldMat = new THREE.MeshBasicMaterial({ color: 0x1a3060 });
+    [
+      ...dotCloud(45, -100, 30, 40, 650), ...dotCloud(-15, -60, 30, 35, 480),
+      ...dotCloud(52, 15, 15, 20, 330),   ...dotCloud(5, 20, 40, 40, 560),
+      ...dotCloud(45, 85, 30, 50, 750),   ...dotCloud(10, 110, 20, 20, 230),
+      ...dotCloud(-25, 135, 20, 20, 280),
+    ].forEach(({ lat, lng }) => {
+      const m = new THREE.Mesh(ldGeo, ldMat);
+      m.position.copy(ll(lat, lng, R + 0.001)); lGrp.add(m);
+    });
+    scene.add(lGrp);
+
+    const apGrp = new THREE.Group();
+    AIRPORTS.forEach(ap => {
+      const pos = ll(ap.lat, ap.lng, R + 0.01);
+      const dot = new THREE.Mesh(
+        new THREE.SphereGeometry(0.006, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0x00d4ff })
+      );
+      dot.position.copy(pos); dot.userData = ap; airportMeshes.push(dot); apGrp.add(dot);
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.010, 0.014, 16),
+        new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
+      );
+      ring.position.copy(pos); ring.lookAt(new THREE.Vector3(0, 0, 0));
+      ring.userData = { isPulse: true, phase: Math.random() * Math.PI * 2 };
+      apGrp.add(ring);
+    });
+    scene.add(apGrp);
+
+    flightGroup = new THREE.Group(); scene.add(flightGroup);
+
+    scene.userData.groups = [gGrp, lGrp, apGrp, flightGroup];
+
+    window.addEventListener('resize', () => {
+      const W = window.innerWidth, H = window.innerHeight;
+      camera.aspect = W / H; camera.updateProjectionMatrix(); renderer.setSize(W, H);
+    });
+
+    initInput(apGrp);
+  }
+
+  function syncRot() {
+    scene.userData.groups.forEach(g => g.rotation.copy(euler));
+  }
+
+  function initInput(apGrp) {
+    const cnv = renderer.domElement;
+    const rc  = new THREE.Raycaster();
+    const mv  = new THREE.Vector2();
+
+    cnv.addEventListener('mousedown', e => {
+      drag = true; autoRot = false; pm = { x: e.clientX, y: e.clientY };
+    });
+    window.addEventListener('mousemove', e => {
+      if (drag) {
+        target.y += (e.clientX - pm.x) * 0.004;
+        target.x += (e.clientY - pm.y) * 0.004;
+        target.x  = Math.max(-1.3, Math.min(1.3, target.x));
+        pm = { x: e.clientX, y: e.clientY };
+      }
+      mv.x = (e.clientX / window.innerWidth)  *  2 - 1;
+      mv.y = (e.clientY / window.innerHeight) * -2 + 1;
+      rc.setFromCamera(mv, camera);
+      const hits = rc.intersectObjects(airportMeshes);
+      const tt   = document.getElementById('tooltip');
+      if (hits.length) {
+        const ap = hits[0].object.userData;
+        document.getElementById('ttCode').textContent = ap.flag + ' ' + ap.code;
+        document.getElementById('ttCity').textContent = ap.city + ', ' + ap.country;
+        tt.style.display = 'block';
+        tt.style.left    = (e.clientX + 14) + 'px';
+        tt.style.top     = (e.clientY - 10) + 'px';
+      } else {
+        tt.style.display = 'none';
+      }
+    });
+    window.addEventListener('mouseup', () => { drag = false; });
+    cnv.addEventListener('wheel', e => {
+      e.preventDefault();
+      cz = Math.max(CZ_MIN, Math.min(CZ_MAX, cz * (e.deltaY > 0 ? 1.08 : 0.92)));
+    }, { passive: false });
+
+    let ts = null;
+    cnv.addEventListener('touchstart', e => { drag = true; autoRot = false; ts = { x: e.touches[0].clientX, y: e.touches[0].clientY }; });
+    cnv.addEventListener('touchmove',  e => {
+      if (!ts) return;
+      target.y += (e.touches[0].clientX - ts.x) * 0.006;
+      target.x += (e.touches[0].clientY - ts.y) * 0.006;
+      target.x  = Math.max(-1.3, Math.min(1.3, target.x));
+      ts = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    });
+    cnv.addEventListener('touchend', () => { drag = false; ts = null; });
+  }
+
+  function toggleAutoRotate() {
+    autoRot = !autoRot;
+    const b = document.getElementById('btnAutoRot');
+    if (b) b.style.color = autoRot ? 'var(--cyan)' : '';
+  }
+
+  function resetView() { target.set(0.3, 0, 0); cz = 3.2; autoRot = true; }
+
+  function cycleMode() {
+    const modes = ['follow', 'cinematic', 'topdown'];
+    const i     = modes.indexOf(camMode);
+    camMode     = modes[(i + 1) % modes.length];
+    const labels = { follow: '📷 Follow', cinematic: '🎥 Cinematic', topdown: '🗺 Top-Down' };
+    const b = document.getElementById('btnCam'); if (b) b.textContent = labels[camMode];
+  }
+
+  function render(t) {
+    const ts = t * 0.001;
+    const f  = MapState.activeFlight;
+
+    if (f && userObj) updateTrail();
+
+    if (f && f.progress > 0.001) {
+      if (camMode === 'follow') {
+        if (userObj) {
+          const pos = userObj.curve.getPoint(Math.min(f.progress, 0.999));
+          const tLng = Math.atan2(pos.z, -pos.x) * 180 / Math.PI - 180;
+          target.y += (-tLng * Math.PI / 180 - target.y) * 0.005;
+          target.x += (0.25 - target.x) * 0.008;
+        }
+        const zTarget = { CRUISE: 2.9, TAKEOFF: 2.4, DESCENT: 2.5, LANDED: 2.6 }[getPhase(f.progress)] || 2.9;
+        cz += (zTarget - cz) * 0.025;
+        autoRot = false;
+      } else if (camMode === 'cinematic') {
+        orb += 0.0025;
+        target.y = orb;
+        target.x = 0.25 + 0.15 * Math.sin(orb * 0.25);
+        cz = 2.7 + 0.5 * Math.sin(orb * 0.18);
+      } else if (camMode === 'topdown') {
+        cz += (2.2 - cz) * 0.04;
+        euler.x += (-0.05 - euler.x) * 0.05;
+      }
+    }
+
+    if (autoRot && !drag) target.y += 0.0007;
+
+    euler.x += (target.x - euler.x) * 0.05;
+    euler.y += (target.y - euler.y) * 0.05;
+    syncRot();
+
+    camera.position.z += (cz - camera.position.z) * 0.08;
+    camera.position.z  = Math.max(CZ_MIN, Math.min(CZ_MAX, camera.position.z));
+
+    if (userObj) {
+      const gp = 0.8 + 0.2 * Math.sin(ts * 4);
+      userObj.glow.scale.setScalar(gp);
+      userObj.glow.material.opacity = 0.2 + 0.1 * gp;
+    }
+
+    scene.userData.groups[2].children.forEach(c => {
+      if (c.userData.isPulse) {
+        const sc = 1 + 0.5 * Math.sin(ts * 2 + c.userData.phase);
+        c.scale.setScalar(sc);
+        c.material.opacity = 0.15 + 0.25 * (1 - Math.abs(Math.sin(ts * 2 + c.userData.phase)));
+      }
+    });
+
+    renderer.render(scene, camera);
+  }
+
+  return { init, launchFlight, getHeading, toggleAutoRotate, resetView, cycleMode, render };
+})();
+
+function getPhase(p) {
+  if (p < 0.03) return 'TAKEOFF';
+  if (p > 0.92) return 'DESCENT';
+  if (p >= 0.999) return 'LANDED';
+  return 'CRUISE';
+}
+
+function haversineKm(a, b) {
+  const R   = 6371;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
+  const x   = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+}
+
+const HUD = (() => {
+  function s(id, v)  { const e = document.getElementById(id); if (e) e.textContent = v; }
+  function st(id, p, v) { const e = document.getElementById(id); if (e) e.style[p] = v; }
+
+  function update(f) {
+    if (!f) return;
+    const { progress, durMs, fromAP, toAP, depTime, arrTime, travelClass } = f;
+    const pct     = Math.round(progress * 100);
+    const phase   = getPhase(progress);
+    const remainMs = (1 - progress) * durMs;
+    const etaH    = Math.floor(remainMs / 3600000);
+    const etaM    = String(Math.floor((remainMs % 3600000) / 60000)).padStart(2, '0');
+    const etaStr  = etaH > 0 ? etaH + 'h ' + etaM + 'm' : etaM + 'm';
+
+    const alt = progress < 0.05 ? Math.round(progress / 0.05 * 35000)
+              : progress > 0.90 ? Math.round((1 - progress) / 0.10 * 35000)
+              : 33000 + Math.round(Math.sin(progress * 20) * 1500);
+
+    const totalKm = haversineKm(fromAP, toAP);
+    const kts     = Math.round(totalKm / (durMs / 3600000) * 0.5396); // km/h → kts
+    const distRem = Math.round(totalKm * (1 - progress));
+
+    const statusEl  = document.getElementById('fp-status');
+    const phaseMap  = { TAKEOFF: ['● CLIMBING', 's-boarding'], CRUISE: ['● CRUISING', 's-cruise'], DESCENT: ['● DESCENDING', 's-boarding'], LANDED: ['● LANDED', 's-landed'] };
+    const [label, cls] = phaseMap[phase] || ['● LIVE', 's-cruise'];
+    if (statusEl) { statusEl.textContent = label; statusEl.className = 'fp-status ' + cls; }
+
+    s('fp-id',       f.id);
+    s('fp-from',     f.origin);
+    s('fp-to',       f.destination);
+    s('fp-fromCity', fromAP.city);
+    s('fp-toCity',   toAP.city);
+    s('fp-dep',      depTime + ' UTC');
+    s('fp-arr',      arrTime + ' UTC');
+    s('fp-pct',      pct + '%');
+    st('fp-arcFill', 'width', pct + '%');
+
+    s('st-eta',   etaStr);
+    s('st-alt',   alt.toLocaleString() + ' ft');
+    s('st-spd',   kts + ' kts');
+    s('st-dist',  distRem.toLocaleString() + ' km');
+    s('st-class', travelClass || '-');
+
+    st('tl-fill',  'width', pct + '%');
+    st('tl-plane', 'left',  pct + '%');
+    s('tl-from',  f.origin);
+    s('tl-to',    f.destination);
+    s('tl-mid',   pct + '%');
+  }
+
+  return { update };
+})();
+
+const UI = (() => {
+  function showErr(msg) {
+    const e = document.getElementById('errorMsg');
+    if (e) { e.textContent = msg; e.style.display = 'block'; }
+  }
+  function clearErr() {
+    const e = document.getElementById('errorMsg');
+    if (e) e.style.display = 'none';
+  }
+  function showApiError(msg) {
+    document.getElementById('err-msg').textContent = msg;
+    document.getElementById('api-error').style.display = 'block';
+  }
+  function hideApiError() {
+    document.getElementById('api-error').style.display = 'none';
+  }
+
+  function showPanel(name) {
+    document.getElementById('search-panel').style.display = name === 'search' ? 'block' : 'none';
+    document.getElementById('booked-panel').style.display = name === 'booked' ? 'block' : 'none';
+    document.getElementById('btnSearch').classList.toggle('active', name === 'search');
+    document.getElementById('btnBooked').classList.toggle('active', name === 'booked');
+    if (name === 'booked') renderBookedList();
+  }
+
+  function setLaunchState(loading) {
+    const btn  = document.getElementById('launchBtn');
+    const icon = document.getElementById('launchBtnIcon');
+    const text = document.getElementById('launchBtnText');
+    if (btn) btn.disabled = loading;
+    if (icon) icon.textContent = loading ? '⏳' : '🔍';
+    if (text) text.textContent = loading ? 'SEARCHING...' : 'TRACK FLIGHT';
+  }
+
+  async function onLaunch() {
+    const rawInput = document.getElementById('flightCodeInput').value.trim();
+    const raw = rawInput.toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if (!raw) { showErr('Enter a booking reference or flight code'); return; }
+    clearErr();
+    setLaunchState(true);
+    hideApiError();
+
+    try {
+
+      const raw1 = await DataService.fetchFlight(raw);
+      if (raw1 && raw1.found) {
+        const flight = normalizeBookingFlight(raw1);
+        if (flight) {
+          MapState.flights = [flight];
+          Engine.setFlight(flight);
+          startPolling(raw);
+          showRoutePreview(flight);
+          return;
+        }
+      }
+
+      const raw2 = await DataService.fetchTrack(raw);
+      if (raw2 && raw2.found && raw2.from && raw2.to) {
+
+        const fromAP = AIRPORTS.find(a => a.code === raw2.from);
+        const toAP   = AIRPORTS.find(a => a.code === raw2.to);
+        if (fromAP && toAP) {
+          const flight = normalizeBookingFlight({
+            ...raw2, found: true,
+            flightCode: raw2.bookingRef || raw,
+            durMs: parseDurStr(raw2.dur) || 5 * 3600000,
+            progress: 0.001,
+          });
+          if (flight) {
+            MapState.flights = [flight];
+            Engine.setFlight(flight);
+            startPolling(raw);
+            showRoutePreview(flight);
+            return;
+          }
+        }
+      }
+
+      const localFlight = FLIGHTS.find(f => 
+        f.fn === raw || f.fn.replace('-', '') === raw.replace('-', '')
+      );
+      if (localFlight) {
+        const fromAP = AIRPORTS.find(a => a.code === localFlight.from);
+        const toAP   = AIRPORTS.find(a => a.code === localFlight.to);
+        if (fromAP && toAP) {
+          const flight = normalizeBookingFlight({
+            found: true,
+            source: 'demo',
+            flightCode: localFlight.fn,
+            from: localFlight.from,
+            to: localFlight.to,
+            durMs: parseDurStr(localFlight.dur) || 5 * 3600000,
+            progress: 0.001,
+            depTime: localFlight.dep,
+            arrTime: localFlight.arr,
+            airline: localFlight.airline,
+            aircraft: localFlight.ac,
+            isDemo: true,
+            canRestart: localFlight.canRestart || false,
+          });
+          if (flight) {
+            MapState.flights = [flight];
+            Engine.setFlight(flight);
+            startPolling(raw);
+            showRoutePreview(flight);
+            return;
+          }
+        }
+      }
+
+      showErr('No flight found for "' + raw + '". Try FW-XXX or your booking reference.');
+      document.getElementById('flightCodeInput').classList.add('error');
+      setTimeout(() => document.getElementById('flightCodeInput').classList.remove('error'), 600);
+
+    } catch (err) {
+      showApiError('Failed to reach flight tracking service. Please check your connection.');
+    } finally {
+      setLaunchState(false);
+    }
+  }
+
+  function showRoutePreview(f) {
+    document.getElementById('rpFrom').textContent     = f.origin;
+    document.getElementById('rpFromCity').textContent = f.fromAP.city;
+    document.getElementById('rpTo').textContent       = f.destination;
+    document.getElementById('rpToCity').textContent   = f.toAP.city;
+    const durMin = Math.round(f.durMs / 60000);
+    document.getElementById('rpDur').textContent = '~' + Math.floor(durMin / 60) + 'h ' + (durMin % 60) + 'm';
+    document.getElementById('routePreview').style.display = 'block';
+  }
+
+  function renderBookedList() {
+    const list = document.getElementById('bookedList');
+    list.innerHTML = '<div class="no-bookings" style="color:var(--muted)">Loading your flights...</div>';
+
+    DataService.fetchBookings().then(bookings => {
+      const flights = normalizeBookingsList(bookings);
+      MapState.flights = flights;
+      list.innerHTML = '';
+
+      if (!flights.length) {
+        list.innerHTML = '<div class="no-bookings">No bookings found.<br>Book a flight to track it here.</div>';
+        return;
+      }
+
+      flights.forEach(f => {
+        const d = document.createElement('div');
+        d.className = 'booked-item';
+        const statusClass = f.status === 'active' ? 'approved' : 'pending';
+        const statusLabel = f.status === 'active' ? 'ACTIVE' : f.status.toUpperCase();
+        d.innerHTML = `
+          <div style="flex:1">
+            <div class="bi-code">${f.id}</div>
+            <div class="bi-route">${f.fromAP.flag} ${f.origin} → ${f.toAP.flag} ${f.destination}</div>
+          </div>
+          <div class="bi-status ${statusClass}">${statusLabel}</div>
+        `;
+        d.addEventListener('click', () => {
+          Engine.setFlight(f);
+          startPolling(f.bookingRef);
+          showRoutePreview(f);
+          showPanel('search');
+          document.getElementById('flightCodeInput').value = f.bookingRef || f.id;
+        });
+        list.appendChild(d);
+      });
+    }).catch(() => {
+      list.innerHTML = '<div class="no-bookings">Sign in to view your flights.</div>';
+    });
+  }
+
+  function retryLoad() {
+    document.getElementById('api-error').style.display = 'none';
+    const code = document.getElementById('flightCodeInput').value.trim();
+    if (code) onLaunch();
+  }
+
+  function initInput() {
+    const inp = document.getElementById('flightCodeInput');
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') onLaunch();
+    });
+  }
+
+  var _uiHidden = false;
+  function toggleAllElements() {
+    _uiHidden = !_uiHidden;
+    var toggleables = [
+      document.getElementById('header'),
+      document.getElementById('left-panel'),
+      document.getElementById('flight-panel'),
+      document.getElementById('globe-controls'),
+      document.getElementById('api-error'),
+      document.getElementById('poll-badge'),
+    ];
+    toggleables.forEach(function(el) {
+      if (!el) return;
+      el.style.transition = 'opacity 0.3s, transform 0.3s';
+      if (_uiHidden) {
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        el.style.transform = 'scale(0.96)';
+      } else {
+        el.style.opacity = '';
+        el.style.pointerEvents = '';
+        el.style.transform = '';
+      }
+    });
+
+    var hiddenNavItems = Array.from(document.querySelectorAll('#top-nav .nav-btn, #top-nav .back-btn'))
+      .filter(function(el) { return el.id !== 'btnHideUI'; });
+    hiddenNavItems.forEach(function(el) {
+      if (_uiHidden) {
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        el.style.transform = 'scale(0.96)';
+      } else {
+        el.style.opacity = '';
+        el.style.pointerEvents = '';
+        el.style.transform = '';
+      }
+    });
+
+    var btn = document.getElementById('btnHideUI');
+    if (btn) {
+      btn.textContent = _uiHidden ? '👁 Show UI' : '👁 Hide UI';
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+
+      if (_uiHidden) {
+        btn.style.position = 'fixed';
+        btn.style.top = '16px';
+        btn.style.right = '16px';
+        btn.style.zIndex = '9999';
+      } else {
+        btn.style.position = '';
+        btn.style.top = '';
+        btn.style.right = '';
+        btn.style.zIndex = '';
+      }
+    }
+  }
+
+  return { showPanel, onLaunch, retryLoad, initInput, showRoutePreview, toggleAllElements };
+})();
+
+
+function startPolling(code) {
+  if (MapState.pollTimer) clearInterval(MapState.pollTimer);
+
+  const badge = document.getElementById('poll-badge');
+  if (badge) badge.style.display = 'block';
+
+  MapState.pollTimer = setInterval(async () => {
+    if (!code) return;
+    try {
+      if (badge) { badge.textContent = 'SYNCING'; badge.classList.add('syncing'); }
+
+      const raw = await DataService.fetchFlight(code);
+      if (raw && raw.found) {
+        const fresh = normalizeBookingFlight(raw);
+        if (fresh && MapState.activeFlight) {
+
+          const serverProg = fresh.progress;
+          const localProg  = MapState.activeFlight.progress;
+          if (Math.abs(serverProg - localProg) > 0.01) {
+            MapState.activeFlight.startTime = fresh.startTime;
+          }
+        }
+      }
+
+      setTimeout(() => {
+        if (badge) badge.classList.remove('syncing');
+      }, 600);
+
+    } catch (_) {
+      if (badge) badge.classList.remove('syncing');
+    }
+  }, 10000);
+}
+
+(function () {
+  const c   = document.getElementById('stars-canvas');
+  const ctx = c.getContext('2d');
+  let stars = [];
+  function resize() {
+    c.width = window.innerWidth; c.height = window.innerHeight; stars = [];
+    for (let i = 0; i < 220; i++)
+      stars.push({ x: Math.random() * c.width, y: Math.random() * c.height, r: Math.random() * 1.4 + 0.2, a: Math.random(), sp: Math.random() * 0.005 + 0.002, ph: Math.random() * Math.PI * 2 });
+  }
+  resize(); window.addEventListener('resize', resize);
+  (function tick(ts) {
+    ctx.clearRect(0, 0, c.width, c.height);
+    stars.forEach(s => {
+      const a = s.a * (0.5 + 0.5 * Math.sin(ts * 0.001 * s.sp + s.ph));
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180,210,255,${a})`; ctx.fill();
+    });
+    requestAnimationFrame(tick);
+  })(0);
+})();
+
+let lastUI = 0;
+let rafId  = null;
+let docVisible = true;
+
+document.addEventListener('visibilitychange', () => {
+  docVisible = !document.hidden;
+  if (!docVisible && rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  else if (docVisible && !rafId) { rafId = requestAnimationFrame(mainLoop); }
+});
+
+function mainLoop(t) {
+  rafId = requestAnimationFrame(mainLoop);
+  Engine.tick();
+  Globe.render(t);
+  if (t - lastUI > 500) {
+    lastUI = t;
+    const f = MapState.activeFlight;
+    if (f) HUD.update(f);
+  }
+}
+
+function tickClock() {
+  const now = new Date();
+  const e = document.getElementById('utcTime');
+  if (e) {
+    const hours = String(now.getUTCHours()).padStart(2, '0');
+    const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+    e.textContent = `${hours}:${minutes}:${seconds}`;
+  }
+}
+
+tickClock();
+setInterval(tickClock, 100);
+
+(function boot() {
+  const msgs   = ['INITIALIZING...', 'BUILDING GLOBE...', 'CONNECTING TO API...', 'READY'];
+  let   mi     = 0;
+  const ldMsg  = document.getElementById('ldMsg');
+  const mi_int = setInterval(() => { if (ldMsg && mi < msgs.length) ldMsg.textContent = msgs[mi++]; }, 550);
+
+  Globe.init();
+  UI.initInput();
+
+  requestAnimationFrame(mainLoop);
+
+  setTimeout(() => {
+    clearInterval(mi_int);
+    const ld = document.getElementById('loading');
+    ld.style.opacity = '0';
+    setTimeout(() => ld.remove(), 700);
+  }, 2400);
+
+  setTimeout(async () => {
+    const p = new URLSearchParams(window.location.search);
+
+    const codeParam = p.get('code')?.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if (codeParam) {
+      const inp = document.getElementById('flightCodeInput');
+      if (inp) inp.value = codeParam;
+      await UI.onLaunch();
+      return;
+    }
+
+    const uf = p.get('from'), ut = p.get('to');
+    if (uf && ut) {
+      const fromAP = AIRPORTS.find(a => a.code === uf.toUpperCase());
+      const toAP   = AIRPORTS.find(a => a.code === ut.toUpperCase());
+      if (fromAP && toAP) {
+        const durMs = (parseInt(p.get('dm') || '0')) || 5 * 3600000;
+        const sw    = parseInt(p.get('sw') || '0');
+        const progress = sw && durMs ? Math.min(0.999, Math.max(0.001, (Date.now() - sw) / durMs)) : 0.001;
+        const fn    = (p.get('fn') || ('FW-' + uf + ut)).toUpperCase();
+        const flight = normalizeBookingFlight({
+          found: true, source: 'url',
+          flightCode: fn, from: uf.toUpperCase(), to: ut.toUpperCase(),
+          durMs, progress,
+          startTime: sw || (Date.now() - progress * durMs),
+        });
+        if (flight) { Engine.setFlight(flight); UI.showRoutePreview(flight); }
+        return;
+      }
+    }
+
+    try {
+      const active = JSON.parse(localStorage.getItem('fw_active_flight') || 'null');
+      if (active && active.from && active.to
+          && AIRPORTS.find(a => a.code === active.from)
+          && AIRPORTS.find(a => a.code === active.to)) {
+        const inp = document.getElementById('flightCodeInput');
+        if (inp) inp.value = active.bookingRef || active.flightNumber || '';
+        await UI.onLaunch();
+        return;
+      }
+    } catch (_) {}
+
+    const token = localStorage.getItem('fw_token');
+    if (token) {
+      setTimeout(() => UI.showPanel('booked'), 200);
+    }
+
+  }, 2800);
+})();
+</script>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

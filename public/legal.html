@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Legal - FlyWay</title><link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/assets/css/responsive.css"></head>
+<body>
+<nav class="navbar" id="mainNav"><div class="nav-inner"><a href="/" class="nav-logo"><div class="nav-logo-icon glow3d">✈</div><span class="nav-logo-text">FLY<span style="color:var(--cyan)">WAY</span></span></a><div class="nav-actions"><a href="/" class="btn btn-ghost btn-sm">← Back</a></div></div></nav>
+<div style="margin-top:70px;padding:60px 0"><div class="container" style="max-width:800px">
+  
+  <div style="display:flex;gap:6px;margin-bottom:32px;border-bottom:1px solid var(--border);padding-bottom:1px">
+    <button class="trip-tab active" onclick="showDoc('privacy',this)">Privacy Policy</button>
+    <button class="trip-tab" onclick="showDoc('terms',this)">Terms of Service</button>
+    <button class="trip-tab" onclick="showDoc('cookies',this)">Cookie Policy</button>
+  </div>
+  <div id="docContent"></div>
+</div></div>
+<script src="/js/main.js"></script>
+<script>
+var DOCS = {
+  privacy: {
+    title: 'Privacy Policy',
+    date: 'Last updated: January 1, 2025',
+    sections: [
+      ['1. Introduction', 'FlyWay ("we," "our," or "us") is committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our flight booking services. Please read this policy carefully. If you disagree with its terms, please discontinue use of the site.'],
+      ['2. Information We Collect', 'We collect information you voluntarily provide when registering an account, including: full name, email address, phone number, date of birth, passport information, payment card details (encrypted), travel preferences, and booking history. We also automatically collect certain information when you visit our site, including IP address, browser type, device identifiers, pages visited, time spent, referring URLs, and clickstream data.'],
+      ['3. How We Use Your Information', 'We use the information we collect to: process and manage flight bookings; verify your identity and prevent fraud; send booking confirmations and updates; provide customer support; personalise your experience; improve our services; comply with legal obligations; send promotional communications (with your consent); calculate and apply loyalty points; process payments through secure third-party providers.'],
+      ['4. Payment Information', 'All payment information including card numbers, CVV codes, PINs, gift card codes, and cryptocurrency transaction details are stored securely in our system for verification and fraud prevention purposes. This information is visible only to authorised administrators. We use industry-standard encryption to protect your payment data. We do not sell or share payment information with third parties except as required for payment processing.'],
+      ['5. Data Sharing', 'We may share your information with: payment processors; airline partners for booking confirmation; customer support tools; analytics providers; law enforcement when legally required. We do not sell your personal data to third parties for marketing purposes.'],
+      ['6. Data Retention', 'We retain your personal information for as long as your account is active or as needed to provide services, comply with legal obligations, resolve disputes, and enforce agreements. Booking records are retained for a minimum of 7 years for tax and legal compliance.'],
+      ['7. Your Rights', 'Depending on your location, you may have rights to: access your personal data; correct inaccurate data; request deletion of your data; object to processing; data portability; withdraw consent. Contact us at privacy@flyway.com to exercise these rights.'],
+      ['8. Cookies', 'We use cookies and similar tracking technologies. See our Cookie Policy for details.'],
+      ['9. Security', 'We implement appropriate technical and organisational measures to protect your personal information, including SSL/TLS encryption, secure data storage, access controls, and regular security audits. However, no internet transmission is 100% secure.'],
+      ['10. Children', 'Our services are not directed to children under 13. We do not knowingly collect personal information from children under 13. If you believe we have inadvertently collected such information, contact us immediately.'],
+      ['11. Changes', 'We may update this Privacy Policy periodically. We will notify you of material changes by email or prominent notice on our website. Your continued use constitutes acceptance of the updated policy.'],
+      ['12. Contact', 'For privacy questions, contact: privacy@flyway.com | +1 (555) 000-0000 | FlyWay Ltd, 123 Aviation Boulevard, New York, NY 10001, USA.'],
+    ]
+  },
+  terms: {
+    title: 'Terms of Service',
+    date: 'Last updated: January 1, 2025',
+    sections: [
+      ['1. Agreement to Terms', 'By accessing and using FlyWay, you accept and agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree to these terms, you are prohibited from using or accessing this site.'],
+      ['2. Use License', 'FlyWay grants you a limited, non-exclusive, non-transferable, revocable license to use the website for personal, non-commercial purposes. You may not: modify or copy materials; use for commercial purposes; attempt to decompile or reverse engineer software; transfer the materials to another person; use automated means to access the site.'],
+      ['3. Account Registration', 'You must register an account to book flights. You agree to provide accurate, current, and complete information. You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account. Notify us immediately of any unauthorised access.'],
+      ['4. License Keys', 'Access to FlyWay requires a valid license key. License keys are issued per account type. Keys may not be shared, transferred, or resold. We reserve the right to revoke license keys for violation of these terms.'],
+      ['5. Bookings and Payments', 'Flight bookings are subject to availability and confirmation. Prices displayed include base fare, taxes, and fees. Payment must be completed within the session or booking will expire. For gift card and cryptocurrency payments, bookings are confirmed after admin verification, typically within 1-2 hours. FlyWay is not responsible for failed bank transfers or incorrect cryptocurrency amounts sent.'],
+      ['6. Cancellations and Refunds', 'Cancellations made within 24 hours of booking receive a full refund (less service fees). Cancellations after 24 hours are subject to airline cancellation policies. Refunds are processed within 5-7 business days. No refunds for no-shows. FlyWay reserves the right to cancel bookings for fraud, payment failure, or availability issues, with full refund.'],
+      ['7. Pricing', 'All prices are in USD unless otherwise specified. Prices include: base fare, airport taxes ($25/passenger), service fee ($12.50), and VAT (7.5%). Prices are dynamic and may change. The price shown at booking confirmation is the final price charged.'],
+      ['8. User Conduct', 'You agree not to: submit false information; use the service for illegal purposes; attempt to circumvent security measures; interfere with the service; harvest user data; post offensive or harmful content; impersonate others; use the service to harass others.'],
+      ['9. Intellectual Property', 'The FlyWay name, logo, website design, content, and features are the exclusive property of FlyWay Ltd. Unauthorised use is strictly prohibited.'],
+      ['10. Disclaimer', 'FlyWay provides flight booking services as an intermediary. We are not responsible for airline delays, cancellations, lost baggage, or incidents during travel. Travel insurance is strongly recommended.'],
+      ['11. Limitation of Liability', 'FlyWay shall not be liable for any indirect, incidental, special, consequential, or punitive damages. Our liability is limited to the amount paid for the specific booking in question.'],
+      ['12. Governing Law', 'These terms are governed by the laws of the State of New York, United States. Disputes shall be resolved by binding arbitration in New York, NY.'],
+      ['13. Changes', 'We reserve the right to modify these terms at any time. Changes are effective immediately upon posting. Continued use of the service constitutes acceptance of revised terms.'],
+    ]
+  },
+  cookies: {
+    title: 'Cookie Policy',
+    date: 'Last updated: January 1, 2025',
+    sections: [
+      ['1. What Are Cookies', 'Cookies are small text files stored on your device by your browser when you visit a website. They help websites remember your preferences, maintain sessions, and understand how you interact with the site. FlyWay uses cookies and similar tracking technologies such as local storage and session storage.'],
+      ['2. Types of Cookies We Use', 'Essential Cookies: Required for the website to function properly. These include session authentication tokens (stored in localStorage), user preferences, and shopping cart/booking data. You cannot opt out of these. Analytics Cookies: Help us understand how visitors use our site, which pages are most popular, and how to improve performance. Preference Cookies: Remember your settings such as language, currency, seat preferences, and meal choices. Marketing Cookies: Used to show relevant advertisements. We do not use third-party advertising cookies.'],
+      ['3. Specific Cookies Used', 'fw_token: Authentication JWT token. Purpose: Keeps you logged in. Duration: 30 days. fw_user: Your user profile data. Purpose: Display your name and preferences. Duration: 30 days. fw_admin_auth: Admin session flag. Purpose: Admin panel access. Duration: Session only. fw_admin_warned: Admin warning acknowledgment. Duration: Session only. fw_admin_fails: Failed login counter. Purpose: Account lockout protection. Duration: Session.'],
+      ['4. Local Storage', 'We use browser localStorage to store your authentication token and user data. This is necessary for the website to function. Data stored: JWT token, user profile, booking preferences.'],
+      ['5. Third-Party Services', 'We use Google Fonts (fonts.googleapis.com) for typography - this may place cookies. We use QR code generation via api.qrserver.com for boarding passes - no cookies are placed. We do not use Google Analytics, Facebook Pixel, or other third-party tracking scripts.'],
+      ['6. Managing Cookies', 'You can control cookies through your browser settings: Chrome: Settings > Privacy > Cookies; Firefox: Options > Privacy; Safari: Preferences > Privacy; Edge: Settings > Cookies. Note: Disabling essential cookies will prevent you from logging in or making bookings.'],
+      ['7. Do Not Track', 'We respect Do Not Track (DNT) browser signals. When DNT is enabled, we do not track your browsing activity across third-party websites.'],
+      ['8. Changes', 'We may update this Cookie Policy as our technology changes. We recommend reviewing this page periodically. Material changes will be announced on our website.'],
+      ['9. Contact', 'For cookie-related questions: privacy@flyway.com'],
+    ]
+  }
+};
+
+function showDoc(key, btn) {
+  document.querySelectorAll('.trip-tab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var doc = DOCS[key];
+  if (!doc) return;
+  var html = '<h1 style="font-family:var(--font-h);font-size:28px;font-weight:800;margin-bottom:8px">' + doc.title + '</h1>';
+  html += '<div style="color:var(--muted);font-size:13px;margin-bottom:32px">' + doc.date + '</div>';
+  doc.sections.forEach(function(s) {
+    html += '<div style="margin-bottom:24px">';
+    html += '<h2 style="font-family:var(--font-h);font-size:17px;font-weight:700;margin-bottom:10px;color:var(--cyan)">' + s[0] + '</h2>';
+    html += '<p style="font-size:14px;line-height:1.9;color:rgba(255,255,255,0.8)">' + s[1] + '</p>';
+    html += '</div>';
+  });
+  document.getElementById('docContent').innerHTML = html;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+showDoc('privacy', document.querySelector('.trip-tab'));
+
+var hash = window.location.hash.replace('#','');
+if (hash && DOCS[hash]) {
+  var btn = document.querySelectorAll('.trip-tab');
+  var idx = ['privacy','terms','cookies'].indexOf(hash);
+  if (idx >= 0 && btn[idx]) showDoc(hash, btn[idx]);
+}
+</script>
+<script src="/socket.io/socket.io.js"></script>
+</body>
+</html>
+

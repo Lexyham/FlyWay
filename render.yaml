@@ -1,0 +1,74 @@
+services:
+  - type: web
+    name: flyway-website
+    runtime: node
+    # Chrome is needed by puppeteer to render ticket/receipt PNG attachments.
+    buildCommand: npm install && npx puppeteer browsers install chrome
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: production
+      - key: PUPPETEER_CACHE_DIR
+        value: /opt/render/project/src/.cache/puppeteer
+        
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+     
+      - key: USE_MONGODB
+        value: 'true'
+      - key: MONGODB_DB_NAME
+        value: flyway
+
+      - key: SMTP_FROM_NAME
+        value: FlyWay
+      - key: BANK_NAME
+        sync: false
+      - key: ACCOUNT_NAME
+        sync: false
+      - key: ACCOUNT_NUMBER
+        sync: false
+      - key: ROUTING_NUMBER
+        sync: false
+      - key: SWIFT_CODE
+        sync: false
+      - key: IBAN
+        sync: false
+      - key: BTC_ADDRESS
+        sync: false
+      - key: ETH_ADDRESS
+        sync: false
+      - key: USDT_ADDRESS
+        sync: false
+      - key: USDC_ADDRESS
+        sync: false
+      - key: BNB_ADDRESS
+        sync: false
+      - key: TWT_ADDRESS
+        sync: false
+      - key: SOL_ADDRESS
+        sync: false
+      - key: XRP_ADDRESS
+        sync: false
+      - key: TRX_ADDRESS
+        sync: false
+      - key: DOGE_ADDRESS
+        sync: false
+      - key: PAYSTACK_NUM
+        sync: false
+      - key: FLUTTER_NUM
+        sync: false
+      - key: CASHAPP_TAG
+        sync: false
+      - key: PAYPAL_EMAIL
+        sync: false
