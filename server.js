@@ -34,9 +34,6 @@ const sendOtpEmail = async (toEmail, otp, action, recipientName) => {
   const intro    = action === 'reset'
     ? 'We received a request to reset your FlyWay account password. Use the secure code below to proceed. If you did not request a password reset, you can safely ignore this email — your account remains secure.'
     : 'Welcome to FlyWay! To complete your registration and activate your account, please enter the one-time verification code below. This code confirms your email address.';
-  const digits = otp.split('').map(d =>
-    `<td style="padding:0 5px"><div style="width:44px;height:56px;line-height:56px;background:#0b1628;border:2px solid #00d4ff;border-radius:10px;text-align:center;font-family:monospace;font-size:28px;font-weight:700;color:#00d4ff;letter-spacing:0">${d}</div></td>`
-  ).join('');
   const year = new Date().getFullYear();
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -69,10 +66,15 @@ const sendOtpEmail = async (toEmail, otp, action, recipientName) => {
           <p style="margin:0 0 6px;font-size:17px;font-weight:600;color:#cde8ff;">${greeting}</p>
           <p style="margin:0 0 32px;font-size:14px;color:#7ca8cc;line-height:1.75;">${intro}</p>
 
-          <!-- OTP digits -->
+          <!-- Keep the code as one text string so it can be selected and copied in email clients. -->
           <p style="margin:0 0 16px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#3d6a99;">Your one-time code</p>
           <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-            <tr>${digits}</tr>
+            <tr>
+              <td>
+                <div style="display:inline-block;background:#0b1628;border:2px solid #00d4ff;border-radius:10px;padding:14px 20px;font-family:monospace;font-size:28px;font-weight:700;color:#00d4ff;letter-spacing:0.3em;user-select:all;-webkit-user-select:all;cursor:text;">${otp}</div>
+                <p style="margin:10px 0 0;font-size:12px;color:#7ca8cc;">Select and copy this code to paste it.</p>
+              </td>
+            </tr>
           </table>
 
           <!-- Expiry notice -->
