@@ -299,7 +299,7 @@
         const hint = res.emailHint || 'your registered email';
         addConsoleLine(`✉ OTP sent to <strong style="color:var(--cyan)">${hint}</strong> — check your inbox.`);
       } else {
-        addConsoleLine('⚠️ Email not configured — contact support for your OTP.', true);
+        addConsoleLine('⚠️ OTP email could not be sent. Check your inbox later or contact support; do not share your verification code.', true);
       }
     } catch (err) {
       addConsoleLine('Reveal failed: ' + (err.message || 'Unable to decode.'), true);

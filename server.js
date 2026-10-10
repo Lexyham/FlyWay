@@ -26,7 +26,7 @@ if (!brevoConfigured) {
 
 const sendOtpEmail = async (toEmail, otp, action, recipientName) => {
   if (!brevoConfigured) {
-    console.warn('[Brevo] Not configured — OTP not emailed. Set SMTP_* values in .env');
+    console.warn('[Brevo] Not configured — OTP not emailed. Set BREVO_API_KEY and SMTP_FROM_EMAIL in the service environment.');
     return false;
   }
   const label    = action === 'reset' ? 'Password Reset' : 'Account Verification';
