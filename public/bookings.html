@@ -87,7 +87,6 @@
   </div>
 </div>
 <div id="toastContainer"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="/js/main.js"></script>
 <script src="/js/barcode-gen.js"></script>
 <script src="/js/ticket-system.js"></script>
@@ -322,12 +321,10 @@ function openTicketModal(id) {
 function fwSavePNG(id) {
   const b = allBookings.find(x => x.id === id);
   if (!b) return;
-  const el = document.querySelector('.fw-modal-ticket .fw-ticket-system');
-  if (el && !el.id) el.id = 'fw-modal-ts-' + id;
   if (typeof FWTicket !== 'undefined') {
-    FWTicket.downloadPNG(el ? el.id : 'modalBody', b);
+    FWTicket.downloadPNG(b);   // rendered from the booking record, not a screenshot of the page
   } else {
-    FlyWay.toast('info','Tip','Use your browser screenshot tool');
+    FlyWay.toast('error','Image export unavailable','Reload the page and try again');
   }
 }
 

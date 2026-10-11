@@ -824,9 +824,316 @@
 </html>`;
   }
 
+  // ─── DEDICATED PNG TICKET RENDERER ───────────────────────────────────────────
+  // Draws the ticket straight from the booking record onto a <canvas>. It never reads or captures the page DOM
+  // (so it cannot pick up navigation, other cards, or the rest of the page) and it deliberately leaves out
+  // payment details. Layout is a landscape boarding pass whose height grows only with passengers / return leg.
+
+  const PNG = { W: 1600, M: 40, PAD: 56, MAX_PAX: 6 };
+
+  function pngFonts() {
+    let base = '';
+    try { base = getComputedStyle(document.documentElement).getPropertyValue('--font').trim(); } catch (e) {}
+    const sans = (base ? base + ',' : '') + '"Plus Jakarta Sans","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+    return { sans: sans, mono: '"JetBrains Mono","SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace' };
+  }
+
+  function rrPath(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // Shrink the font until the text fits maxW; if it still does not fit at minSize, cut with an ellipsis.
+  function fitText(ctx, str, maxW, size, minSize, weight, family) {
+    str = String(str == null || str === '' ? '—' : str);
+    let s = size;
+    ctx.font = weight + ' ' + s + 'px ' + family;
+    while (s > minSize && ctx.measureText(str).width > maxW) { s -= 1; ctx.font = weight + ' ' + s + 'px ' + family; }
+    if (ctx.measureText(str).width > maxW) {
+      while (str.length > 1 && ctx.measureText(str + '…').width > maxW) str = str.slice(0, -1);
+      str = str.trimEnd() + '…';
+    }
+    return str;
+  }
+
+  function drawText(ctx, str, x, y, o) {
+    o = o || {};
+    ctx.save();
+    ctx.fillStyle = o.color || '#e0f0ff';
+    ctx.textAlign = o.align || 'left';
+    ctx.textBaseline = 'alphabetic';
+    if (o.spacing && 'letterSpacing' in ctx) ctx.letterSpacing = o.spacing + 'px';
+    let out = str;
+    if (o.maxW) out = fitText(ctx, str, o.maxW, o.size, o.min || Math.round(o.size * 0.5), o.weight || 600, o.family);
+    else ctx.font = (o.weight || 600) + ' ' + o.size + 'px ' + o.family;
+    ctx.fillText(out, x, y);
+    ctx.restore();
+    return out;
+  }
+
+  // Simple vector aeroplane (nose pointing +x), scale s ≈ half-length in px.
+  function drawPlane(ctx, cx, cy, s, color) {
+    const top = [[1,0],[0.3,-0.12],[0,-0.12],[-0.35,-0.85],[-0.55,-0.85],[-0.35,-0.12],[-0.8,-0.12],[-1,-0.4],[-1.1,-0.4],[-1,0]];
+    const pts = top.concat(top.slice(1, -1).reverse().map(function (p) { return [p[0], -p[1]]; }));
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    pts.forEach(function (p, i) { i ? ctx.lineTo(p[0] * s, p[1] * s) : ctx.moveTo(p[0] * s, p[1] * s); });
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Draw the scannable Code 128 bars directly (parsed from FWBarcode's SVG) using whole-pixel module widths.
+  function drawBarcode(ctx, payload, x, y, maxW, h) {
+    if (typeof FWBarcode === 'undefined' || !payload) return 0;
+    const svg = FWBarcode.generate(payload, { height: h + 8, moduleW: 1, quietZone: 0, color: '#000', bgColor: 'transparent', showText: false });
+    const vb = /viewBox="0 0 ([\d.]+) /.exec(svg);
+    if (!vb) return 0;
+    const total = parseFloat(vb[1]);
+    const k = Math.max(1, Math.floor(maxW / total));
+    const startX = x + Math.floor((maxW - total * k) / 2);
+    ctx.fillStyle = '#0a1628';
+    const re = /<rect x="([\d.]+)" y="[\d.]+" width="([\d.]+)"/g;
+    let m;
+    while ((m = re.exec(svg))) ctx.fillRect(startX + parseFloat(m[1]) * k, y, parseFloat(m[2]) * k, h);
+    return total * k;
+  }
+
+  function renderTicketCanvas(booking) {
+    return Promise.race([
+      (document.fonts && document.fonts.ready) || Promise.resolve(),
+      new Promise(function (r) { setTimeout(r, 1500); })
+    ]).then(function () { return paintTicket(booking || {}); });
+  }
+
+  function paintTicket(booking) {
+    const F = pngFonts();
+    // FlyWay is a top-level const in main.js (not always a window property), so look it up by name too
+    const FW = (typeof FlyWay !== 'undefined') ? FlyWay : global.FlyWay;
+    const airports = (FW && FW.airports) ? FW.airports : [];
+    const f   = booking.outboundFlight || {};
+    const ret = booking.returnFlight || null;
+    const pax = Array.isArray(booking.passengers) ? booking.passengers : [];
+    const st  = getStatus(booking);
+    const cls = getClass(booking);
+    const fromA = getAirportCity(airports, f.from);
+    const toA   = getAirportCity(airports, f.to);
+    const isCancelled = (booking.status || '').toLowerCase() === 'cancelled';
+    const shownPax = pax.slice(0, PNG.MAX_PAX);
+
+    const W = PNG.W, M = PNG.M, P = PNG.PAD;
+    const x0 = M + P, CW = W - 2 * (M + P);
+
+    // ── layout (heights only; drawing happens after the canvas is sized)
+    const H_HEADER = 168, H_ROUTE = 300, H_TEAR = 56, H_GRID = 250;
+    const H_RETURN = ret ? 96 : 0;
+    const H_PAX = pax.length ? (64 + shownPax.length * 56 + (pax.length > PNG.MAX_PAX ? 44 : 0) + 16) : 0;
+    const H_CODE = 230;
+    const H = M + H_HEADER + H_ROUTE + H_TEAR + H_GRID + H_RETURN + H_PAX + H_CODE + M;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // background
+    ctx.fillStyle = '#060d1f'; ctx.fillRect(0, 0, W, H);
+    const glow = ctx.createRadialGradient(W * 0.8, 0, 0, W * 0.8, 0, W * 0.7);
+    glow.addColorStop(0, 'rgba(0,212,255,0.14)'); glow.addColorStop(1, 'rgba(0,212,255,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+
+    // card
+    const cx = M, cy = M, cw = W - 2 * M, ch = H - 2 * M;
+    const cardGrad = ctx.createLinearGradient(0, cy, 0, cy + ch);
+    cardGrad.addColorStop(0, '#0c1c3e'); cardGrad.addColorStop(1, '#081226');
+    rrPath(ctx, cx, cy, cw, ch, 40); ctx.fillStyle = cardGrad; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,212,255,0.35)'; ctx.stroke();
+
+    let y = cy;
+
+    // ── header
+    const logoSize = 72, hy = y + (H_HEADER - logoSize) / 2;
+    const lg = ctx.createLinearGradient(x0, hy, x0 + logoSize, hy + logoSize);
+    lg.addColorStop(0, '#00d4ff'); lg.addColorStop(1, '#7c3aed');
+    rrPath(ctx, x0, hy, logoSize, logoSize, 20); ctx.fillStyle = lg; ctx.fill();
+    drawPlane(ctx, x0 + logoSize / 2, hy + logoSize / 2, 22, '#06101f');
+    const tx = x0 + logoSize + 22;
+    ctx.font = '800 38px ' + F.sans;
+    const flyW = ctx.measureText('FLY').width, wayW = ctx.measureText('WAY').width;
+    drawText(ctx, 'FLY', tx, hy + 36, { size: 38, weight: 800, family: F.sans, color: '#ffffff', spacing: 2 });
+    drawText(ctx, 'WAY', tx + flyW + 2, hy + 36, { size: 38, weight: 800, family: F.sans, color: '#00d4ff', spacing: 2 });
+    drawText(ctx, 'AIRLINES', tx + flyW + wayW + 22, hy + 36, { size: 22, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.7)', spacing: 3 });
+    drawText(ctx, 'Premium Aviation Experience', tx, hy + 66, { size: 20, weight: 500, family: F.sans, color: 'rgba(224,240,255,0.55)' });
+
+    // status pill + booking reference (right side)
+    const right = x0 + CW;
+    const pillText = (st.icon + '  ' + st.label);
+    ctx.font = '800 20px ' + F.sans;
+    const pillW = Math.min(CW * 0.42, ctx.measureText(pillText).width + 48);
+    const pillX = right - pillW, pillY = y + 30;
+    rrPath(ctx, pillX, pillY, pillW, 40, 20);
+    ctx.fillStyle = st.bg; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = st.border; ctx.stroke();
+    drawText(ctx, pillText, pillX + pillW / 2, pillY + 27, { size: 20, weight: 800, family: F.sans, color: st.color, align: 'center', maxW: pillW - 28, min: 12 });
+    drawText(ctx, 'BOOKING REFERENCE', right, y + 104, { size: 15, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.5)', align: 'right', spacing: 2 });
+    drawText(ctx, booking.ref || '—', right, y + 146, { size: 42, weight: 800, family: F.mono, color: '#e8f7ff', align: 'right', maxW: CW * 0.45, min: 22, spacing: 3 });
+    y += H_HEADER;
+    ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(x0, y - 2, CW, 2);
+
+    // ── route
+    const EP_W = 440;
+    const rt = y;
+    drawText(ctx, f.from || '—', x0, rt + 150, { size: 140, weight: 800, family: F.sans, color: '#ffffff', maxW: EP_W, min: 70 });
+    drawText(ctx, fromA.city || f.from || '—', x0, rt + 196, { size: 34, weight: 600, family: F.sans, color: 'rgba(224,240,255,0.88)', maxW: EP_W, min: 20 });
+    drawText(ctx, f.depTime || '—', x0, rt + 252, { size: 56, weight: 800, family: F.sans, color: '#00d4ff', maxW: EP_W, min: 28 });
+    drawText(ctx, 'DEPARTURE', x0 + 0, rt + 282, { size: 16, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.5)', spacing: 3 });
+
+    drawText(ctx, f.to || '—', right, rt + 150, { size: 140, weight: 800, family: F.sans, color: '#ffffff', align: 'right', maxW: EP_W, min: 70 });
+    drawText(ctx, toA.city || f.to || '—', right, rt + 196, { size: 34, weight: 600, family: F.sans, color: 'rgba(224,240,255,0.88)', align: 'right', maxW: EP_W, min: 20 });
+    drawText(ctx, f.arrTime || '—', right, rt + 252, { size: 56, weight: 800, family: F.sans, color: '#00d4ff', align: 'right', maxW: EP_W, min: 28 });
+    drawText(ctx, 'ARRIVAL', right, rt + 282, { size: 16, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.5)', align: 'right', spacing: 3 });
+
+    const pl = x0 + EP_W + 36, pr = right - EP_W - 36, pm = (pl + pr) / 2, pw = pr - pl, lineY = rt + 130;
+    drawText(ctx, f.flightNumber || '—', pm, rt + 84, { size: 32, weight: 800, family: F.mono, color: '#ffffff', align: 'center', maxW: pw, min: 18 });
+    drawText(ctx, f.aircraft || '', pm, rt + 108, { size: 18, weight: 500, family: F.sans, color: 'rgba(224,240,255,0.55)', align: 'center', maxW: pw, min: 12 });
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,212,255,0.55)'; ctx.lineWidth = 3; ctx.setLineDash([2, 12]); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(pl + 14, lineY); ctx.lineTo(pr - 14, lineY); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#00d4ff';
+    ctx.beginPath(); ctx.arc(pl + 6, lineY, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(pr - 6, lineY, 7, 0, Math.PI * 2); ctx.fill();
+    drawPlane(ctx, pm, lineY, 22, '#00d4ff');
+    drawText(ctx, f.duration || '—', pm, rt + 176, { size: 26, weight: 700, family: F.sans, color: '#e0f0ff', align: 'center', maxW: pw, min: 16 });
+    drawText(ctx, f.type || 'Non-stop', pm, rt + 204, { size: 19, weight: 600, family: F.sans, color: 'rgba(224,240,255,0.55)', align: 'center', maxW: pw, min: 12 });
+    y += H_ROUTE;
+
+    // ── tear line with notches
+    const ty = y + H_TEAR / 2;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 2; ctx.setLineDash([12, 10]);
+    ctx.beginPath(); ctx.moveTo(cx + 36, ty); ctx.lineTo(cx + cw - 36, ty); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#060d1f';
+    ctx.beginPath(); ctx.arc(cx, ty, 26, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + cw, ty, 26, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,212,255,0.35)';
+    ctx.beginPath(); ctx.arc(cx, ty, 26, -Math.PI / 2, Math.PI / 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx + cw, ty, 26, Math.PI / 2, Math.PI * 1.5); ctx.stroke();
+    y += H_TEAR;
+
+    // ── details grid (same fields as the on-screen ticket)
+    const cells = [
+      ['DATE', fmtDate(f.departureDate), '#ffffff'],
+      ['CLASS', cls.label, cls.color],
+      ['PASSENGERS', (pax.length || 1) + (((pax.length || 1) === 1) ? ' passenger' : ' passengers'), '#ffffff'],
+      ['AIRLINE', f.airline || 'Fly Way Airlines', '#ffffff'],
+      ['TERMINAL', booking.terminal || 'Main Terminal', '#ffffff'],
+      ['GATE', booking.gate || 'TBA', '#ffffff'],
+      ['DISTANCE', f.distance || '—', '#ffffff'],
+      ['TRIP TYPE', ret ? 'Round-Trip' : 'One-Way', '#ffffff']
+    ];
+    const colW = CW / 4;
+    cells.forEach(function (c, i) {
+      const col = i % 4, row = Math.floor(i / 4);
+      const gx = x0 + col * colW, gy = y + 20 + row * 110;
+      drawText(ctx, c[0], gx, gy + 24, { size: 15, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.5)', spacing: 2.5 });
+      drawText(ctx, c[1], gx, gy + 68, { size: 31, weight: 700, family: F.sans, color: c[2], maxW: colW - 24, min: 16 });
+    });
+    y += H_GRID;
+
+    // ── return leg (round trips)
+    if (ret) {
+      rrPath(ctx, x0, y + 8, CW, 72, 18);
+      ctx.fillStyle = 'rgba(0,212,255,0.07)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,212,255,0.22)'; ctx.stroke();
+      drawText(ctx, 'RETURN', x0 + 28, y + 52, { size: 16, weight: 800, family: F.sans, color: '#00d4ff', spacing: 3 });
+      const route = (ret.from || '—') + '  →  ' + (ret.to || '—');
+      const used = drawText(ctx, route, x0 + 150, y + 56, { size: 32, weight: 800, family: F.sans, color: '#ffffff', maxW: 380, min: 18 });
+      ctx.font = '800 32px ' + F.sans;
+      const rx = x0 + 150 + Math.min(380, ctx.measureText(used).width) + 36;
+      const bits = [ret.flightNumber, ret.departureDate ? fmtDate(ret.departureDate) : '', (ret.depTime || ret.arrTime) ? ((ret.depTime || '—') + ' → ' + (ret.arrTime || '—')) : ''].filter(Boolean).join('  ·  ');
+      drawText(ctx, bits, rx, y + 54, { size: 26, weight: 600, family: F.sans, color: 'rgba(224,240,255,0.85)', maxW: x0 + CW - 28 - rx, min: 14 });
+      y += H_RETURN;
+    }
+
+    // ── passengers
+    if (pax.length) {
+      ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(x0, y, CW, 2);
+      drawText(ctx, 'PASSENGERS', x0, y + 42, { size: 15, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.5)', spacing: 2.5 });
+      drawText(ctx, pax.length + (pax.length === 1 ? ' traveller' : ' travellers'), right, y + 42, { size: 15, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.5)', align: 'right', spacing: 1.5 });
+      shownPax.forEach(function (p, i) {
+        const ry = y + 64 + i * 56 + 28;
+        const name = (p && p.name) ? String(p.name).trim() : ('Passenger ' + (i + 1));
+        ctx.beginPath(); ctx.arc(x0 + 20, ry, 20, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0,212,255,0.14)'; ctx.fill();
+        drawText(ctx, (name.charAt(0) || 'P').toUpperCase(), x0 + 20, ry + 8, { size: 22, weight: 800, family: F.sans, color: '#00d4ff', align: 'center' });
+        const age = p && p.age;
+        const tag = (age === undefined || age === null || age === '') ? '' : (age < 2 ? 'Infant' : age < 12 ? 'Child' : age >= 60 ? 'Senior' : 'Adult');
+        const seat = (booking.selectedSeats || [])[i] || 'Auto-assigned';
+        drawText(ctx, name, x0 + 56, ry + 10, { size: 30, weight: 700, family: F.sans, color: '#ffffff', maxW: CW * 0.52, min: 16 });
+        drawText(ctx, tag ? (tag + (age !== undefined && age !== '' ? ' · ' + age : '')) : '', x0 + CW * 0.62, ry + 8, { size: 22, weight: 500, family: F.sans, color: 'rgba(224,240,255,0.6)', maxW: CW * 0.14, min: 12 });
+        drawText(ctx, 'SEAT', right - 150, ry + 6, { size: 14, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.45)', align: 'right', spacing: 2 });
+        drawText(ctx, seat, right, ry + 9, { size: 28, weight: 800, family: F.mono, color: '#00d4ff', align: 'right', maxW: 140, min: 14 });
+      });
+      if (pax.length > PNG.MAX_PAX) {
+        drawText(ctx, '+ ' + (pax.length - PNG.MAX_PAX) + ' more passenger' + (pax.length - PNG.MAX_PAX > 1 ? 's' : '') + ' on this booking', x0, y + 64 + shownPax.length * 56 + 30, { size: 22, weight: 600, family: F.sans, color: 'rgba(224,240,255,0.6)' });
+      }
+      y += H_PAX;
+    }
+
+    // ── barcode + issue info
+    ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(x0, y, CW, 2);
+    const bw = Math.round(CW * 0.62), bh = 150, by = y + 28;
+    rrPath(ctx, x0, by, bw, bh, 18); ctx.fillStyle = '#ffffff'; ctx.fill();
+    const payload = (typeof FWBarcode !== 'undefined') ? FWBarcode.buildPayload(booking) : buildScanPayload(booking);
+    const drawn = drawBarcode(ctx, payload, x0 + 28, by + 22, bw - 56, bh - 56);
+    if (!drawn) drawText(ctx, booking.ref || '—', x0 + bw / 2, by + bh / 2 + 10, { size: 40, weight: 800, family: F.mono, color: '#0a1628', align: 'center', maxW: bw - 56, min: 20 });
+    drawText(ctx, payload || booking.ref || '', x0 + bw / 2, by + bh - 14, { size: 17, weight: 600, family: F.mono, color: '#44546a', align: 'center', maxW: bw - 56, min: 10, spacing: 1 });
+    drawText(ctx, 'ELECTRONIC TICKET', right, by + 30, { size: 15, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.5)', align: 'right', spacing: 2.5 });
+    drawText(ctx, (booking.ref || '—') + '  ·  ' + (f.flightNumber || '—'), right, by + 76, { size: 28, weight: 700, family: F.mono, color: '#e0f0ff', align: 'right', maxW: CW - bw - 40, min: 14 });
+    drawText(ctx, 'Issued ' + fmtDateTime(new Date()), right, by + 112, { size: 19, weight: 500, family: F.sans, color: 'rgba(224,240,255,0.55)', align: 'right', maxW: CW - bw - 40, min: 11 });
+
+    // cancelled tickets must not look valid
+    if (isCancelled) {
+      ctx.save();
+      ctx.translate(W / 2, H / 2); ctx.rotate(-0.22);
+      ctx.font = '900 190px ' + F.sans; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(255,87,87,0.22)'; ctx.fillText('CANCELLED', 0, 0);
+      ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(255,87,87,0.28)'; ctx.strokeText('CANCELLED', 0, 0);
+      ctx.restore();
+    }
+    return canvas;
+  }
+
+  function triggerDownload(canvas, filename) {
+    return new Promise(function (resolve, reject) {
+      function save(url, revoke) {
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.rel = 'noopener';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        if (revoke) setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+        resolve();
+      }
+      if (canvas.toBlob) {
+        canvas.toBlob(function (blob) {
+          if (!blob) { try { save(canvas.toDataURL('image/png'), false); } catch (e) { reject(e); } return; }
+          save(URL.createObjectURL(blob), true);
+        }, 'image/png');
+      } else {
+        try { save(canvas.toDataURL('image/png'), false); } catch (e) { reject(e); }
+      }
+    });
+  }
+
   // ─── PUBLIC API ───────────────────────────────────────────────────────────────
 
   const TicketSystem = {
+    renderTicketCanvas,
     buildWebTicketHTML,
     buildPrintableHTML,
     buildPricingBreakdown,
@@ -864,24 +1171,18 @@
       }
     },
 
-    // Download via html2canvas (PNG)
-    downloadPNG: function(elId, booking) {
-      const el = document.getElementById(elId);
-      if (!el) { if(global.FlyWay) global.FlyWay.toast('error','Not ready','Complete booking first'); return; }
-      if (typeof html2canvas === 'undefined') { window.print(); return; }
-      if (global.FlyWay && global.FlyWay.toast) global.FlyWay.toast('info','Preparing image…','Just a moment');
-      html2canvas(el, { backgroundColor:'#060d1f', scale:2, useCORS:true, allowTaint:true, logging:false }).then(function(canvas) {
-        const ref  = (booking && booking.ref) ? booking.ref : 'FW-Ticket';
-        const link = document.createElement('a');
-        link.download = 'FlyWay-Ticket-' + ref + '.png';
-        link.href = canvas.toDataURL('image/png');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        if (global.FlyWay && global.FlyWay.toast) global.FlyWay.toast('success','Image saved!','FlyWay-Ticket-'+ref+'.png');
-      }).catch(function() {
-        window.print();
-      });
+    // Save the ticket as a PNG. Accepts downloadPNG(booking) or the legacy downloadPNG(elementId, booking);
+    // the element is ignored — the image is rendered from the booking record, never from the page.
+    downloadPNG: function(a, b) {
+      const booking = (a && typeof a === 'object') ? a : b;
+      const toast = function(type, title, msg) { if (global.FlyWay && global.FlyWay.toast) global.FlyWay.toast(type, title, msg); };
+      if (!booking) { toast('error', 'Not ready', 'Complete booking first'); return Promise.resolve(false); }
+      toast('info', 'Preparing image…', 'Just a moment');
+      const ref = String(booking.ref || 'FW-Ticket').replace(/[^A-Za-z0-9_-]/g, '');
+      return renderTicketCanvas(booking)
+        .then(function(canvas) { return triggerDownload(canvas, 'FlyWay-Ticket-' + ref + '.png'); })
+        .then(function() { toast('success', 'Image saved!', 'FlyWay-Ticket-' + ref + '.png'); return true; })
+        .catch(function() { toast('error', 'Could not create the image', 'Please try again or use Ticket PDF'); return false; });
     },
   };
 

@@ -85,7 +85,7 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
 
       <div id="errBox1" class="hidden" style="background:rgba(255,87,87,0.1);border:1px solid rgba(255,87,87,0.3);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--coral);margin-bottom:16px;"></div>
 
-      <div class="form-row">
+      <div class="form-row keep-2">
         <div class="form-group">
           <label class="form-label">First Name</label>
           <input class="form-input" id="firstName" placeholder="John" autocomplete="given-name">
@@ -110,24 +110,24 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
         <div id="emailStatus" style="margin-top:6px;font-size:12px;min-height:18px;"></div>
       </div>
       <div class="form-group">
-        <label class="form-label">Phone Number (optional)</label>
+        <label class="form-label">Phone Number</label>
         <div class="input-group"><span class="input-prefix">📞</span>
           <input class="form-input" type="tel" id="phone" placeholder="+1 555 0000" autocomplete="tel">
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
-        <div class="input-group"><span class="input-prefix">🔒</span>
+        <div class="input-group has-suffix"><span class="input-prefix">🔒</span>
           <input class="form-input" type="password" id="password" placeholder="Create a strong password" autocomplete="new-password">
-          <span class="input-suffix" onclick="togglePw('password')">👁</span>
+          <button type="button" class="input-suffix" onclick="togglePw('password', this)" aria-label="Show password" aria-pressed="false">👁</button>
         </div>
-        <div class="form-hint" id="pwStrength"></div>
+        <div class="form-hint" id="pwStrength" style="min-height:16px"></div>
       </div>
       <div class="form-group">
         <label class="form-label">Confirm Password</label>
-        <div class="input-group"><span class="input-prefix">🔒</span>
+        <div class="input-group has-suffix"><span class="input-prefix">🔒</span>
           <input class="form-input" type="password" id="confirmPw" placeholder="Repeat your password" autocomplete="new-password">
-          <span class="input-suffix" onclick="togglePw('confirmPw')">👁</span>
+          <button type="button" class="input-suffix" onclick="togglePw('confirmPw', this)" aria-label="Show password" aria-pressed="false">👁</button>
         </div>
       </div>
       <button class="btn btn-primary btn-full btn-lg" id="continueBtn" onclick="goToStep2()">Continue →</button>
@@ -231,9 +231,14 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
     setTimeout(function() { validateAndCheck(); }, 100);
   }
 
-  function togglePw(id) {
+  function togglePw(id, btn) {
     const el = document.getElementById(id);
     el.type = el.type === 'password' ? 'text' : 'password';
+    if (btn) {
+      const shown = el.type === 'text';
+      btn.setAttribute('aria-pressed', shown ? 'true' : 'false');
+      btn.setAttribute('aria-label', shown ? 'Hide password' : 'Show password');
+    }
   }
 
   // Password strength

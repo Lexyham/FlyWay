@@ -75,11 +75,11 @@
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
-          <div class="input-group">
+          <div class="input-group has-suffix">
             <span class="input-prefix">🔒</span>
             <input class="form-input" type="password" id="password" placeholder="Enter your password"
               autocomplete="current-password">
-            <span class="input-suffix" onclick="togglePw()">👁</span>
+            <button type="button" class="input-suffix" onclick="togglePw(this)" aria-label="Show password" aria-pressed="false">👁</button>
           </div>
         </div>
 
@@ -109,9 +109,14 @@
 
     if (FlyWay.isLoggedIn()) window.location.href = '/dashboard';
 
-    function togglePw() {
+    function togglePw(btn) {
       const pw = document.getElementById('password');
       pw.type = pw.type === 'password' ? 'text' : 'password';
+      if (btn) {
+        const shown = pw.type === 'text';
+        btn.setAttribute('aria-pressed', shown ? 'true' : 'false');
+        btn.setAttribute('aria-label', shown ? 'Hide password' : 'Show password');
+      }
     }
 
     async function doLogin() {

@@ -292,17 +292,27 @@ p  { font-size: clamp(0.825rem,1.5vw, 1rem); }
 .form-hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .form-error { font-size: 12px; color: var(--coral); margin-top: 4px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+/* Short fields (e.g. first/last name) stay side by side on phones */
+.form-row.keep-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+/* Icon inputs: the icon lives in a fixed 42px gutter and the input reserves that gutter with padding,
+   so typed text can never run underneath an icon (at any viewport width). */
 .input-group { position: relative; }
 .input-prefix {
-  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-  color: var(--muted); font-size: 16px; pointer-events: none;
+  position: absolute; left: 0; top: 0; bottom: 0; width: 42px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 16px; line-height: 1; pointer-events: none;
 }
 .input-group .form-input { padding-left: 42px; }
+.input-group.has-suffix .form-input { padding-right: 46px; }
 .input-suffix {
-  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
-  cursor: pointer; color: var(--muted);
+  position: absolute; right: 0; top: 0; bottom: 0; width: 44px; min-width: 44px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; border-radius: 0 var(--radius) var(--radius) 0;
+  cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1;
 }
+.input-suffix:hover { color: var(--white); }
+.input-suffix:focus-visible { outline: 2px solid var(--cyan); outline-offset: -3px; }
 
 
 .card {
@@ -772,7 +782,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .hero-bg-plane { position: absolute; font-size: 60px; opacity: 0.04; animation: planeFly 25s linear infinite; }
 .hero-glow { position: absolute; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%); pointer-events: none; }
-.hero-content { position: relative; z-index: 2; padding: 120px 0 80px; }
+.hero-content { position: relative; z-index: 2; padding-top: 120px; padding-bottom: 80px; }
 .hero-tagline { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); border-radius: 20px; padding: 6px 16px; font-size: 13px; color: var(--cyan); font-weight: 600; margin-bottom: 24px; }
 
 /* ── Hero headline word-level animation spans ─────────────────────────── */
@@ -1131,7 +1141,7 @@ mark { background: #ffe58f; color: #000; }
 
   
   .hero { padding: 72px 0 48px; text-align: center; }
-  .hero-content { padding: 80px 0 52px; text-align: center; }
+  .hero-content { padding-top: 80px; padding-bottom: 52px; text-align: center; }
   .hero-tagline { font-size: 12px; padding: 5px 13px; margin-bottom: 18px; }
   .hero-btns { flex-direction: column; gap: 10px; margin-top: 22px; justify-content: center; }
   .hero-stats { gap: 18px; margin-top: 36px; flex-wrap: wrap; justify-content: center; }
@@ -1343,7 +1353,7 @@ mark { background: #ffe58f; color: #000; }
 
   
   .hero { padding: 60px 0 36px; }
-  .hero-content { padding: 68px 0 40px; }
+  .hero-content { padding-top: 68px; padding-bottom: 40px; }
   .hero-tagline { font-size: 11px; padding: 4px 11px; margin-bottom: 14px; }
   .hero-stats { gap: 14px; margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; }
   .hero-stat-num { font-size: 20px; }

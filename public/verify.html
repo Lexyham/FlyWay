@@ -8,34 +8,33 @@
   <link rel="stylesheet" href="/assets/css/responsive.css">
   <style>
     body { background: radial-gradient(circle at top left, rgba(0,212,255,0.16), transparent 28%), radial-gradient(circle at bottom right, rgba(245,200,66,0.12), transparent 28%), #050b1a; color: #e8f7ff; }
-    .verify-shell { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px 16px; }
+    .verify-shell { min-height:100vh; min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:40px 16px; }
     .verify-grid { width:100%; max-width:1200px; display:grid; grid-template-columns: 1.1fr .9fr; gap:18px; }
     .secure-panel, .console-panel { background:rgba(7,13,33,0.96); border:1px solid rgba(0,212,255,0.18); border-radius:28px; padding:28px; box-shadow:0 30px 90px rgba(0,0,0,0.28); position:relative; overflow:hidden; }
     .secure-panel::before, .console-panel::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at top, rgba(0,212,255,0.06), transparent 35%), radial-gradient(circle at bottom, rgba(245,200,66,0.05), transparent 30%); pointer-events:none; }
     .secure-panel >*, .console-panel >* { position:relative; z-index:1; }
     .verify-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:24px; }
-    .verify-badge { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:999px; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.16); color:var(--cyan); font-weight:700; letter-spacing:0.02em; }
-    .verify-title { font-family:var(--font-h); font-size:30px; line-height:1.1; margin:0; }
+    .verify-badge { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:999px; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.16); color:var(--cyan); font-weight:700; font-size:16px; letter-spacing:0.02em; margin:0; font-family:inherit; line-height:1.2; }
     .verify-sub { color:var(--muted); font-size:14px; max-width:520px; }
     .status-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:24px 0; }
-    .status-card { border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); border-radius:18px; padding:18px; min-height:110px; }
-    .status-card strong { display:block; font-size:22px; margin-bottom:6px; }
+    .status-card { border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); border-radius:18px; padding:18px; min-height:96px; min-width:0; }
+    .status-card strong { display:block; font-size:22px; margin-bottom:6px; overflow-wrap:anywhere; line-height:1.2; }
     .status-card span { color:var(--muted); font-size:12px; }
-    .timeline { list-style:none; padding:0; margin:0; display:grid; gap:12px; }
-    .timeline li { display:grid; grid-template-columns:24px 1fr; gap:14px; align-items:flex-start; }
-    .timeline li::before { content:'•'; color:var(--cyan); font-size:22px; line-height:1; margin-top:1px; }
-    .timeline strong { display:block; margin-bottom:4px; font-size:14px; }
+    .session-created { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:4px 12px; font-size:13px; padding:12px 16px; border:1px solid rgba(255,255,255,0.08); border-radius:14px; background:rgba(255,255,255,0.03); }
+    .session-created strong { font-size:13px; }
+    .session-created span { color:var(--muted); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
     .pulse { display:inline-flex; align-items:center; gap:8px; font-size:12px; }
     .pulse-dot { width:10px; height:10px; border-radius:50%; background:var(--emerald); box-shadow:0 0 10px rgba(0,227,150,0.8); animation:pulse 1.8s infinite; }
     @keyframes pulse { 0%,100% { transform: scale(0.9); opacity:0.8; } 50% { transform: scale(1.2); opacity:1; }}
-    .console-log { background:rgba(0,0,0,0.2); border:1px solid rgba(0,212,255,0.1); border-radius:18px; padding:18px; min-height:200px; font-family:monospace; font-size:13px; color:#cde8ff; overflow:hidden; position:relative; }
-    .console-log::before { content:'SECURE LOG'; position:absolute; right:18px; top:18px; color:rgba(255,255,255,0.25); font-size:11px; letter-spacing:1px; }
-    .console-line { opacity:0; transform:translateY(6px); animation:lineIn 0.35s forwards; }
-    .console-line:nth-child(1){animation-delay:0.1s;} .console-line:nth-child(2){animation-delay:0.18s;} .console-line:nth-child(3){animation-delay:0.26s;} .console-line:nth-child(4){animation-delay:0.34s;}
+    .console-wrap { background:rgba(0,0,0,0.2); border:1px solid rgba(0,212,255,0.1); border-radius:18px; overflow:hidden; }
+    .console-head { display:flex; justify-content:flex-end; padding:8px 14px 0; color:rgba(255,255,255,0.3); font-size:10px; letter-spacing:1px; }
+    /* Bounded, scrollable console: it never grows the page; newest line is kept in view by addConsoleLine() */
+    .console-log { height:220px; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; padding:8px 14px 14px; font-family:monospace; font-size:13px; line-height:1.5; color:#cde8ff; overflow-wrap:anywhere; word-break:break-word; scrollbar-width:thin; scrollbar-color:rgba(0,212,255,0.3) transparent; }
+    .console-line { opacity:0; transform:translateY(6px); animation:lineIn 0.35s forwards; margin-bottom:2px; }
     @keyframes lineIn { to { opacity:1; transform:translateY(0); } }
     .codeframe { display:grid; gap:16px; margin-top:20px; }
-    .otp-deck { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:20px; }
-    .otp-cell { width:58px; height:70px; border-radius:18px; border:1px solid rgba(0,212,255,0.18); background:rgba(0,0,0,0.24); display:flex; align-items:center; justify-content:center; font-family:var(--font-m); font-size:28px; letter-spacing:0.18em; color:#e8f7ff; transition:transform 0.3s ease, border-color 0.3s ease; }
+    .otp-deck { display:grid; grid-template-columns:repeat(6,minmax(0,58px)); gap:12px; justify-content:center; margin-top:20px; }
+    .otp-cell { min-width:0; height:70px; border-radius:18px; border:1px solid rgba(0,212,255,0.18); background:rgba(0,0,0,0.24); display:flex; align-items:center; justify-content:center; font-family:var(--font-m); font-size:28px; letter-spacing:0.18em; color:#e8f7ff; transition:transform 0.3s ease, border-color 0.3s ease; }
     .otp-cell.active { border-color: var(--cyan); box-shadow:0 0 24px rgba(0,212,255,0.18); transform:translateY(-2px); }
     .otp-controls { display:flex; gap:12px; flex-wrap:wrap; margin-top:24px; }
     .otp-controls button { flex:1 1 140px; }
@@ -45,8 +44,8 @@
     .holo-shell span { position:relative; z-index:1; }
     .scan-beam { height:2px; width:100%; background:linear-gradient(90deg, transparent, rgba(0,212,255,0.42), transparent); animation:beam 2s infinite; margin-top:14px; opacity:0.8; }
     .cipher-glow { color: rgba(0,212,255,0.95); font-weight:700; letter-spacing:0.06em; }
-    .otp-entry { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:20px; }
-    .otp-input { width:50px; height:58px; border-radius:14px; border:1px solid rgba(255,255,255,0.12); background:rgba(0,0,0,0.25); color:#e8f7ff; font-size:24px; text-align:center; font-family:var(--font-m); }
+    .otp-entry { display:grid; grid-template-columns:repeat(6,minmax(0,50px)); gap:8px; justify-content:center; margin-top:14px; }
+    .otp-input { width:100%; min-width:0; padding:0; height:58px; border-radius:14px; border:1px solid rgba(255,255,255,0.12); background:rgba(0,0,0,0.25); color:#e8f7ff; font-size:24px; text-align:center; font-family:var(--font-m); }
     .otp-input:focus { border-color:var(--cyan); outline:none; box-shadow:0 0 0 4px rgba(0,212,255,0.08); }
     .hidden { display:none !important; }
     .panel-note { color:var(--muted); font-size:13px; margin-top:12px; }
@@ -54,6 +53,33 @@
     .success-panel { background:rgba(0,227,150,0.12); border-color:rgba(0,227,150,0.25); color:var(--emerald); }
     .failure-panel { background:rgba(255,87,87,0.12); border-color:rgba(255,87,87,0.28); color:var(--coral); }
     @media(max-width:1024px){ .verify-grid { grid-template-columns:1fr; } .secure-panel, .console-panel { padding:22px; } }
+    @media(max-width:600px){
+      .verify-shell { padding:12px 10px; align-items:flex-start; }
+      .verify-grid { gap:10px; }
+      .secure-panel, .console-panel { padding:14px; border-radius:20px; }
+      .verify-header { margin-bottom:12px; gap:8px; }
+      .verify-badge { padding:7px 12px; font-size:13px; }
+      .status-grid { gap:8px; margin:0 0 10px; }
+      .status-card { padding:10px 12px; min-height:0; border-radius:14px; }
+      .status-card strong { font-size:15px; margin-bottom:2px; }
+      .status-card span { font-size:11px; }
+      .session-created { padding:9px 12px; font-size:12px; border-radius:12px; }
+      .console-panel .verify-header { margin-bottom:8px; }
+      .console-log { height:clamp(120px,22vh,170px); font-size:12px; }
+      .codeframe { gap:10px; margin-top:12px; }
+      .holo-shell { padding:10px; min-height:0; border-radius:14px; font-size:13px; }
+      .scan-beam { margin-top:8px; }
+      .scan-status-row { gap:6px; margin-top:0; }
+      .hint-pill { padding:5px 10px; font-size:11px; }
+      .otp-deck { gap:6px; margin-top:0; }
+      .otp-cell { height:48px; border-radius:12px; font-size:20px; letter-spacing:0; }
+      .otp-controls { gap:8px; margin-top:12px; }
+      .otp-controls button { flex:1 1 120px; padding-top:10px; padding-bottom:10px; }
+      .otp-entry { gap:6px; margin-top:10px; }
+      .otp-input { height:48px; border-radius:12px; font-size:20px; }
+      #otpEntryPanel > div:last-child { margin-top:12px !important; gap:8px !important; }
+      #resetPanel { margin-top:14px !important; }
+    }
   </style>
 <meta name="robots" content="noindex,nofollow">
 </head>
@@ -63,9 +89,7 @@
     <section class="secure-panel">
       <div class="verify-header">
         <div>
-          <div class="verify-badge">🔒 SECURE GATEWAY</div>
-          <h1 class="verify-title">FlyWay secure verification terminal</h1>
-          <p class="verify-sub">This portal establishes a temporary encrypted session, decodes your access package, and presents a holographic OTP in a protected runway.</p>
+          <h1 class="verify-badge">🔒 SECURE GATEWAY</h1>
         </div>
         <div class="pulse"><span class="pulse-dot"></span><span id="statusTag">Initializing</span></div>
       </div>
@@ -75,24 +99,20 @@
         <div class="status-card"><strong id="sessionAction">-</strong><span>Verification target</span></div>
         <div class="status-card"><strong id="sessionAttempt">-</strong><span>Attempts remaining</span></div>
       </div>
-      <ul class="timeline">
-        <li><strong>Session created</strong><span id="timelineCreated">Pending</span></li>
-        <li><strong>Fingerprint locked</strong><span id="timelineFingerprint">Secure</span></li>
-        <li><strong>OTP reveal stage</strong><span id="timelineReveal">Locked</span></li>
-        <li><strong>Verification state</strong><span id="timelineState">Pending</span></li>
-      </ul>
-      <div class="panel-note">Designed to feel like an airline terminal boarding pass, but for secure account verification.</div>
+      <div class="session-created"><strong>Session created</strong><span id="timelineCreated">-</span></div>
     </section>
 
     <section class="console-panel">
       <div class="verify-header" style="align-items:flex-start;">
         <div>
           <h2 class="modal-title">Verification console</h2>
-          <p class="verify-sub">Interact with the decryption sequence to expose your one-time key.</p>
         </div>
       </div>
 
-      <div class="console-log" id="consoleLog"></div>
+      <div class="console-wrap">
+        <div class="console-head" aria-hidden="true">SECURE LOG</div>
+        <div class="console-log" id="consoleLog" role="log" aria-live="polite" tabindex="0" aria-label="Verification console"></div>
+      </div>
 
       <div class="codeframe" id="revealFrame">
         <div class="holo-shell">
@@ -118,8 +138,7 @@
       </div>
 
       <div id="otpEntryPanel" class="hidden">
-        <div class="panel-note">Enter the OTP shown above into the authentication matrix to continue.</div>
-        <div class="otp-entry" id="otpEntry"></div>
+        <div class="otp-entry" id="otpEntry" role="group" aria-label="One-time code"></div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;">
           <button class="btn btn-gold" onclick="verifyOtp()">VERIFY CODE</button>
           <button class="btn btn-ghost" onclick="clearOtpInputs()">CLEAR</button>
@@ -178,9 +197,6 @@
       document.getElementById('sessionExpires').textContent = formatTimer(sessionInfo.expiresAt);
       document.getElementById('sessionAttempt').textContent = `${Math.max(0, sessionInfo.maxAttempts - sessionInfo.attempts)} / ${sessionInfo.maxAttempts}`;
       document.getElementById('timelineCreated').textContent = new Date(sessionInfo.createdAt).toLocaleString();
-      document.getElementById('timelineFingerprint').textContent = 'Browser locked';
-      document.getElementById('timelineReveal').textContent = sessionInfo.revealStage > 0 ? 'In progress' : 'Locked';
-      document.getElementById('timelineState').textContent = sessionInfo.status.toUpperCase();
       setStatus('Ready for secure reveal');
       if (sessionInfo.status !== 'pending') {
         throw new Error('Session is not available for verification.');
@@ -190,7 +206,7 @@
       setInterval(updateCountdown, 1000);
     } catch (err) {
       setStatus('Verification session unavailable');
-      const msg = err.message || 'Unknown error';
+      const msg = escapeHtml(err.message || 'Unknown error');
       const isNotFound = msg.includes('404') || msg.includes('not found') || msg.includes('expired') || msg.includes('unavailable');
       addConsoleLine('Unable to load session: ' + msg, true);
       if (isNotFound) {
@@ -203,15 +219,22 @@
     }
   }
 
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
   function addConsoleLine(text, error = false) {
     const log = document.getElementById('consoleLog');
     const line = document.createElement('div');
     line.className = 'console-line';
     line.style.color = error ? 'var(--coral)' : '#cde8ff';
-    // Use innerHTML so links/bold in error hints render correctly
+    // innerHTML is used so the links/bold in the hints render; callers must pass escapeHtml()'d dynamic values
     line.innerHTML = '> ' + text;
     log.appendChild(line);
+    while (log.children.length > 200) log.removeChild(log.firstChild); // keep the log bounded
+    // The console scrolls inside its own box; keep the newest entry in view without moving the page
     log.scrollTop = log.scrollHeight;
+    requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
   }
 
   function setStatus(text) {
@@ -228,7 +251,7 @@
       socket.emit('join-session', sessionId);
     });
     socket.on('session_connected', (payload) => {
-      addConsoleLine(payload.message || 'Secure channel confirmed.');
+      addConsoleLine(escapeHtml(payload.message || 'Secure channel confirmed.'));
     });
     socket.on('session_update', (payload) => {
       if (payload.attempts !== undefined) {
@@ -244,7 +267,7 @@
       addConsoleLine('Session verified by secure core.');
     });
     socket.on('session_expired', (payload) => {
-      addConsoleLine(payload.message || 'Session expired.', true);
+      addConsoleLine(escapeHtml(payload.message || 'Session expired.'), true);
       setStatus('Session expired');
       document.getElementById('revealBtn').disabled = true;
     });
@@ -290,19 +313,18 @@
       addConsoleLine('OTP packet dispatched. Parsing response...');
       const masked = decodeRevealPayload(res.revealPayload);
       otpCode = null; // OTP is secret — user must enter from email
-      document.getElementById('timelineReveal').textContent = 'Reveal stage ' + res.stage;
       document.getElementById('sessionAttempt').textContent = `${Math.max(0, sessionInfo.maxAttempts - sessionInfo.attempts)} / ${sessionInfo.maxAttempts}`;
       document.getElementById('cipherStrength').textContent = 'Cipher strength: 100%';
       setStatus('OTP dispatched to email');
       animateOtpReveal(masked);
       if (res.emailSent) {
-        const hint = res.emailHint || 'your registered email';
+        const hint = escapeHtml(res.emailHint || 'your registered email');
         addConsoleLine(`✉ OTP sent to <strong style="color:var(--cyan)">${hint}</strong> — check your inbox.`);
       } else {
         addConsoleLine('⚠️ OTP email could not be sent. Check your inbox later or contact support; do not share your verification code.', true);
       }
     } catch (err) {
-      addConsoleLine('Reveal failed: ' + (err.message || 'Unable to decode.'), true);
+      addConsoleLine('Reveal failed: ' + escapeHtml(err.message || 'Unable to decode.'), true);
       setStatus('Reveal error');
       document.getElementById('scanTag').textContent = 'Reveal failure';
     } finally {
@@ -312,8 +334,9 @@
 
   function decodeRevealPayload(payload) {
     try {
-      // Server now sends a simple base64 of the masked string (e.g. "3●●●●●")
-      return atob(payload);
+      // Server sends base64 of the UTF-8 masked string (e.g. "3●●●●●"); plain atob() would mangle the ● characters
+      const bytes = Uint8Array.from(atob(payload), c => c.charCodeAt(0));
+      return new TextDecoder('utf-8').decode(bytes);
     } catch (err) {
       return '';
     }
@@ -321,7 +344,7 @@
 
   function animateOtpReveal(masked) {
     // masked = e.g. "3●●●●●" — first char is a hint, rest are hidden dots
-    const chars = masked.split('');
+    const chars = Array.from(masked);
     chars.forEach((char, index) => {
       const cell = document.getElementById(`deck${index}`);
       if (!cell) return;
@@ -350,12 +373,22 @@
     for (let i = 0; i < 6; i++) {
       const input = document.createElement('input');
       input.type = 'text';
-      input.maxLength = 1;
+      input.inputMode = 'numeric';
+      input.pattern = '[0-9]*';
+      input.autocomplete = i === 0 ? 'one-time-code' : 'off';
+      input.maxLength = i === 0 ? 6 : 1;   // first box accepts a pasted / autofilled code and spreads it
       input.className = 'otp-input';
+      input.setAttribute('aria-label', 'Digit ' + (i + 1) + ' of 6');
       input.addEventListener('input', (e) => {
         const target = e.target;
-        target.value = target.value.replace(/[^0-9]/g, '');
+        const digits = target.value.replace(/[^0-9]/g, '');
+        if (digits.length > 1) { spreadDigits(target, digits); return; }
+        target.value = digits;
         if (target.value && target.nextElementSibling) target.nextElementSibling.focus();
+      });
+      input.addEventListener('paste', (e) => {
+        const text = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
+        if (text.length > 1) { e.preventDefault(); spreadDigits(e.target, text); }
       });
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Backspace' && !e.target.value && e.target.previousElementSibling) {
@@ -364,6 +397,16 @@
       });
       container.appendChild(input);
     }
+  }
+
+  function spreadDigits(startEl, digits) {
+    const boxes = Array.from(document.querySelectorAll('.otp-input'));
+    let idx = boxes.indexOf(startEl);
+    if (idx < 0) idx = 0;
+    if (digits.length >= boxes.length) idx = 0; // a full code always fills from the first box
+    for (const d of digits) { if (idx >= boxes.length) break; boxes[idx++].value = d; }
+    const next = boxes[Math.min(idx, boxes.length - 1)];
+    if (next) next.focus();
   }
 
   function clearOtpInputs() {
@@ -395,7 +438,7 @@
         setTimeout(() => window.location.href = '/dashboard', 2200);
       }
     } catch (err) {
-      addConsoleLine('OTP validation failed: ' + (err.message || 'Invalid code'), true);
+      addConsoleLine('OTP validation failed: ' + escapeHtml(err.message || 'Invalid code'), true);
       setStatus('Verification failed');
       FlyWay.toast('error', 'Verification failed', err.message || 'Unable to validate the OTP.');
     }
@@ -414,7 +457,7 @@
       addConsoleLine('Password reset finalized. Redirecting to login...');
       setTimeout(() => window.location.href = '/login', 2200);
     } catch (err) {
-      addConsoleLine('Password reset failed: ' + (err.message || 'Unable to apply password'), true);
+      addConsoleLine('Password reset failed: ' + escapeHtml(err.message || 'Unable to apply password'), true);
       FlyWay.toast('error', 'Reset failed', err.message || 'Unable to reset password.');
     }
   }

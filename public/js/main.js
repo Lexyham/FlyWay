@@ -285,9 +285,13 @@ const FlyWay = {
       if (top + ddH > window.innerHeight - 10) {
         top = r.top - ddH - 2;
       }
+      // Never narrower than a readable list (matters when the field sits in a compact 2-column grid)
+      var vw    = document.documentElement.clientWidth || window.innerWidth;
+      var width = Math.min(Math.max(r.width, 260), vw - 16);
+      var left  = Math.max(8, Math.min(r.left, vw - width - 8));
       dd.style.top   = top + 'px';
-      dd.style.left  = r.left + 'px';
-      dd.style.width = r.width + 'px';
+      dd.style.left  = left + 'px';
+      dd.style.width = width + 'px';
     }
     function hl(text, q) {
       if (!q || !text) return escHtml(text || '');

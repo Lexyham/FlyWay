@@ -142,7 +142,7 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
     <div id="step1">
       <div class="search-box">
         <h2 style="font-family:var(--font-h);font-size:22px;font-weight:800;margin-bottom:6px">✈ Find Your Perfect Flight</h2>
-        <p style="color:var(--muted);font-size:14px;margin-bottom:24px">30+ global airports · All travel purposes · Instant booking</p>
+        <p class="search-sub">30+ global airports · All travel purposes · Instant booking</p>
         <div class="trip-type-tabs">
           <button class="trip-tab active" id="tabOneWay" onclick="setTrip('one-way')">→ One-Way</button>
           <button class="trip-tab" id="tabRound" onclick="setTrip('round-trip')">⇄ Round-Trip</button>
@@ -184,7 +184,6 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
         </div>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
           <button class="btn btn-primary btn-lg" onclick="searchFlights()">🔍 Search Available Flights</button>
-          <span style="font-size:12px;color:var(--muted)">✓ No booking fees · ✓ All routes available · ✓ Instant confirmation</span>
         </div>
       </div>
       
@@ -192,29 +191,25 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
         <div style="font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600"><span class="fw-anime-label" id="popularRoutesLabel">⚡ Popular Routes:</span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap" id="popularRoutesBar"></div>
       </div>
-      <div style="margin-top:24px;padding:22px;border:1px solid var(--border);border-radius:20px;background:rgba(255,255,255,0.04);">
-        <div style="font-size:15px;font-weight:700;margin-bottom:12px">Flight type guide</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
-          <div style="padding:16px;border-radius:16px;background:rgba(4,14,34,0.9);">
-            <div style="font-weight:700;margin-bottom:8px">Non-stop Flight</div>
-            <div style="color:var(--muted);font-size:13px">The fastest option, with no stops. The plane takes off, lands once, and arrives at the destination.</div>
+      <div class="ft-guide" id="ftGuide">
+        <button type="button" class="ft-guide-toggle" id="ftGuideBtn" aria-expanded="false" aria-controls="ftGuidePanel">
+          <span>Flight type guide</span><span class="ft-guide-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="ft-guide-panel" id="ftGuidePanel" role="region" aria-labelledby="ftGuideBtn" hidden>
+          <div class="ft-guide-grid">
+            <div class="ft-card">
+              <div class="ft-card-title">Non-stop Flight</div>
+              <div class="ft-card-desc">The fastest option, with no stops. The plane takes off, lands once, and arrives at the destination.</div>
+            </div>
+            <div class="ft-card">
+              <div class="ft-card-title">Direct Flight</div>
+              <div class="ft-card-desc">A single flight number that may stop for passengers or refuel, but you usually stay on the same plane.</div>
+            </div>
+            <div class="ft-card">
+              <div class="ft-card-title">Connecting Flight</div>
+              <div class="ft-card-desc">At least two separate planes and flight numbers. You change planes during a layover.</div>
+            </div>
           </div>
-          <div style="padding:16px;border-radius:16px;background:rgba(4,14,34,0.9);">
-            <div style="font-weight:700;margin-bottom:8px">Direct Flight</div>
-            <div style="color:var(--muted);font-size:13px">A single flight number that may stop for passengers or refuel, but you usually stay on the same plane.</div>
-          </div>
-          <div style="padding:16px;border-radius:16px;background:rgba(4,14,34,0.9);">
-            <div style="font-weight:700;margin-bottom:8px">Connecting Flight</div>
-            <div style="color:var(--muted);font-size:13px">At least two separate planes and flight numbers. You change planes during a layover.</div>
-          </div>
-        </div>
-        <div style="margin-top:16px;color:var(--muted);font-size:13px;line-height:1.6;">
-          <strong>Fastest:</strong> Non-stop.<br>
-          <strong>Convenience:</strong> Non-stop &gt; Direct &gt; Connecting.<br>
-          <strong>Cheaper:</strong> Connecting flights are usually the cheapest, while non-stop are the most expensive.
-        </div>
-        <div style="margin-top:16px;color:var(--muted);font-size:13px;line-height:1.6;">
-          If you want to make sure your trip goes smoothly, I can also help you find out average delay times for a specific airline, explain minimum layover time for a connecting flight, or give tips for what to do if you miss a connection.
         </div>
       </div>
     </div>
@@ -489,14 +484,14 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
       <div id="ticketEl"></div>
 
       <!-- ── Action Strip ── -->
-      <div class="fw-action-strip">
-        <button class="fw-action-btn fw-action-btn-primary" onclick="openFlightMap()" id="btn3DTrack">🌍 Track in 3D</button>
-        <button class="fw-action-btn fw-action-btn-ghost" onclick="openTrackPage()">📡 Live Status</button>
-        <button class="fw-action-btn fw-action-btn-ghost" onclick="fwDownloadPNG()">🖼 Save PNG</button>
-        <button class="fw-action-btn fw-action-btn-ghost" onclick="fwDownloadTicket()">📄 Ticket PDF</button>
-        <button class="fw-action-btn fw-action-btn-ghost" onclick="fwDownloadReceipt()">🧾 Receipt PDF</button>
-        <button class="fw-action-btn fw-action-btn-ghost" onclick="copyTrackLink()">🔗 Share</button>
-        <a href="/bookings" class="fw-action-btn fw-action-btn-ghost">📋 All Bookings</a>
+      <div class="fw-action-strip fw-action-strip--icons" role="toolbar" aria-label="Booking actions">
+        <button type="button" class="fw-action-btn fw-action-icon fw-action-btn-primary" onclick="openFlightMap()" id="btn3DTrack" title="Track in 3D" aria-label="Track in 3D"><span class="fw-action-ico" aria-hidden="true">🌍</span><span class="fw-action-lbl">3D Track</span></button>
+        <button type="button" class="fw-action-btn fw-action-icon fw-action-btn-ghost" onclick="openTrackPage()" title="Live Status" aria-label="Live Status"><span class="fw-action-ico" aria-hidden="true">📡</span><span class="fw-action-lbl">Live</span></button>
+        <button type="button" class="fw-action-btn fw-action-icon fw-action-btn-ghost" onclick="fwDownloadPNG()" title="Save PNG" aria-label="Save ticket as PNG image"><span class="fw-action-ico" aria-hidden="true">🖼</span><span class="fw-action-lbl">PNG</span></button>
+        <button type="button" class="fw-action-btn fw-action-icon fw-action-btn-ghost" onclick="fwDownloadTicket()" title="Ticket PDF" aria-label="Ticket PDF"><span class="fw-action-ico" aria-hidden="true">🎫</span><span class="fw-action-lbl">Ticket</span></button>
+        <button type="button" class="fw-action-btn fw-action-icon fw-action-btn-ghost" onclick="fwDownloadReceipt()" title="Receipt PDF" aria-label="Receipt PDF"><span class="fw-action-ico" aria-hidden="true">🧾</span><span class="fw-action-lbl">Receipt</span></button>
+        <button type="button" class="fw-action-btn fw-action-icon fw-action-btn-ghost" onclick="copyTrackLink()" title="Share tracking link" aria-label="Share tracking link"><span class="fw-action-ico" aria-hidden="true">🔗</span><span class="fw-action-lbl">Share</span></button>
+        <a href="/bookings" class="fw-action-btn fw-action-icon fw-action-btn-ghost" title="All Bookings" aria-label="All Bookings"><span class="fw-action-ico" aria-hidden="true">📚</span><span class="fw-action-lbl">Bookings</span></a>
       </div>
     </div>
 
@@ -518,7 +513,6 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
 </div>
 <div id="toastContainer"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="/js/main.js"></script>
 <script src="/js/ticket-system.js"></script>
 <script src="/js/barcode-gen.js"></script>
@@ -1844,12 +1838,12 @@ function showConfirmation(booking) {
 // ── Premium download wrappers (delegate to FWTicket engine) ────────────────
 function fwDownloadPNG() {
   var b = currentBooking;
-  var el = document.getElementById('ticketEl');
-  if (!el || !b) { FlyWay.toast('error','Ticket not ready','Complete booking first'); return; }
+  if (!b) { FlyWay.toast('error','Ticket not ready','Complete booking first'); return; }
   if (typeof FWTicket !== 'undefined') {
-    FWTicket.downloadPNG('ticketEl', b);
+    // Renders a dedicated ticket image from the booking record (not a screenshot of the page)
+    FWTicket.downloadPNG(b);
   } else {
-    downloadTicketPNG();
+    FlyWay.toast('error','Image export unavailable','Reload the page and try again');
   }
 }
 
@@ -1872,22 +1866,7 @@ function fwDownloadReceipt() {
 }
 
 // ── Legacy fallbacks (kept for backward compat) ─────────────────────────────
-function downloadTicketPNG() {
-  var el = document.getElementById('ticketEl') || document.getElementById('confirmCard');
-  if (!el) { FlyWay.toast('error','Ticket not ready','Complete booking first'); return; }
-  if (typeof html2canvas === 'undefined') { window.print(); return; }
-  FlyWay.toast('info','Preparing PNG…','This may take a moment');
-  html2canvas(el, {backgroundColor:'#060d1f', scale:2, useCORS:true, allowTaint:true, logging:false}).then(function(canvas){
-    var link = document.createElement('a');
-    var ref = (currentBooking && currentBooking.ref) ? currentBooking.ref : (S.bookingRef || Date.now());
-    link.download = 'FlyWay-Ticket-' + ref + '.png';
-    link.href = canvas.toDataURL('image/png');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    FlyWay.toast('success','Ticket downloaded!','PNG saved to your device');
-  }).catch(function(){ window.print(); });
-}
+function downloadTicketPNG() { fwDownloadPNG(); }
 
 function downloadTicketPDF() { fwDownloadTicket(); }
 function downloadReceipt()   { fwDownloadReceipt(); }
@@ -1909,6 +1888,64 @@ function copyTrackLink() {
   navigator.clipboard.writeText(publicTrackUrl)
     .then(()=>FlyWay.toast('success','Public tracker link copied!','Share this link to view live flight status'));
 }
+</script>
+<script>
+(function initFlightTypeGuide() {
+  var guide = document.getElementById('ftGuide');
+  var btn   = document.getElementById('ftGuideBtn');
+  var panel = document.getElementById('ftGuidePanel');
+  if (!guide || !btn || !panel) return;
+
+  var observer = null;
+  var ignoreUntil = 0;   // short grace period after a toggle so layout shifts can't re-trigger a close
+
+  function isOpen() { return btn.getAttribute('aria-expanded') === 'true'; }
+
+  function watch() {
+    if (observer || !('IntersectionObserver' in window)) return;
+    observer = new IntersectionObserver(function (entries) {
+      var e = entries[entries.length - 1];
+      if (!e.isIntersecting && isOpen() && Date.now() > ignoreUntil) closeGuide(e.boundingClientRect.bottom <= 0);
+    }, { threshold: 0 });
+    observer.observe(guide);
+  }
+  function unwatch() { if (observer) { observer.disconnect(); observer = null; } }
+
+  function openGuide() {
+    ignoreUntil = Date.now() + 400;
+    panel.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    guide.classList.add('is-open');
+    watch();
+    // make sure the revealed content is actually on screen
+    try { panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+  }
+
+  // guideAboveViewport: the user scrolled DOWN past the guide, so collapsing it would pull the page up.
+  function closeGuide(guideAboveViewport) {
+    ignoreUntil = Date.now() + 400;
+    var y0 = window.scrollY, h0 = document.documentElement.scrollHeight;
+    panel.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+    guide.classList.remove('is-open');
+    unwatch();
+    if (guideAboveViewport) {
+      var removed = h0 - document.documentElement.scrollHeight;
+      // only compensate if the browser (scroll anchoring) did not already keep the view stable
+      if (removed > 0 && Math.abs(window.scrollY - y0) < 1) {
+        var root = document.documentElement, prev = root.style.scrollBehavior;
+        root.style.scrollBehavior = 'auto';
+        window.scrollTo(0, Math.max(0, y0 - removed));
+        root.style.scrollBehavior = prev;
+      }
+    }
+  }
+
+  btn.addEventListener('click', function () { isOpen() ? closeGuide(false) : openGuide(); });
+  guide.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen()) { closeGuide(false); btn.focus(); }
+  });
+})();
 </script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
