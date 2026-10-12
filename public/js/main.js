@@ -736,19 +736,40 @@ const FlyWay = {
       });
       this.chatDocumentHandlerAdded = true;
     }
+    let sending = false;
     async function send() {
       const msg = input ? input.value.trim() : '';
-      if (!msg) return;
+      if (!msg || sending) return;
+      sending = true;
+      const history = self.chatMessages.filter(function(m){ return !m.typing; }).slice(-10).map(function(m) {
+        return { role:m.type === 'user' ? 'user' : 'assistant', content:m.text };
+      });
       if (input) input.value = '';
+      if (input) input.disabled = true;
       self.chatMessages.push({type:'user',text:msg});
       self.chatMessages.push({type:'bot',text:'● ● ●',typing:true});
+      if (sendBtn) sendBtn.disabled = true;
       self.renderChat();
-      await new Promise(function(r){ setTimeout(r, 500+Math.random()*500); });
-      self.chatMessages = self.chatMessages.filter(function(m){ return !m.typing; });
-      const reply = self.zephyrReply(msg);
+      let reply;
+      try {
+        const result = await self.api('POST','/api/zephyr/chat',{message:msg,history:history});
+        reply = result.source === 'offline' ? self.zephyrReply(msg) : result;
+      } catch(e) {
+        console.error('[Zephyr] Chat API request failed:', e.message);
+        reply = self.zephyrReply(msg);
+      } finally {
+        self.chatMessages = self.chatMessages.filter(function(m){ return !m.typing; });
+        sending = false;
+        if (input) input.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
+      }
       self.chatMessages.push({type:'bot',text:reply.text,escalate:reply.escalate});
       self.renderChat();
-      try { await self.api('POST','/api/messages',{name:self.user?self.user.username:'Guest',email:self.user?self.user.email:'',subject:'AI Chat',message:msg,userId:self.user?self.user.id:null}); } catch(e) {}
+      try {
+        await self.api('POST','/api/messages',{name:self.user?self.user.username:'Guest',email:self.user?self.user.email:'',subject:'AI Chat',message:msg,userId:self.user?self.user.id:null});
+      } catch(e) {
+        console.warn('[Zephyr] Could not save the chat message for support review:', e.message);
+      }
     }
     if (sendBtn) sendBtn.addEventListener('click', send);
     if (input) input.addEventListener('keydown', function(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} });
@@ -757,7 +778,8 @@ const FlyWay = {
     const el = document.getElementById('chatMessages');
     if (!el) return;
     el.innerHTML = this.chatMessages.map(function(m) {
-      const txt = m.typing ? m.text : m.text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+      const escapedText = String(m.text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      const txt = m.typing ? escapedText : escapedText.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
       const esc = m.escalate ? '<a class="escalate" onclick="window.location.href=\'/contact\'">Talk to a human agent →</a>' : '';
       return '<div class="chat-bubble ' + m.type + '">' + txt + esc + '</div>';
     }).join('');
@@ -768,6 +790,8 @@ const FlyWay = {
     let text = '', escalate = false;
     if (/^(hi|hello|hey|good morning|good evening|howdy|sup|yo)/.test(m))
       text = 'Hello! 👋 I\'m **Zephyr**, FlyWay\'s AI travel assistant. I\'m here 24/7 to help with bookings, tracking, payments, baggage, and more. What can I help you with?';
+    else if (/n[\s-]?gram|probabilistic|large language model|\bllm\b|transformer model|neural language model/.test(m))
+      text = '**These ideas are related, but they describe different approaches or scales:**\n\n• **Probabilistic / N-gram models** estimate the next word from how often short word sequences appeared in training text. They are simple and fast, but their short context makes them poor at following long conversations.\n\n• **Neural language models** learn patterns in text using neural networks and vector representations, so they can generalize beyond exact phrases seen in training.\n\n• **Transformer models** are a neural-network architecture that uses attention to connect relevant words across a context. They are the architecture behind most modern language models.\n\n• **Large language models (LLMs)** are very large neural language models trained on extensive text. Most current LLMs use Transformers; the terms describe model scale/use and architecture, respectively.\n\nIn short: N-grams count short patterns; neural models learn representations; Transformers are an architecture; and LLMs are large models often built with that architecture.';
     else if (/who are you|your name|what are you/.test(m))
       text = 'I\'m **Zephyr** - FlyWay\'s AI assistant! I help with:\n\n✈ **Booking flights**\n📡 **Flight tracking**\n💳 **Payments** (gift cards, crypto)\n🧳 **Baggage** allowances\n🎟 **Promo codes**\n⭐ **Loyalty points**\n\nJust ask!';
     else if (/book|flight|ticket|reserve|fly/.test(m))
@@ -803,7 +827,9 @@ const FlyWay = {
     else if (/flight type|non.?stop|direct flight|connecting|layover|stopover/.test(m))
       text = 'Here\'s the **Flight Type Guide**:\n\n✈ **Non-stop Flight**\nThe fastest option, with no stops. The plane takes off, lands once, and arrives at the destination.\n\n🛫 **Direct Flight**\nA single flight number that may stop for passengers or refuel, but you usually stay on the same plane. Adds 30-60 minutes to flight time.\n\n🔄 **Connecting Flight**\nAt least two separate planes and flight numbers. You change planes during a layover. Adds 2-4 hours for connections.\n\n**Fastest:** Non-stop\n**Convenience:** Non-stop > Direct > Connecting\n**Cheaper:** Connecting flights are usually the cheapest, while non-stop are the most expensive.\n\nTrack Direct/Connecting flights to see live stop reports! I can also help with average delay times for airlines, minimum layover times, or tips for missed connections!';
     else
-      { text = 'Great question! Here\'s what I can help with:\n\n• ✈ How to book a flight\n• 📡 Tracking your flight live\n• 💳 Payment methods\n• 🧳 Baggage allowances\n• 🎟 Getting promo codes\n• 🔔 Notifications and bookings\n\nOr contact our support team for personal help.'; escalate = true; }
+      text = 'I can answer general questions as well as FlyWay questions. My local language model is not reachable right now, so I do not want to guess at an answer. Start Ollama on the FlyWay server and make sure the configured model is downloaded, then ask me again.\n\nWould you like help booking a flight on FlyWay?';
+    if (/n[\s-]?gram|probabilistic|large language model|\bllm\b|transformer model|neural language model/.test(m))
+      text += '\n\nWould you like help booking a flight on FlyWay?';
     return { text:text, escalate:escalate };
   }
 };

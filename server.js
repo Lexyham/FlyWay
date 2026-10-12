@@ -15,6 +15,7 @@ const rateLimit = require('express-rate-limit');
 const emailService = require('./services/emailDeliveryService');
 const brevoMail = require('./services/brevoMailService');
 const mongoStore = require('./services/mongoService');
+const zephyrAi = require('./services/zephyrAiService');
 const { getStorageStatus } = mongoStore;
 
 const brevoConfigured = brevoMail.isConfigured();
@@ -1412,6 +1413,35 @@ app.post('/api/promo/validate', (req, res) => {
   if(promo.minPassengers&&passengerCount<promo.minPassengers) return res.json({valid:false,message:`Requires ${promo.minPassengers}+ passengers`});
   const discount=promo.discountType==='percentage'?Math.min((amount*promo.discountValue)/100,promo.maxDiscount):Math.min(promo.discountValue,amount);
   res.json({valid:true,discount,description:promo.description,type:promo.type,discountValue:promo.discountValue});
+});
+
+const zephyrChatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+app.post('/api/zephyr/chat', zephyrChatLimiter, async (req, res) => {
+  const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+  if (!message) return res.status(400).json({ error: 'A message is required.' });
+  if (message.length > 2000) return res.status(400).json({ error: 'Messages must be 2000 characters or fewer.' });
+  if (req.body.history !== undefined && !Array.isArray(req.body.history)) {
+    return res.status(400).json({ error: 'Conversation history must be a list of messages.' });
+  }
+
+  const history = Array.isArray(req.body.history)
+    ? req.body.history.slice(-10).map((item) => ({
+      role: item?.role,
+      content: typeof item?.content === 'string' ? item.content.slice(0, 2000) : ''
+    }))
+    : [];
+
+  try {
+    res.json(await zephyrAi.generateReply(message, history));
+  } catch (error) {
+    console.error('[Zephyr] Chat request failed:', error.message);
+    res.status(500).json({ error: 'Zephyr could not process that message. Please try again.' });
+  }
 });
 
 app.post('/api/messages', (req, res) => {

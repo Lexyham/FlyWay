@@ -1,0 +1,98 @@
+services:
+  flyway:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      ollama-model:
+        condition: service_completed_successfully
+    ports:
+      - "${FLYWAY_HOST_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      JWT_SECRET: "${JWT_SECRET:?Set JWT_SECRET in the deployment environment}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
+      USE_MONGODB: "${USE_MONGODB:-false}"
+      MONGODB_URI: "${MONGODB_URI:-}"
+      MONGODB_DB_NAME: "${MONGODB_DB_NAME:-flyway}"
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-llama3.2:3b}"
+      BREVO_API_KEY: "${BREVO_API_KEY:-}"
+      SMTP_FROM_EMAIL: "${SMTP_FROM_EMAIL:-}"
+      SMTP_FROM_NAME: "${SMTP_FROM_NAME:-FlyWay}"
+      BANK_NAME: "${BANK_NAME:-}"
+      ACCOUNT_NAME: "${ACCOUNT_NAME:-}"
+      ACCOUNT_NUMBER: "${ACCOUNT_NUMBER:-}"
+      ROUTING_NUMBER: "${ROUTING_NUMBER:-}"
+      SWIFT_CODE: "${SWIFT_CODE:-}"
+      IBAN: "${IBAN:-}"
+      BTC_ADDRESS: "${BTC_ADDRESS:-}"
+      ETH_ADDRESS: "${ETH_ADDRESS:-}"
+      USDT_ADDRESS: "${USDT_ADDRESS:-}"
+      USDC_ADDRESS: "${USDC_ADDRESS:-}"
+      BNB_ADDRESS: "${BNB_ADDRESS:-}"
+      TWT_ADDRESS: "${TWT_ADDRESS:-}"
+      SOL_ADDRESS: "${SOL_ADDRESS:-}"
+      XRP_ADDRESS: "${XRP_ADDRESS:-}"
+      TRX_ADDRESS: "${TRX_ADDRESS:-}"
+      DOGE_ADDRESS: "${DOGE_ADDRESS:-}"
+      PAYSTACK_NUM: "${PAYSTACK_NUM:-}"
+      FLUTTER_NUM: "${FLUTTER_NUM:-}"
+      CASHAPP_TAG: "${CASHAPP_TAG:-}"
+      PAYPAL_EMAIL: "${PAYPAL_EMAIL:-}"
+    volumes:
+      - flyway-data:/app/data
+      - flyway-uploads:/app/public/uploads
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - flyway-private
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_KEEP_ALIVE: 24h
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    networks:
+      - flyway-private
+
+  ollama-model:
+    image: ollama/ollama:latest
+    restart: "no"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: ["/bin/ollama"]
+    command: ["pull", "${OLLAMA_MODEL:-llama3.2:3b}"]
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    volumes:
+      - ollama-models:/root/.ollama
+    networks:
+      - flyway-private
+
+volumes:
+  flyway-data:
+  flyway-uploads:
+  ollama-models:
+
+networks:
+  flyway-private:
