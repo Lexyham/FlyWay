@@ -576,7 +576,7 @@ body.nav-open { overflow: hidden; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   §10  MOBILE LAYOUT  ≤ 768px  — grids & hero  (supplement)
+   §10  MOBILE LAYOUT  ≤ 768px  - grids & hero  (supplement)
 ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   /* Hero */
@@ -610,7 +610,7 @@ body.nav-open { overflow: hidden; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   §11  SMALL MOBILE  ≤ 480px  — layout floor values
+   §11  SMALL MOBILE  ≤ 480px  - layout floor values
 ═══════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
   /* Hero search preview */
@@ -646,7 +646,7 @@ body.nav-open { overflow: hidden; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   §12  FLIGHTGAME HUD  — mobile overrides
+   §12  FLIGHTGAME HUD  - mobile overrides
    Fixes oversized arrow-pad, powerups bar, and topbar
    on Pixel 1 / iPhone X / iPhone 7-8 / Samsung etc.
 ═══════════════════════════════════════════════════════════ */
@@ -657,10 +657,10 @@ body.nav-open { overflow: hidden; }
   .sc                 { padding: 3px 7px !important; font-size: 10px !important; border-radius: 6px !important; }
   #livesEl            { font-size: 14px !important; gap: 2px !important; }
 
-  /* Left info panel — push below topbar */
+  /* Left info panel - push below topbar */
   #left-info          { top: 44px !important; left: 10px !important; font-size: 10px !important; line-height: 1.8 !important; }
 
-  /* Power-ups bar — shrink buttons */
+  /* Power-ups bar - shrink buttons */
   #powerups-bar       { top: 44px !important; right: 8px !important; gap: 3px !important; }
   .pu-btn             { padding: 4px 7px !important; font-size: 9px !important; min-width: 72px !important; border-radius: 6px !important; }
   .pu-cd              { font-size: 8px !important; }
@@ -745,7 +745,7 @@ body.nav-open { overflow: hidden; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   §13  TRACK PAGE / AWARD CARDS  — mobile overrides
+   §13  TRACK PAGE / AWARD CARDS  - mobile overrides
    Handles elements with inline font-size that can't be
    targeted by earlier rules (JavaScript-generated HTML).
 ═══════════════════════════════════════════════════════════ */
@@ -766,7 +766,7 @@ body.nav-open { overflow: hidden; }
   #trDepTime,
   #trArrTime          { font-size: clamp(16px, 4.5vw, 22px) !important; }
 
-  /* Globe 3D footer stats bar — prevent overflow */
+  /* Globe 3D footer stats bar - prevent overflow */
   #globe3d-footer     { flex-wrap: wrap !important; gap: 6px !important; padding: 8px 10px !important; }
   .g3d-stat           { padding: 4px 8px !important; font-size: 10px !important; }
   .g3d-stat-val       { font-size: 11px !important; }
@@ -798,7 +798,7 @@ body.nav-open { overflow: hidden; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   §15  REVIEW SCROLLER — reduced card sizes on mobile
+   §15  REVIEW SCROLLER - reduced card sizes on mobile
 ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .review-card           { min-width: 220px !important; max-width: 250px !important; padding: 14px !important; }
@@ -817,7 +817,7 @@ body.nav-open { overflow: hidden; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   §16  BOOKING — "Choose Your Journey Type" flight guide cards
+   §16  BOOKING - "Choose Your Journey Type" flight guide cards
    Also: payment methods grid, booking steps, price summary
 ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
@@ -851,7 +851,7 @@ body.nav-open { overflow: hidden; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   §17  DASHBOARD + ALL SIDEBAR PAGES — element sizing
+   §17  DASHBOARD + ALL SIDEBAR PAGES - element sizing
    Covers: dashboard.html, bookings.html, profile.html,
    transactions.html, notifications.html
 ═══════════════════════════════════════════════════════════ */
@@ -924,7 +924,7 @@ body.nav-open { overflow: hidden; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   §18  MOBILE MENU — hide Sign In link when user is logged in
+   §18  MOBILE MENU - hide Sign In link when user is logged in
    JS sets body.fw-logged-in; CSS hides the sign-in link.
 ═══════════════════════════════════════════════════════════ */
 body.fw-logged-in .mobile-menu a[href="/login"],
@@ -938,20 +938,20 @@ body.fw-logged-in .mobile-menu a[href="/register"] {
    Breakpoints: ≤1024 tablet · ≤768 phone/large · ≤599 phone · ≤359 small phone
 ═══════════════════════════════════════════════════════════ */
 
-/* — Hero stats — */
+/* - Hero stats - */
 .hero-stats { gap: clamp(12px, 3vw, 24px); }
 
-/* — Quick Flight Search grid — */
+/* - Quick Flight Search grid - */
 .qs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
 .qs-grid .qs-from, .qs-grid .qs-to { grid-column: 1 / -1; }   /* desktop: From / To full width, like before */
 .qs-grid .form-group { min-width: 0; }
 .qs-grid .form-input { text-overflow: ellipsis; }
 
-/* — Booking assurances — */
+/* - Booking assurances - */
 .assure-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 6px; margin-top: 14px; font-size: 12px; color: var(--muted); }
 .assure-row > span { white-space: nowrap; }
 
-/* — Hot routes — */
+/* - Hot routes - */
 .hot-routes { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
 .hot-routes-title { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
 .hot-routes-bar { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -960,7 +960,7 @@ body.fw-logged-in .mobile-menu a[href="/register"] {
 .hr-label { font-weight: 600; }
 .hr-price { font-size: 11px; color: var(--emerald); }
 
-/* — Trust indicators — */
+/* - Trust indicators - */
 .trust-row-strip { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 32px; }
 .trust-row-inline { display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; margin-top: 16px; }
 .tb-icon { font-size: 20px; line-height: 1; }
@@ -968,7 +968,7 @@ body.fw-logged-in .mobile-menu a[href="/register"] {
 .tb-title { font-weight: 700; font-size: 13px; }
 .tb-sub { font-size: 11px; color: var(--muted); }
 
-/* — Footer — */
+/* - Footer - */
 .site-footer { background: var(--navy2); border-top: 1px solid var(--border); padding: 48px 0 24px; }
 .footer-blurb { color: var(--muted); font-size: 14px; line-height: 1.8; max-width: 280px; }
 .footer-col-title { font-weight: 700; margin-bottom: 14px; font-size: 14px; }
@@ -978,7 +978,7 @@ body.fw-logged-in .mobile-menu a[href="/register"] {
 .footer-legal { display: flex; flex-wrap: wrap; gap: 20px; }
 .footer-legal a { color: var(--muted); }
 
-/* ── ≤1024px: tablet — four search fields in one row once there is room ── */
+/* ── ≤1024px: tablet - four search fields in one row once there is room ── */
 @media (min-width: 600px) and (max-width: 1024px) {
   .qs-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 12px; }
   .qs-grid .qs-from, .qs-grid .qs-to { grid-column: auto; }
@@ -1026,7 +1026,7 @@ body.fw-logged-in .mobile-menu a[href="/register"] {
   .footer-legal { justify-content: center; gap: 6px 16px; }
 }
 
-/* ── ≤599px: phones — 2 × 2 search grid, 2-column hot routes ── */
+/* ── ≤599px: phones - 2 × 2 search grid, 2-column hot routes ── */
 @media (max-width: 599px) {
   .qs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 8px; }
   .qs-grid .qs-from, .qs-grid .qs-to { grid-column: auto; }
@@ -1049,7 +1049,7 @@ body.fw-logged-in .mobile-menu a[href="/register"] {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   §16  BOOKING PAGE — search header + collapsible flight-type guide
+   §16  BOOKING PAGE - search header + collapsible flight-type guide
 ═══════════════════════════════════════════════════════════ */
 .search-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
 @media (max-width: 768px) {

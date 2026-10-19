@@ -214,9 +214,9 @@ function renderBookings(bookings) {
         '<div class="fw-bcard-main">' +
           '<div class="fw-bcard-left">' +
             '<div class="fw-bcard-route">' +
-              '<span class="fw-bcard-iata">' + (f.from||'—') + '</span>' +
+              '<span class="fw-bcard-iata">' + (f.from||'-') + '</span>' +
               '<span class="fw-bcard-arrow">→</span>' +
-              '<span class="fw-bcard-iata">' + (f.to||'—') + '</span>' +
+              '<span class="fw-bcard-iata">' + (f.to||'-') + '</span>' +
               '<span class="fw-status-badge" style="color:' + stColor + ';background:' + stBg + ';border-color:' + stBorder + ';font-size:9px;padding:3px 10px">' + (isLanded ? '🛬 LANDED' : st.toUpperCase()) + '</span>' +
               '<span class="fw-status-badge" style="color:' + payColor + ';background:' + payBg + ';border-color:' + payColor + '30;font-size:9px;padding:3px 10px">💳 ' + (b.paymentStatus||'pending').replace('_',' ').toUpperCase() + '</span>' +
             '</div>' +
@@ -225,16 +225,16 @@ function renderBookings(bookings) {
               '<span>' + b.ref + '</span>' +
               '<button class="fw-bcard-btn fw-bcard-btn-ghost" style="font-size:11px;padding:4px 6px;min-width:auto;line-height:1;" data-ref="' + b.ref + '" onclick="copyBookingRef(this.dataset.ref)">Copy</button>' +
             '</span>' +
-              '<span class="fw-bcard-meta-item" style="display:flex;align-items:center;gap:6px;">✈ <span>' + (f.flightNumber||'—') + '</span>' +
+              '<span class="fw-bcard-meta-item" style="display:flex;align-items:center;gap:6px;">✈ <span>' + (f.flightNumber||'-') + '</span>' +
                 ((f.flightNumber && f.flightNumber !== '') ? '<button class="fw-bcard-btn fw-bcard-btn-ghost" style="font-size:11px;padding:4px 6px;min-width:auto;line-height:1;" data-fn="' + f.flightNumber + '" onclick="copyFlightNumber(this.dataset.fn)">Copy</button>' : '') +
               '</span>' +
               '<span class="fw-bcard-meta-item">' + (f.airline||'Fly Way Airlines') + '</span>' +
               '<span class="fw-bcard-meta-item" style="text-transform:uppercase">' + (b.travelClass||'Economy') + '</span>' +
             '</div>' +
             '<div class="fw-bcard-meta">' +
-              '<span class="fw-bcard-meta-item">📅 ' + (f.departureDate||b.createdAt&&b.createdAt.split('T')[0]||'—') + '</span>' +
-              '<span class="fw-bcard-meta-item">⏰ ' + (f.depTime||'—') + ' → ' + (f.arrTime||'—') + '</span>' +
-              '<span class="fw-bcard-meta-item">⏱ ' + (f.duration||'—') + '</span>' +
+              '<span class="fw-bcard-meta-item">📅 ' + (f.departureDate||b.createdAt&&b.createdAt.split('T')[0]||'-') + '</span>' +
+              '<span class="fw-bcard-meta-item">⏰ ' + (f.depTime||'-') + ' → ' + (f.arrTime||'-') + '</span>' +
+              '<span class="fw-bcard-meta-item">⏱ ' + (f.duration||'-') + '</span>' +
             '</div>' +
             '<div class="fw-bcard-meta">' +
               '<span class="fw-bcard-meta-item">👤 ' + paxStr + '</span>' +
@@ -244,7 +244,7 @@ function renderBookings(bookings) {
           '</div>' +
           '<div class="fw-bcard-right">' +
             '<div class="fw-bcard-amount">$' + FlyWay.fmt(b.totalAmount) + '</div>' +
-            '<div class="fw-bcard-method">' + (b.paymentMethod||'—').replace('_',' ') + '</div>' +
+            '<div class="fw-bcard-method">' + (b.paymentMethod||'-').replace('_',' ') + '</div>' +
             '<div class="fw-bcard-date">' + FlyWay.fmtDate(b.createdAt) + '</div>' +
           '</div>' +
         '</div>' +

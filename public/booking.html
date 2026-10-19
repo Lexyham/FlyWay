@@ -471,7 +471,7 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
         </div>
         <div class="fw-confirm-title" id="confirmTitle">Booking Submitted!</div>
         <div class="fw-confirm-sub" id="confirmSubtitle">Your flight has been booked successfully</div>
-        <div class="fw-confirm-ref" id="confirmRefCode">—</div>
+        <div class="fw-confirm-ref" id="confirmRefCode">-</div>
       </div>
 
       <!-- ── Loyalty Banner ── -->
@@ -1797,7 +1797,7 @@ function showConfirmation(booking) {
   const titleEl = document.getElementById('confirmTitle');
   const iconEl  = document.getElementById('confirmIconInner');
 
-  if (refEl) refEl.textContent = booking.ref || '—';
+  if (refEl) refEl.textContent = booking.ref || '-';
 
   const isCancelled = (booking.status || '').toLowerCase() === 'cancelled';
   const isPending   = (booking.paymentStatus === 'pending') || !booking.paymentStatus;
@@ -1809,7 +1809,7 @@ function showConfirmation(booking) {
   } else if (isPending) {
     if (iconEl)  { iconEl.textContent = '⏳'; iconEl.style.background = 'linear-gradient(135deg,#f5c842,#d4a800)'; }
     if (titleEl) titleEl.textContent = 'Booking Submitted!';
-    if (subEl)   { subEl.textContent = 'Awaiting payment approval — you will be notified once confirmed.'; subEl.style.color = '#f5c842'; }
+    if (subEl)   { subEl.textContent = 'Awaiting payment approval - you will be notified once confirmed.'; subEl.style.color = '#f5c842'; }
   } else {
     if (iconEl)  iconEl.textContent = '✅';
     if (titleEl) titleEl.textContent = 'Booking Confirmed!';

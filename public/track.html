@@ -63,7 +63,7 @@
   perspective: 800px;
   cursor: pointer;
   will-change: transform;
-  /* no CSS :hover transform — anime.js owns this */
+  /* no CSS :hover transform - anime.js owns this */
 }
 /* Award icon: anime.js drives the spin, CSS just provides the shape */
 .award-icon-wrap{
@@ -71,7 +71,7 @@
   background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(124,58,237,0.1));
   display:flex; align-items:center; justify-content:center;
   margin:0 auto 14px; font-size:28px;
-  /* animation:awardSpin removed — anime.js handles rotation */
+  /* animation:awardSpin removed - anime.js handles rotation */
   will-change: transform;
 }
 @keyframes awardSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}

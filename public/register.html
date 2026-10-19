@@ -307,7 +307,7 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
       setEmailStatus('ok', '✔️ Email verified');
     } catch {
       // Fail-open: network/server error → allow through
-      setEmailStatus('warn', '⚠️ Could not verify email — proceeding anyway');
+      setEmailStatus('warn', '⚠️ Could not verify email - proceeding anyway');
     }
     FlyWay.setLoading(btn, false);
     // ── Proceed to Step 2 ───────────────────────────────────────────────────

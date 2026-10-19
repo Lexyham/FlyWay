@@ -91,7 +91,7 @@ const AdminController = (() => {
   }
 
   async function cancelBooking(id) {
-    const reason = prompt('Reason for cancellation (required — shown to user):');
+    const reason = prompt('Reason for cancellation (required - shown to user):');
     if (!reason) { AdminUI.toast('error', 'Reason required'); return; }
     await _run(async () => {
       await AdminAPI.updateBooking(id, { status: 'cancelled', adminNote: reason });
@@ -673,7 +673,7 @@ const AdminController = (() => {
     });
 
     socket.on('admin_proof_uploaded', data => {
-      AdminUI.realtimeToast('📎 Proof Uploaded', `Booking ${data.ref || ''} — payment proof submitted`);
+      AdminUI.realtimeToast('📎 Proof Uploaded', `Booking ${data.ref || ''} - payment proof submitted`);
       if (AdminState.get('currentTab') === 'payments') loadPayments();
     });
 

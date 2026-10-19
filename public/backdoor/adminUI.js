@@ -76,7 +76,7 @@ const AdminUI = (() => {
       <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
         <div>
           <div style="font-weight:700;font-size:14px">
-            ${b.outboundFlight?.from || '—'} → ${b.outboundFlight?.to || '—'}
+            ${b.outboundFlight?.from || '-'} → ${b.outboundFlight?.to || '-'}
             <span style="font-family:var(--font-m);font-size:11px;color:var(--cyan);margin-left:6px">${b.ref}</span>
           </div>
           <div style="font-size:11px;color:var(--muted)">
@@ -110,7 +110,7 @@ const AdminUI = (() => {
           <div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
               <div style="font-family:var(--font-h);font-weight:800;font-size:17px">
-                ${b.outboundFlight?.from || '—'} → ${b.outboundFlight?.to || '—'}
+                ${b.outboundFlight?.from || '-'} → ${b.outboundFlight?.to || '-'}
               </div>
               <span style="font-family:var(--font-m);font-size:10px;background:rgba(0,212,255,0.1);color:var(--cyan);padding:2px 9px;border-radius:20px;border:1px solid rgba(0,212,255,0.2)">${b.ref}</span>
               ${FlyWay.statusBadge(b.status)}${FlyWay.statusBadge(b.paymentStatus)}
@@ -142,11 +142,11 @@ const AdminUI = (() => {
     el('bdTitle').textContent = `Booking ${b.ref}`;
     set('bdContent', `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;margin-bottom:16px">
-        <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">ROUTE</div><strong style="font-size:15px">${f.from || '—'} → ${f.to || '—'}</strong></div>
+        <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">ROUTE</div><strong style="font-size:15px">${f.from || '-'} → ${f.to || '-'}</strong></div>
         <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">STATUS</div>${FlyWay.statusBadge(b.status)} ${FlyWay.statusBadge(b.paymentStatus)}</div>
         <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">AMOUNT</div><strong style="color:var(--cyan);font-size:18px">$${FlyWay.fmt(b.totalAmount)}</strong></div>
-        <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">USER</div><strong>${b.userName || '—'}</strong> <span style="color:var(--muted);font-size:11px">${b.userEmail || ''}</span></div>
-        <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">FLIGHT</div>${f.flightNumber || '—'} · ${f.depTime || '—'}→${f.arrTime || '—'} · ${f.duration || '—'}</div>
+        <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">USER</div><strong>${b.userName || '-'}</strong> <span style="color:var(--muted);font-size:11px">${b.userEmail || ''}</span></div>
+        <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">FLIGHT</div>${f.flightNumber || '-'} · ${f.depTime || '-'}→${f.arrTime || '-'} · ${f.duration || '-'}</div>
         <div><div style="color:var(--muted);font-size:10px;margin-bottom:2px">PAYMENT</div>${b.paymentMethod} ${b.promoCode ? '· Promo: ' + b.promoCode : ''}</div>
       </div>
       ${b.adminNote ? `<div style="padding:10px;background:rgba(245,200,66,0.07);border:1px solid rgba(245,200,66,0.2);border-radius:8px;font-size:12px;color:var(--gold);margin-bottom:12px">📝 Admin Note: ${b.adminNote}</div>` : ''}
@@ -178,7 +178,7 @@ const AdminUI = (() => {
       <div class="adm-card" style="border-color:rgba(245,200,66,0.25);margin-bottom:16px">
         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
           <div>
-            <div style="font-weight:800;font-size:15px;font-family:var(--font-h)">${b.outboundFlight?.from || '—'} → ${b.outboundFlight?.to || '—'}</div>
+            <div style="font-weight:800;font-size:15px;font-family:var(--font-h)">${b.outboundFlight?.from || '-'} → ${b.outboundFlight?.to || '-'}</div>
             <div style="font-size:12px;color:var(--muted);margin-top:3px">
               <span style="font-family:var(--font-m);color:var(--cyan)">${b.ref}</span> · ${b.userName || '?'} · ${b.paymentMethod}
             </div>
@@ -193,11 +193,11 @@ const AdminUI = (() => {
         </div>
         <div class="form-group">
           <label class="form-label">Admin Note / Reason (shown to user)</label>
-          <input class="form-input" id="nr_${b.id}" placeholder="e.g. Payment received ✓  OR  Wrong amount — please resend $${FlyWay.fmt(b.totalAmount)}">
+          <input class="form-input" id="nr_${b.id}" placeholder="e.g. Payment received ✓  OR  Wrong amount - please resend $${FlyWay.fmt(b.totalAmount)}">
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-success" onclick="AdminController.approvePayment('${b.id}')">✅ Approve — Confirm Booking</button>
-          <button class="btn btn-danger"  onclick="AdminController.rejectPayment('${b.id}')">❌ Reject — Notify User</button>
+          <button class="btn btn-success" onclick="AdminController.approvePayment('${b.id}')">✅ Approve - Confirm Booking</button>
+          <button class="btn btn-danger"  onclick="AdminController.rejectPayment('${b.id}')">❌ Reject - Notify User</button>
           <button class="btn btn-ghost btn-sm" onclick="AdminController.openBookingDetail('${b.id}')">📋 Full Details</button>
         </div>
       </div>`).join(''));
@@ -222,8 +222,8 @@ const AdminUI = (() => {
       <tbody>${list.map(t => `
         <tr class="adm-tr">
           <td class="adm-td" style="font-family:var(--font-m);color:var(--cyan);font-size:11px">${t.bookingRef}</td>
-          <td class="adm-td">${t.userName || '—'}</td>
-          <td class="adm-td" style="font-weight:600">${t.route || '—'}</td>
+          <td class="adm-td">${t.userName || '-'}</td>
+          <td class="adm-td" style="font-weight:600">${t.route || '-'}</td>
           <td class="adm-td" style="font-family:var(--font-h);font-weight:700;color:var(--cyan)">$${FlyWay.fmt(t.amount)}</td>
           <td class="adm-td" style="text-transform:capitalize">${t.paymentMethod}</td>
           <td class="adm-td">${FlyWay.statusBadge(t.status)}</td>
@@ -261,12 +261,12 @@ const AdminUI = (() => {
           <div class="cred-row"><span class="cred-key">Username</span><span class="cred-val">${u.username}</span></div>
           <div class="cred-row"><span class="cred-key">Password</span>
             <span style="display:flex;align-items:center;gap:6px">
-              <span class="cred-val" id="pw_${u.id}" style="filter:blur(5px)">${u.passwordPlain || '—'}</span>
+              <span class="cred-val" id="pw_${u.id}" style="filter:blur(5px)">${u.passwordPlain || '-'}</span>
               <button onclick="const e=document.getElementById('pw_${u.id}');e.style.filter=e.style.filter==='none'?'blur(5px)':'none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px">👁</button>
             </span>
           </div>
           <div class="cred-row"><span class="cred-key">Email</span><span class="cred-val">${u.email}</span></div>
-          <div class="cred-row"><span class="cred-key">License Key</span><span class="cred-val">${u.licenseKey || '—'}</span></div>
+          <div class="cred-row"><span class="cred-key">License Key</span><span class="cred-val">${u.licenseKey || '-'}</span></div>
         </div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
           <button class="btn ${u.isActive ? 'btn-danger' : 'btn-success'} btn-sm" onclick="AdminController.toggleUser('${u.id}','${u.username}',${u.isActive})">${u.isActive ? '🚫 Disable' : '✅ Enable'}</button>
@@ -283,7 +283,7 @@ const AdminUI = (() => {
     const prev = sel.value;
     sel.innerHTML = '<option value="">Select user...</option>' +
       users.filter(u => u.role !== 'admin').map(u =>
-        `<option value="${u.id}">${u.username || u.email} — ${u.email}</option>`
+        `<option value="${u.id}">${u.username || u.email} - ${u.email}</option>`
       ).join('');
     if (prev) sel.value = prev;
   }
@@ -408,7 +408,7 @@ const AdminUI = (() => {
           const sc  = statusColor(l);
           const ec  = expiryColor(l);
           const et  = expiryText(l);
-          const activated = l.activatedAt ? new Date(l.activatedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+          const activated = l.activatedAt ? new Date(l.activatedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '-';
           return `<tr class="adm-tr">
             <td class="adm-td" style="font-family:var(--font-m);color:#00d4ff;font-size:11px;letter-spacing:0.5px">${l.key}</td>
             <td class="adm-td"><span class="badge badge-muted" style="text-transform:capitalize">${l.type||'standard'}</span></td>
@@ -482,7 +482,7 @@ const AdminUI = (() => {
         <tbody>
         ${logs.slice(0, 100).map(l => `<tr class="adm-tr">
           <td class="adm-td" style="font-size:11px;color:var(--muted);white-space:nowrap">${FlyWay.fmtDateTime(l.timestamp)}</td>
-          <td class="adm-td" style="font-size:12px">${l.userName || l.userId?.slice(0, 8) || '—'}</td>
+          <td class="adm-td" style="font-size:12px">${l.userName || l.userId?.slice(0, 8) || '-'}</td>
           <td class="adm-td"><span class="badge ${l.action.includes('LOGIN') ? 'badge-cyan' : l.action.includes('CANCEL') ? 'badge-red' : l.action.includes('BOOKING') ? 'badge-green' : 'badge-muted'}">${l.action}</span></td>
           <td class="adm-td" style="font-family:var(--font-m);font-size:10px;color:var(--muted)">${l.ip}</td>
           <td class="adm-td" style="font-size:11px;color:var(--muted)">${JSON.stringify(l.details || {}).slice(0, 80)}</td>

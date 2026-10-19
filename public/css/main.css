@@ -804,7 +804,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.02); }
 }
 /* When anime.js splits letters, each char gets a color so override gradient.
    -webkit-text-fill-color: transparent is inherited from .text-gradient and
-   makes child spans invisible — force it back to an opaque colour here. */
+   makes child spans invisible - force it back to an opaque colour here. */
 .fw-hero-word.text-gradient .fw-char {
   -webkit-text-fill-color: var(--gold);  /* visible amber; anime.js will override */
   color: var(--gold);

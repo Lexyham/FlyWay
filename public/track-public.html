@@ -241,7 +241,7 @@ function renderFull(){
   var upcomingNote = isUpcoming ? '<div style="margin-top:24px;padding:28px;border-radius:20px;background:linear-gradient(135deg,rgba(124,58,237,0.08),rgba(0,212,255,0.05));border:1px solid rgba(124,58,237,0.2);text-align:center">'+
       '<div style="font-size:32px;margin-bottom:10px">✈</div>'+ 
       '<div style="font-weight:700;font-size:16px;margin-bottom:6px">Flight '+(f.fn||code)+' has not yet started</div>'+ 
-      '<div style="color:var(--muted);font-size:13px;margin-bottom:16px">The runway is warming up — stay here for live updates, or jump into the cockpit simulator or game while you wait.</div>'+ 
+      '<div style="color:var(--muted);font-size:13px;margin-bottom:16px">The runway is warming up - stay here for live updates, or jump into the cockpit simulator or game while you wait.</div>'+ 
       '<div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">'+
         '<button class="btn btn-ghost" onclick="stayOnTrackPublic()" style="min-width:170px;padding:12px 20px">Stay Here</button>'+ 
         '<button class="btn btn-primary" onclick="launchFlightGame()" style="min-width:170px;padding:12px 20px">Have Fun</button>'+ 
@@ -429,7 +429,7 @@ function stayOnTrackPublic(){
   if(window.FlyWay && typeof FlyWay.toast==='function'){
     FlyWay.toast('success','Staying here','Enjoy the live tracker while your flight prepares to depart');
   } else {
-    alert('Staying here — enjoy the live tracker!');
+    alert('Staying here - enjoy the live tracker!');
   }
 }
 

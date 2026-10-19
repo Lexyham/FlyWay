@@ -312,14 +312,14 @@
       const res = await FlyWay.api('POST', `/api/verification-session/${sessionId}/reveal`, {});
       addConsoleLine('OTP packet dispatched. Parsing response...');
       const masked = decodeRevealPayload(res.revealPayload);
-      otpCode = null; // OTP is secret — user must enter from email
+      otpCode = null; // OTP is secret - user must enter from email
       document.getElementById('sessionAttempt').textContent = `${Math.max(0, sessionInfo.maxAttempts - sessionInfo.attempts)} / ${sessionInfo.maxAttempts}`;
       document.getElementById('cipherStrength').textContent = 'Cipher strength: 100%';
       setStatus('OTP dispatched to email');
       animateOtpReveal(masked);
       if (res.emailSent) {
         const hint = escapeHtml(res.emailHint || 'your registered email');
-        addConsoleLine(`✉ OTP sent to <strong style="color:var(--cyan)">${hint}</strong> — check your inbox.`);
+        addConsoleLine(`✉ OTP sent to <strong style="color:var(--cyan)">${hint}</strong> - check your inbox.`);
       } else {
         addConsoleLine('⚠️ OTP email could not be sent. Check your inbox later or contact support; do not share your verification code.', true);
       }
@@ -343,7 +343,7 @@
   }
 
   function animateOtpReveal(masked) {
-    // masked = e.g. "3●●●●●" — first char is a hint, rest are hidden dots
+    // masked = e.g. "3●●●●●" - first char is a hint, rest are hidden dots
     const chars = Array.from(masked);
     chars.forEach((char, index) => {
       const cell = document.getElementById(`deck${index}`);
@@ -352,7 +352,7 @@
         cell.textContent = char; // shows digit for first, ● for rest
         cell.classList.add('active');
         if (char === '●') {
-          addConsoleLine(`Digit ${index + 1} encrypted — protected in transit.`);
+          addConsoleLine(`Digit ${index + 1} encrypted - protected in transit.`);
         } else {
           addConsoleLine(`Digit ${index + 1} partially decoded.`);
         }
@@ -361,7 +361,7 @@
     // After animation: show the entry panel, tell user to check email
     setTimeout(() => {
       buildOtpInputs();
-      // DO NOT auto-fill — user must enter the real OTP from their inbox
+      // DO NOT auto-fill - user must enter the real OTP from their inbox
       document.getElementById('otpEntryPanel').classList.remove('hidden');
       document.getElementById('scanTag').textContent = 'Check your email inbox and enter the 6-digit code below.';
     }, 1700);

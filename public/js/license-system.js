@@ -92,14 +92,14 @@
 
     let text, cls, urgency, isCountdown = false, isHidden = false;
     if (diffMs < 86400000) {
-      // Live countdown for licenses expiring within 24 hours — show HH:MM:SS only
+      // Live countdown for licenses expiring within 24 hours - show HH:MM:SS only
       text = _formatCountdown(diffMs);
       cls = 'expiry-soon';
       urgency = 'soon';
       isCountdown = true;
     }
     else {
-      // More than 24 h remaining — display a friendly expiration date
+      // More than 24 h remaining - display a friendly expiration date
       if (diffDays === 0) {
         text = 'Expires today';
       } else if (diffDays <= 7) {
@@ -166,7 +166,7 @@
       else if (expiryInfo.urgency === 'lifetime')  icon = '♾';
       else if (expiryInfo.urgency === 'soon')      icon = '🟡';
 
-      // For the live countdown we show ONLY the HH:MM:SS — no extra label text
+      // For the live countdown we show ONLY the HH:MM:SS - no extra label text
       const display = expiryInfo.isCountdown
         ? expiryInfo.text
         : icon + ' ' + expiryInfo.text;
@@ -348,12 +348,12 @@
       }
 
       msg.style.color = '#00d4ff';
-      msg.textContent = '✅ Key verified — activating...';
+      msg.textContent = '✅ Key verified - activating...';
 
       // Step 2: Apply
       const r = await _api('POST', '/api/auth/update-license', { licenseKey: key });
       if (r.error) {
-        // update-license might reject for valid reasons but key was validated — proceed anyway
+        // update-license might reject for valid reasons but key was validated - proceed anyway
         if (r.error.toLowerCase().includes('already')) {
           msg.style.color = '#f5c842';
           msg.textContent = '⚠️ ' + r.error;
@@ -398,7 +398,7 @@
   function _gateContactAdmin() {
     // Redirect to contact page with pre-filled subject
     const user = _user();
-    const ref  = encodeURIComponent('License Activation Request — ' + (user.username || user.email || ''));
+    const ref  = encodeURIComponent('License Activation Request - ' + (user.username || user.email || ''));
     window.location.href = '/contact?subject=' + ref;
   }
 
@@ -651,7 +651,7 @@
         _setBookingButtonState(true);
       }
     } catch(e) {
-      // Network error — allow through (backend will validate)
+      // Network error - allow through (backend will validate)
       console.warn('[FWLicense] guard check failed:', e);
     }
   }
@@ -745,7 +745,7 @@
       }
 
       msg.style.color = '#00d4ff';
-      msg.textContent = '✅ Verified — activating…';
+      msg.textContent = '✅ Verified - activating…';
 
       const r = await _api('POST', '/api/auth/update-license', { licenseKey: key });
       if (r && r.error && r.error.toLowerCase && r.error.toLowerCase().includes('already')) {

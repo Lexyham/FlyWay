@@ -27,19 +27,19 @@ if (!brevoConfigured) {
 
 const sendOtpEmail = async (toEmail, otp, action, recipientName) => {
   if (!brevoConfigured) {
-    console.warn('[Brevo] Not configured — OTP not emailed. Set BREVO_API_KEY and SMTP_FROM_EMAIL in the service environment.');
+    console.warn('[Brevo] Not configured - OTP not emailed. Set BREVO_API_KEY and SMTP_FROM_EMAIL in the service environment.');
     return false;
   }
   const label    = action === 'reset' ? 'Password Reset' : 'Account Verification';
   const greeting = recipientName ? `Hi ${recipientName},` : 'Hello,';
   const intro    = action === 'reset'
-    ? 'We received a request to reset your FlyWay account password. Use the secure code below to proceed. If you did not request a password reset, you can safely ignore this email — your account remains secure.'
+    ? 'We received a request to reset your FlyWay account password. Use the secure code below to proceed. If you did not request a password reset, you can safely ignore this email - your account remains secure.'
     : 'Welcome to FlyWay! To complete your registration and activate your account, please enter the one-time verification code below. This code confirms your email address.';
   const year = new Date().getFullYear();
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>FlyWay — ${label}</title></head>
+<title>FlyWay - ${label}</title></head>
 <body style="margin:0;padding:0;background:#060f1e;font-family:'Segoe UI',Arial,Helvetica,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#060f1e;padding:32px 16px;">
   <tr><td align="center">
@@ -85,7 +85,7 @@ const sendOtpEmail = async (toEmail, otp, action, recipientName) => {
                 <table cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="font-size:18px;padding-right:10px;">⏱</td>
-                    <td style="font-size:13px;color:#f0c040;line-height:1.6;">This code expires in <strong>1 minute</strong>. Do not share it with anyone, including FlyWay staff. If you didn't request this, your account is safe — simply ignore this email.</td>
+                    <td style="font-size:13px;color:#f0c040;line-height:1.6;">This code expires in <strong>1 minute</strong>. Do not share it with anyone, including FlyWay staff. If you didn't request this, your account is safe - simply ignore this email.</td>
                   </tr>
                 </table>
               </td>
@@ -123,7 +123,7 @@ const sendOtpEmail = async (toEmail, otp, action, recipientName) => {
 </table>
 </body></html>`;
   const subject = `FlyWay ${label} Code: ${otp}`;
-  const textBody = `Your FlyWay ${label} code is: ${otp}\n\nExpires in 1 minute. Do not share this code.\n\nIf you did not request this, you can safely ignore this email.\n\n— FlyWay Security Team`;
+  const textBody = `Your FlyWay ${label} code is: ${otp}\n\nExpires in 1 minute. Do not share this code.\n\nIf you did not request this, you can safely ignore this email.\n\n- FlyWay Security Team`;
   try {
     await brevoMail.sendEmail({ to: toEmail, subject, htmlBody: html, textBody });
     return true;
@@ -234,7 +234,7 @@ const createNotification = (userId, type, title, message, data = {}) => {
 const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 const hashValue = (value) => crypto.createHash('sha256').update(String(value)).digest('hex');
-// Use only user-agent for fingerprint — IP excluded because reverse proxies (Render, nginx)
+// Use only user-agent for fingerprint - IP excluded because reverse proxies (Render, nginx)
 // can present different IPs for the same client across requests, breaking session verification.
 const getRequestFingerprint = (req) => hashValue(req.headers['user-agent'] || 'unknown');
 const releaseExpiredLicenseReservations = () => {
@@ -416,7 +416,7 @@ function seed() {
 
   if (readDB(FILES.promoCodes).length === 0) {
     writeDB(FILES.promoCodes, [
-      { id:uuidv4(), code:'L1E2X3Y4',  type:'auto_payment', description:'Auto-payment — 100% off', discountType:'percentage', discountValue:100, maxDiscount:99999, isActive:true, adminOnly:true, usageLimit:100, usedCount:0, validUntil:'2027-12-31', createdAt:new Date().toISOString() },
+      { id:uuidv4(), code:'L1E2X3Y4',  type:'auto_payment', description:'Auto-payment - 100% off', discountType:'percentage', discountValue:100, maxDiscount:99999, isActive:true, adminOnly:true, usageLimit:100, usedCount:0, validUntil:'2027-12-31', createdAt:new Date().toISOString() },
       { id:uuidv4(), code:'FLYWAY25',  type:'discount', description:'25% off all bookings', discountType:'percentage', discountValue:25, maxDiscount:500, isActive:true, adminOnly:true, usageLimit:200, usedCount:0, validUntil:'2027-12-31', createdAt:new Date().toISOString() },
       { id:uuidv4(), code:'WELCOME50', type:'discount', description:'50% off new users', discountType:'percentage', discountValue:50, maxDiscount:300, isActive:true, adminOnly:true, usageLimit:100, usedCount:0, validUntil:'2027-12-31', createdAt:new Date().toISOString() },
       { id:uuidv4(), code:'FAMILY10',  type:'family', description:'10% off 3+ passengers', discountType:'percentage', discountValue:10, maxDiscount:200, isActive:true, adminOnly:true, minPassengers:3, usageLimit:500, usedCount:0, validUntil:'2027-12-31', createdAt:new Date().toISOString() },
@@ -669,14 +669,14 @@ app.post('/api/admin/test-smtp', adminAuth, async (req, res) => {
     const adminEmail = process.env.SMTP_FROM_EMAIL;
     await brevoMail.sendEmail({
       to: adminEmail,
-      subject: '✅ FlyWay Brevo SMTP Test — Connection Successful',
+      subject: '✅ FlyWay Brevo SMTP Test - Connection Successful',
       htmlBody: `<div style="font-family:Arial;padding:24px;background:#0d1f3c;border-radius:12px;color:#cde8ff;max-width:480px">
                <h2 style="color:#00d4ff;margin:0 0 12px">✈ FlyWay Brevo SMTP Test</h2>
                <p>Your Brevo SMTP connection is working correctly.</p>
                <p style="color:#8899aa;font-size:12px">Sender: ${process.env.SMTP_FROM_EMAIL}<br>
                Sent at: ${new Date().toUTCString()}</p>
              </div>`,
-      textBody: 'FlyWay Brevo SMTP Test — connection successful.',
+      textBody: 'FlyWay Brevo SMTP Test - connection successful.',
     });
     res.json({ ok: true, message: `Test email sent to ${adminEmail}` });
   } catch (err) {
@@ -729,7 +729,7 @@ app.post('/api/auth/register', async (req, res) => {
     const allRegisterSessions = getVerificationSessions().filter(s => s.action === 'register');
     const emailLower = email.toLowerCase();
 
-    // 3i: if there is a locked session (cooldownUntil in future) for this email — block new attempts
+    // 3i: if there is a locked session (cooldownUntil in future) for this email - block new attempts
     const lockedSession = allRegisterSessions.find(s =>
       s.email === emailLower && s.cooldownUntil && new Date(s.cooldownUntil) > new Date()
     );
@@ -895,7 +895,7 @@ app.post('/api/verification-session/:sessionId/reveal', async (req, res) => {
     saveVerificationSessions(sessions);
     io.to(session.id).emit('session_update', { stage: session.revealStage, attempts: session.attempts });
 
-    // Send OTP via email — do NOT return it in the response
+    // Send OTP via email - do NOT return it in the response
     const _otpRecipientName = session.registration ? session.registration.firstName : null;
     const emailSent = await sendOtpEmail(session.email, session.otp, session.action, _otpRecipientName);
 
@@ -1954,7 +1954,7 @@ io.on('connection', socket => {
     else if(m.match(/pay|payment/))   reply='We accept Bank Transfer, Crypto (BTC/ETH/USDT), Mobile Wallets, and Gift Cards.';
     else if(m.match(/cancel|refund/)) reply='Cancel from **My Bookings**. Refunds take 5-7 business days once approved by admin.';
     else if(m.match(/track|status/))  reply='Use **Track Flight** with your flight number (e.g. FW-XXX) for live status, gate, and weather!';
-    else reply='Great question — let me connect you with our support team for a personal response.';
+    else reply='Great question - let me connect you with our support team for a personal response.';
     socket.emit('chat_reply',{message:reply,timestamp:new Date().toISOString()});
   });
 });
@@ -1966,7 +1966,7 @@ async function start() {
       console.log('[Storage] MongoDB connected. Documents loaded:', JSON.stringify(summary));
     } catch (err) {
       // Do NOT silently fall back to JSON: on Render that would hide the problem and lose data on restart.
-      console.error('[Storage] FATAL —', err.message);
+      console.error('[Storage] FATAL -', err.message);
       process.exit(1);
     }
   }

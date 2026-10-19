@@ -59,7 +59,7 @@
   }
 
   function fmtDate(d) {
-    if (!d) return '—';
+    if (!d) return '-';
     try {
       const date = new Date(d);
       if (isNaN(date)) return d;
@@ -68,7 +68,7 @@
   }
 
   function fmtDateTime(d) {
-    if (!d) return '—';
+    if (!d) return '-';
     try {
       const date = new Date(d);
       if (isNaN(date)) return d;
@@ -138,7 +138,7 @@
       const cardData = booking.cardData || {};
       const rawNum = (cardData.number || '').replace(/\s/g,'');
       const masked = rawNum.length >= 4 ? '**** **** **** ' + rawNum.slice(-4) : '**** **** **** ****';
-      const holderName = cardData.name || (booking.passengers?.[0]?.name) || '—';
+      const holderName = cardData.name || (booking.passengers?.[0]?.name) || '-';
       return {
         method: payConf.label,
         icon: payConf.icon,
@@ -146,7 +146,7 @@
         fields: [
           { label: 'Cardholder', value: holderName.toUpperCase() },
           { label: 'Card Number', value: masked, mono: true },
-          { label: 'Expiry', value: cardData.expiry || '—' },
+          { label: 'Expiry', value: cardData.expiry || '-' },
           { label: 'Transaction ID', value: txId, mono: true },
           { label: 'Authorization', value: 'AUTH-' + Math.random().toString(36).slice(2,8).toUpperCase() },
           { label: 'Processed At', value: fmtDateTime(now) },
@@ -167,7 +167,7 @@
           { label: 'Confirmation Block', value: '#' + (Math.floor(Math.random() * 900000) + 100000) },
           { label: 'Confirmations', value: Math.floor(Math.random() * 8 + 3) + ' / 6 required' },
           { label: 'Broadcast At', value: fmtDateTime(now) },
-          { label: 'Status', value: 'PROOF SUBMITTED — VERIFICATION PENDING', highlight: true },
+          { label: 'Status', value: 'PROOF SUBMITTED - VERIFICATION PENDING', highlight: true },
         ]
       };
     }
@@ -220,7 +220,7 @@
         quietZone: 6,
       });
     }
-    // Fallback (visual only — not scannable)
+    // Fallback (visual only - not scannable)
     w = w || 280;
     const chars = (text + '00000000000000').slice(0, 14);
     const bars = [];
@@ -277,7 +277,7 @@
           <div class="fw-pax-avatar">${(p.name || 'P').charAt(0).toUpperCase()}</div>
           <div class="fw-pax-info">
             <div class="fw-pax-name">${p.name || 'Passenger ' + (i+1)}</div>
-            <div class="fw-pax-meta">Age ${p.age || '—'} · ${ageTag} · ${p.meal || 'Standard Meal'}</div>
+            <div class="fw-pax-meta">Age ${p.age || '-'} · ${ageTag} · ${p.meal || 'Standard Meal'}</div>
           </div>
           <div class="fw-pax-right">
             <div class="fw-pax-seat">${seat}</div>
@@ -323,7 +323,7 @@
           </div>
           <div class="fw-bp-header-right">
             ${statusBadge}
-            <div class="fw-bp-ref">${booking.ref || '—'}</div>
+            <div class="fw-bp-ref">${booking.ref || '-'}</div>
             <div class="fw-bp-ref-label">BOOKING REFERENCE</div>
           </div>
         </div>
@@ -331,16 +331,16 @@
         <!-- Route hero -->
         <div class="fw-bp-route">
           <div class="fw-bp-endpoint">
-            <div class="fw-bp-iata">${f.from || '—'}</div>
-            <div class="fw-bp-city">${fromAirport.flag || '🌍'} ${fromAirport.city || f.from || '—'}</div>
-            <div class="fw-bp-time">${f.depTime || '—'}</div>
+            <div class="fw-bp-iata">${f.from || '-'}</div>
+            <div class="fw-bp-city">${fromAirport.flag || '🌍'} ${fromAirport.city || f.from || '-'}</div>
+            <div class="fw-bp-time">${f.depTime || '-'}</div>
             <div class="fw-bp-time-label">DEPARTURE</div>
           </div>
 
           <div class="fw-bp-path">
             <div class="fw-bp-path-top">
-              <span class="fw-bp-flight-no">${f.flightNumber || '—'}</span>
-              <span class="fw-bp-ac">${f.aircraft || '—'}</span>
+              <span class="fw-bp-flight-no">${f.flightNumber || '-'}</span>
+              <span class="fw-bp-ac">${f.aircraft || '-'}</span>
             </div>
             <div class="fw-bp-path-line">
               <div class="fw-bp-path-dot"></div>
@@ -348,15 +348,15 @@
               <div class="fw-bp-plane-icon">✈</div>
             </div>
             <div class="fw-bp-path-bottom">
-              <span class="fw-bp-dur">${f.duration || '—'}</span>
+              <span class="fw-bp-dur">${f.duration || '-'}</span>
               <span class="fw-bp-type">${f.type || 'Non-stop'}</span>
             </div>
           </div>
 
           <div class="fw-bp-endpoint fw-bp-endpoint-right">
-            <div class="fw-bp-iata">${f.to || '—'}</div>
-            <div class="fw-bp-city">${toAirport.flag || '🌍'} ${toAirport.city || f.to || '—'}</div>
-            <div class="fw-bp-time">${f.arrTime || '—'}</div>
+            <div class="fw-bp-iata">${f.to || '-'}</div>
+            <div class="fw-bp-city">${toAirport.flag || '🌍'} ${toAirport.city || f.to || '-'}</div>
+            <div class="fw-bp-time">${f.arrTime || '-'}</div>
             <div class="fw-bp-time-label">ARRIVAL</div>
           </div>
         </div>
@@ -392,7 +392,7 @@
           </div>
           <div class="fw-detail-item">
             <div class="fw-detail-label">DISTANCE</div>
-            <div class="fw-detail-val">${f.distance || '—'}</div>
+            <div class="fw-detail-val">${f.distance || '-'}</div>
           </div>
           <div class="fw-detail-item">
             <div class="fw-detail-label">TRIP TYPE</div>
@@ -413,7 +413,7 @@
             <div class="fw-barcode-wrap">
               ${generateBarcodeSVG(barcodeText, 260, 46)}
             </div>
-            <div class="fw-barcode-text">${booking.ref || '—'} · ${f.flightNumber || '—'} · FlyWay Airlines</div>
+            <div class="fw-barcode-text">${booking.ref || '-'} · ${f.flightNumber || '-'} · FlyWay Airlines</div>
             <div class="fw-receipt-id">Receipt ID: ${receiptId}</div>
             <div class="fw-issued-at">Issued: ${fmtDateTime(now)} GMT</div>
           </div>
@@ -444,7 +444,7 @@
           <div class="fw-intel-grid">
             <div class="fw-intel-item">
               <div class="fw-intel-label">Flight Number</div>
-              <div class="fw-intel-val fw-mono">${f.flightNumber || '—'}</div>
+              <div class="fw-intel-val fw-mono">${f.flightNumber || '-'}</div>
             </div>
             <div class="fw-intel-item">
               <div class="fw-intel-label">Airline</div>
@@ -452,15 +452,15 @@
             </div>
             <div class="fw-intel-item">
               <div class="fw-intel-label">Aircraft</div>
-              <div class="fw-intel-val">${f.aircraft || '—'}</div>
+              <div class="fw-intel-val">${f.aircraft || '-'}</div>
             </div>
             <div class="fw-intel-item">
               <div class="fw-intel-label">Duration</div>
-              <div class="fw-intel-val">${f.duration || '—'}</div>
+              <div class="fw-intel-val">${f.duration || '-'}</div>
             </div>
             <div class="fw-intel-item">
               <div class="fw-intel-label">Distance</div>
-              <div class="fw-intel-val">${f.distance || '—'}</div>
+              <div class="fw-intel-val">${f.distance || '-'}</div>
             </div>
             <div class="fw-intel-item">
               <div class="fw-intel-label">Flight Type</div>
@@ -468,11 +468,11 @@
             </div>
             <div class="fw-intel-item">
               <div class="fw-intel-label">Departure</div>
-              <div class="fw-intel-val fw-time-val">${f.depTime || '—'}</div>
+              <div class="fw-intel-val fw-time-val">${f.depTime || '-'}</div>
             </div>
             <div class="fw-intel-item">
               <div class="fw-intel-label">Arrival</div>
-              <div class="fw-intel-val fw-time-val">${f.arrTime || '—'}</div>
+              <div class="fw-intel-val fw-time-val">${f.arrTime || '-'}</div>
             </div>
             <div class="fw-intel-item fw-intel-wide">
               <div class="fw-intel-label">Booking Status</div>
@@ -517,7 +517,7 @@
             </div>
             <div class="fw-intel-item">
               <div class="fw-intel-label">Loyalty Points</div>
-              <div class="fw-intel-val" style="color:#f5c842">${booking.loyaltyEarned > 0 ? '+' + booking.loyaltyEarned + ' pts earned' : '—'}</div>
+              <div class="fw-intel-val" style="color:#f5c842">${booking.loyaltyEarned > 0 ? '+' + booking.loyaltyEarned + ' pts earned' : '-'}</div>
             </div>
           </div>
         </div>
@@ -592,7 +592,7 @@
       <tr>
         <td>${i+1}</td>
         <td><strong>${p.name || 'Passenger '+(i+1)}</strong></td>
-        <td>${p.age || '—'}</td>
+        <td>${p.age || '-'}</td>
         <td>${(booking.selectedSeats||[])[i] || 'Auto'}</td>
         <td>${p.meal || 'Standard'}</td>
       </tr>`).join('');
@@ -616,7 +616,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FlyWay ${isReceipt?'Receipt':'Ticket'} · ${booking.ref || '—'}</title>
+<title>FlyWay ${isReceipt?'Receipt':'Ticket'} · ${booking.ref || '-'}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&family=Space+Mono:wght@400;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -712,7 +712,7 @@
         <div class="logo-sub">${isReceipt ? 'OFFICIAL PAYMENT RECEIPT' : 'ELECTRONIC BOARDING PASS'}</div>
       </div>
       <div class="ref-block">
-        <div class="ref-val">${booking.ref || '—'}</div>
+        <div class="ref-val">${booking.ref || '-'}</div>
         <div class="ref-label">BOOKING REFERENCE</div>
       </div>
     </div>
@@ -720,27 +720,27 @@
     ${!isReceipt ? `
     <div class="route-hero">
       <div class="route-end">
-        <div class="iata">${f.from || '—'}</div>
-        <div class="city-nm">${fromAirport.flag||'🌍'} ${fromAirport.city||f.from||'—'}</div>
-        <div class="dep-time">${f.depTime || '—'}</div>
+        <div class="iata">${f.from || '-'}</div>
+        <div class="city-nm">${fromAirport.flag||'🌍'} ${fromAirport.city||f.from||'-'}</div>
+        <div class="dep-time">${f.depTime || '-'}</div>
       </div>
       <div class="route-mid">
         <div class="route-line"><span class="route-plane">✈</span></div>
-        <div class="route-dur">${f.duration || '—'}</div>
-        <div class="route-fn">${f.flightNumber || '—'} · ${f.aircraft || '—'}</div>
+        <div class="route-dur">${f.duration || '-'}</div>
+        <div class="route-fn">${f.flightNumber || '-'} · ${f.aircraft || '-'}</div>
       </div>
       <div class="route-end right">
-        <div class="iata">${f.to || '—'}</div>
-        <div class="city-nm">${toAirport.flag||'🌍'} ${toAirport.city||f.to||'—'}</div>
-        <div class="dep-time">${f.arrTime || '—'}</div>
+        <div class="iata">${f.to || '-'}</div>
+        <div class="city-nm">${toAirport.flag||'🌍'} ${toAirport.city||f.to||'-'}</div>
+        <div class="dep-time">${f.arrTime || '-'}</div>
       </div>
     </div>
     <div>
       <span class="status-badge" style="color:${st.color};background:${st.bg};border-color:${st.border}">${st.icon} ${st.label}</span>
     </div>` : `
     <div style="margin-top:8px">
-      <div style="font-size:22px;font-weight:700;color:#fff">${f.from||'—'} → ${f.to||'—'}</div>
-      <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px">${f.flightNumber||'—'} · ${fmtDate(f.departureDate)}</div>
+      <div style="font-size:22px;font-weight:700;color:#fff">${f.from||'-'} → ${f.to||'-'}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px">${f.flightNumber||'-'} · ${fmtDate(f.departureDate)}</div>
       <span class="status-badge" style="color:${st.color};background:${st.bg};border-color:${st.border}">${st.icon} ${st.label}</span>
     </div>`}
   </div>
@@ -752,12 +752,12 @@
     <div class="detail-grid">
       <div class="detail-item"><div class="detail-label">Date</div><div class="detail-val">${fmtDate(f.departureDate)}</div></div>
       <div class="detail-item"><div class="detail-label">Class</div><div class="detail-val">${cls.label}</div></div>
-      <div class="detail-item"><div class="detail-label">Aircraft</div><div class="detail-val">${f.aircraft||'—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Aircraft</div><div class="detail-val">${f.aircraft||'-'}</div></div>
       <div class="detail-item"><div class="detail-label">Airline</div><div class="detail-val">${f.airline||'Fly Way Airlines'}</div></div>
       <div class="detail-item"><div class="detail-label">Terminal</div><div class="detail-val">${booking.terminal||'Main'}</div></div>
       <div class="detail-item"><div class="detail-label">Gate</div><div class="detail-val">${booking.gate||'TBA'}</div></div>
-      <div class="detail-item"><div class="detail-label">Departure</div><div class="detail-val">${f.depTime||'—'}</div></div>
-      <div class="detail-item"><div class="detail-label">Arrival</div><div class="detail-val">${f.arrTime||'—'}</div></div>
+      <div class="detail-item"><div class="detail-label">Departure</div><div class="detail-val">${f.depTime||'-'}</div></div>
+      <div class="detail-item"><div class="detail-label">Arrival</div><div class="detail-val">${f.arrTime||'-'}</div></div>
     </div>
   </div>
   <hr class="divider">` : ''}
@@ -804,7 +804,7 @@
       class="qr-img" onerror="this.style.display='none'" alt="QR">
     <div class="barcode-col">
       <div class="barcode-svg" style="color:#1e293b;max-width:280px">${generateBarcodeSVG(barcodeText || buildScanPayload(booking), 0, 40)}</div>
-      <div class="barcode-id">${booking.ref||'—'} · ${f.flightNumber||'—'} · Receipt: ${receiptId}</div>
+      <div class="barcode-id">${booking.ref||'-'} · ${f.flightNumber||'-'} · Receipt: ${receiptId}</div>
     </div>
   </div>
 
@@ -851,7 +851,7 @@
 
   // Shrink the font until the text fits maxW; if it still does not fit at minSize, cut with an ellipsis.
   function fitText(ctx, str, maxW, size, minSize, weight, family) {
-    str = String(str == null || str === '' ? '—' : str);
+    str = String(str == null || str === '' ? '-' : str);
     let s = size;
     ctx.font = weight + ' ' + s + 'px ' + family;
     while (s > minSize && ctx.measureText(str).width > maxW) { s -= 1; ctx.font = weight + ' ' + s + 'px ' + family; }
@@ -982,25 +982,25 @@
     ctx.fillStyle = st.bg; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = st.border; ctx.stroke();
     drawText(ctx, pillText, pillX + pillW / 2, pillY + 27, { size: 20, weight: 800, family: F.sans, color: st.color, align: 'center', maxW: pillW - 28, min: 12 });
     drawText(ctx, 'BOOKING REFERENCE', right, y + 104, { size: 15, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.5)', align: 'right', spacing: 2 });
-    drawText(ctx, booking.ref || '—', right, y + 146, { size: 42, weight: 800, family: F.mono, color: '#e8f7ff', align: 'right', maxW: CW * 0.45, min: 22, spacing: 3 });
+    drawText(ctx, booking.ref || '-', right, y + 146, { size: 42, weight: 800, family: F.mono, color: '#e8f7ff', align: 'right', maxW: CW * 0.45, min: 22, spacing: 3 });
     y += H_HEADER;
     ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(x0, y - 2, CW, 2);
 
     // ── route
     const EP_W = 440;
     const rt = y;
-    drawText(ctx, f.from || '—', x0, rt + 150, { size: 140, weight: 800, family: F.sans, color: '#ffffff', maxW: EP_W, min: 70 });
-    drawText(ctx, fromA.city || f.from || '—', x0, rt + 196, { size: 34, weight: 600, family: F.sans, color: 'rgba(224,240,255,0.88)', maxW: EP_W, min: 20 });
-    drawText(ctx, f.depTime || '—', x0, rt + 252, { size: 56, weight: 800, family: F.sans, color: '#00d4ff', maxW: EP_W, min: 28 });
+    drawText(ctx, f.from || '-', x0, rt + 150, { size: 140, weight: 800, family: F.sans, color: '#ffffff', maxW: EP_W, min: 70 });
+    drawText(ctx, fromA.city || f.from || '-', x0, rt + 196, { size: 34, weight: 600, family: F.sans, color: 'rgba(224,240,255,0.88)', maxW: EP_W, min: 20 });
+    drawText(ctx, f.depTime || '-', x0, rt + 252, { size: 56, weight: 800, family: F.sans, color: '#00d4ff', maxW: EP_W, min: 28 });
     drawText(ctx, 'DEPARTURE', x0 + 0, rt + 282, { size: 16, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.5)', spacing: 3 });
 
-    drawText(ctx, f.to || '—', right, rt + 150, { size: 140, weight: 800, family: F.sans, color: '#ffffff', align: 'right', maxW: EP_W, min: 70 });
-    drawText(ctx, toA.city || f.to || '—', right, rt + 196, { size: 34, weight: 600, family: F.sans, color: 'rgba(224,240,255,0.88)', align: 'right', maxW: EP_W, min: 20 });
-    drawText(ctx, f.arrTime || '—', right, rt + 252, { size: 56, weight: 800, family: F.sans, color: '#00d4ff', align: 'right', maxW: EP_W, min: 28 });
+    drawText(ctx, f.to || '-', right, rt + 150, { size: 140, weight: 800, family: F.sans, color: '#ffffff', align: 'right', maxW: EP_W, min: 70 });
+    drawText(ctx, toA.city || f.to || '-', right, rt + 196, { size: 34, weight: 600, family: F.sans, color: 'rgba(224,240,255,0.88)', align: 'right', maxW: EP_W, min: 20 });
+    drawText(ctx, f.arrTime || '-', right, rt + 252, { size: 56, weight: 800, family: F.sans, color: '#00d4ff', align: 'right', maxW: EP_W, min: 28 });
     drawText(ctx, 'ARRIVAL', right, rt + 282, { size: 16, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.5)', align: 'right', spacing: 3 });
 
     const pl = x0 + EP_W + 36, pr = right - EP_W - 36, pm = (pl + pr) / 2, pw = pr - pl, lineY = rt + 130;
-    drawText(ctx, f.flightNumber || '—', pm, rt + 84, { size: 32, weight: 800, family: F.mono, color: '#ffffff', align: 'center', maxW: pw, min: 18 });
+    drawText(ctx, f.flightNumber || '-', pm, rt + 84, { size: 32, weight: 800, family: F.mono, color: '#ffffff', align: 'center', maxW: pw, min: 18 });
     drawText(ctx, f.aircraft || '', pm, rt + 108, { size: 18, weight: 500, family: F.sans, color: 'rgba(224,240,255,0.55)', align: 'center', maxW: pw, min: 12 });
     ctx.save();
     ctx.strokeStyle = 'rgba(0,212,255,0.55)'; ctx.lineWidth = 3; ctx.setLineDash([2, 12]); ctx.lineCap = 'round';
@@ -1010,7 +1010,7 @@
     ctx.beginPath(); ctx.arc(pl + 6, lineY, 7, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(pr - 6, lineY, 7, 0, Math.PI * 2); ctx.fill();
     drawPlane(ctx, pm, lineY, 22, '#00d4ff');
-    drawText(ctx, f.duration || '—', pm, rt + 176, { size: 26, weight: 700, family: F.sans, color: '#e0f0ff', align: 'center', maxW: pw, min: 16 });
+    drawText(ctx, f.duration || '-', pm, rt + 176, { size: 26, weight: 700, family: F.sans, color: '#e0f0ff', align: 'center', maxW: pw, min: 16 });
     drawText(ctx, f.type || 'Non-stop', pm, rt + 204, { size: 19, weight: 600, family: F.sans, color: 'rgba(224,240,255,0.55)', align: 'center', maxW: pw, min: 12 });
     y += H_ROUTE;
 
@@ -1036,7 +1036,7 @@
       ['AIRLINE', f.airline || 'Fly Way Airlines', '#ffffff'],
       ['TERMINAL', booking.terminal || 'Main Terminal', '#ffffff'],
       ['GATE', booking.gate || 'TBA', '#ffffff'],
-      ['DISTANCE', f.distance || '—', '#ffffff'],
+      ['DISTANCE', f.distance || '-', '#ffffff'],
       ['TRIP TYPE', ret ? 'Round-Trip' : 'One-Way', '#ffffff']
     ];
     const colW = CW / 4;
@@ -1053,11 +1053,11 @@
       rrPath(ctx, x0, y + 8, CW, 72, 18);
       ctx.fillStyle = 'rgba(0,212,255,0.07)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,212,255,0.22)'; ctx.stroke();
       drawText(ctx, 'RETURN', x0 + 28, y + 52, { size: 16, weight: 800, family: F.sans, color: '#00d4ff', spacing: 3 });
-      const route = (ret.from || '—') + '  →  ' + (ret.to || '—');
+      const route = (ret.from || '-') + '  →  ' + (ret.to || '-');
       const used = drawText(ctx, route, x0 + 150, y + 56, { size: 32, weight: 800, family: F.sans, color: '#ffffff', maxW: 380, min: 18 });
       ctx.font = '800 32px ' + F.sans;
       const rx = x0 + 150 + Math.min(380, ctx.measureText(used).width) + 36;
-      const bits = [ret.flightNumber, ret.departureDate ? fmtDate(ret.departureDate) : '', (ret.depTime || ret.arrTime) ? ((ret.depTime || '—') + ' → ' + (ret.arrTime || '—')) : ''].filter(Boolean).join('  ·  ');
+      const bits = [ret.flightNumber, ret.departureDate ? fmtDate(ret.departureDate) : '', (ret.depTime || ret.arrTime) ? ((ret.depTime || '-') + ' → ' + (ret.arrTime || '-')) : ''].filter(Boolean).join('  ·  ');
       drawText(ctx, bits, rx, y + 54, { size: 26, weight: 600, family: F.sans, color: 'rgba(224,240,255,0.85)', maxW: x0 + CW - 28 - rx, min: 14 });
       y += H_RETURN;
     }
@@ -1092,10 +1092,10 @@
     rrPath(ctx, x0, by, bw, bh, 18); ctx.fillStyle = '#ffffff'; ctx.fill();
     const payload = (typeof FWBarcode !== 'undefined') ? FWBarcode.buildPayload(booking) : buildScanPayload(booking);
     const drawn = drawBarcode(ctx, payload, x0 + 28, by + 22, bw - 56, bh - 56);
-    if (!drawn) drawText(ctx, booking.ref || '—', x0 + bw / 2, by + bh / 2 + 10, { size: 40, weight: 800, family: F.mono, color: '#0a1628', align: 'center', maxW: bw - 56, min: 20 });
+    if (!drawn) drawText(ctx, booking.ref || '-', x0 + bw / 2, by + bh / 2 + 10, { size: 40, weight: 800, family: F.mono, color: '#0a1628', align: 'center', maxW: bw - 56, min: 20 });
     drawText(ctx, payload || booking.ref || '', x0 + bw / 2, by + bh - 14, { size: 17, weight: 600, family: F.mono, color: '#44546a', align: 'center', maxW: bw - 56, min: 10, spacing: 1 });
     drawText(ctx, 'ELECTRONIC TICKET', right, by + 30, { size: 15, weight: 700, family: F.sans, color: 'rgba(224,240,255,0.5)', align: 'right', spacing: 2.5 });
-    drawText(ctx, (booking.ref || '—') + '  ·  ' + (f.flightNumber || '—'), right, by + 76, { size: 28, weight: 700, family: F.mono, color: '#e0f0ff', align: 'right', maxW: CW - bw - 40, min: 14 });
+    drawText(ctx, (booking.ref || '-') + '  ·  ' + (f.flightNumber || '-'), right, by + 76, { size: 28, weight: 700, family: F.mono, color: '#e0f0ff', align: 'right', maxW: CW - bw - 40, min: 14 });
     drawText(ctx, 'Issued ' + fmtDateTime(new Date()), right, by + 112, { size: 19, weight: 500, family: F.sans, color: 'rgba(224,240,255,0.55)', align: 'right', maxW: CW - bw - 40, min: 11 });
 
     // cancelled tickets must not look valid
@@ -1161,7 +1161,7 @@
       }
       win.document.write(html);
       win.document.close();
-      win.document.title = 'FlyWay ' + (mode==='receipt'?'Receipt':'Ticket') + ' · ' + (booking.ref||'—');
+      win.document.title = 'FlyWay ' + (mode==='receipt'?'Receipt':'Ticket') + ' · ' + (booking.ref||'-');
       setTimeout(() => {
         win.print();
         setTimeout(() => { try { URL.revokeObjectURL && URL.revokeObjectURL(''); } catch(e){} }, 2000);
@@ -1172,7 +1172,7 @@
     },
 
     // Save the ticket as a PNG. Accepts downloadPNG(booking) or the legacy downloadPNG(elementId, booking);
-    // the element is ignored — the image is rendered from the booking record, never from the page.
+    // the element is ignored - the image is rendered from the booking record, never from the page.
     downloadPNG: function(a, b) {
       const booking = (a && typeof a === 'object') ? a : b;
       const toast = function(type, title, msg) { if (global.FlyWay && global.FlyWay.toast) global.FlyWay.toast(type, title, msg); };

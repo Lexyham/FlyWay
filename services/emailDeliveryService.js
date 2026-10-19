@@ -95,7 +95,7 @@ function templateData(booking, user, type) {
     supportEmail: process.env.SMTP_FROM_EMAIL || 'support@flyway.com',
     companyName: 'FlyWay',
     currentYear: new Date().getFullYear(),
-    qrPreview: booking.ref ? booking.ref : '—',
+    qrPreview: booking.ref ? booking.ref : '-',
   };
 }
 
