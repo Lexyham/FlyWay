@@ -972,6 +972,7 @@ let S = {
   tripType:'one-way', from:null, to:null,
   depDate:'', retDate:'', passengers:1, travelClass:'economy', flightType:'any',
   outbound:null, returnFlight:null,
+  flightOptions:new Map(),
   passengerDetails:[], contactEmail:'', contactPhone:'',
   selectedSeats:[], seatMap:[],
   baggage:{carryOn:1,checked:0}, baggageFee:0,
@@ -1287,6 +1288,10 @@ function searchFlights() {
   const out = Array.isArray(outResult) ? outResult : [];
   const retResult = S.tripType==='round-trip' ? getFlightsForRoute(toCode, fromCode, S.travelClass, S.retDate||S.depDate||getTomorrow(), S.flightType) : [];
   const ret = Array.isArray(retResult) ? retResult : [];
+  S.flightOptions = new Map([
+    ...out.map(f => [`outbound:${f.fn}`, f]),
+    ...ret.map(f => [`return:${f.fn}`, f]),
+  ]);
   const mult = FlyWay.classMultiplier[S.travelClass]||1;
 
   const renderFCard = (f, isRet=false) => {
@@ -1341,11 +1346,10 @@ function searchFlights() {
 
 function selectFlight(fn, isRet) {
 
-  let f = FLIGHTS.find(x => x.fn===fn);
+  const f = S.flightOptions.get(`${isRet?'return':'outbound'}:${fn}`);
   if (!f) {
-
-    f = {fn, airline:'Fly Way Airlines', ac:'Boeing 737-800', from:S.from?.code, to:S.to?.code,
-         dep:'08:00', arr:'12:00', dur:'4h 00m', price:399, cls:['economy','business','first']};
+    FlyWay.toast('error', 'Flight unavailable', 'Search again and select a current flight option.');
+    return;
   }
   if (isRet) S.returnFlight = f; else S.outbound = f;
 
@@ -1522,10 +1526,10 @@ function updatePricing() {
     <div class="price-total-row flex-between"><span class="price-total-label">Total</span><span class="price-total-amount">${FlyWay.currency.format(t.total)}</span></div>
     ${currentStep>=6?`<button class="btn btn-gold btn-full btn-lg" style="margin-top:14px" onclick="submitBooking()">🔒 Pay ${FlyWay.currency.format(t.total)}</button>`:''}
   `;
-  ['pax3Summary','seatPriceSummary','extrasPriceSummary','payPriceSummary'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=pricingHTML;});
+    const f = S.flightOptions.get(`${isRet?'return':'outbound'}:${fn}`);
   const pb=document.getElementById('payBtn');if(pb)pb.textContent=`🔒 Confirm & Pay ${FlyWay.currency.format(t.total)}`;
-  const freeChecked={economy:1,business:2,first:3}[S.travelClass]||1;
-  const checked=parseInt(document.getElementById('checkedBags')?.value||0);
+      FlyWay.toast('error', 'Flight unavailable', 'Search again and select a current flight option.');
+      return;
   const fn=document.getElementById('baggageFeeNote');
   if(fn){const ex=Math.max(0,checked-freeChecked);fn.textContent=ex>0?`⚠ ${ex} extra bag${ex>1?'s':''} · +$${ex*50}`:`✅ Within free allowance`;fn.style.color=ex>0?'var(--gold)':'var(--emerald)';}
   const bi=document.getElementById('baggageIncluded');
