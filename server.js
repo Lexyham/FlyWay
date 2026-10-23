@@ -1180,8 +1180,9 @@ app.post('/api/bookings', auth, upload.fields([{ name:'paymentProof', maxCount:1
     let data;
     try { data = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body; }
     catch { data = req.body; }
-    const { tripType, outboundFlight, returnFlight, passengers, travelClass, selectedSeats, baggage, promoCode, contactInfo, paymentMethod, totalAmount, baggageFees, seatFees, paymentDetails, cardData } = data || {};
+    const { tripType, outboundFlight, returnFlight, passengers, travelClass, selectedSeats, baggage, promoCode, contactInfo, paymentMethod, totalAmount, promoDiscount: requestedPromoDiscount, baggageFees, seatFees, paymentDetails, cardData } = data || {};
     if (!outboundFlight || !passengers || !passengers.length) return res.status(400).json({ error:'Missing required booking fields' });
+    if (!Number.isFinite(Number(totalAmount)) || Number(totalAmount) < 0) return res.status(400).json({ error:'Invalid booking total' });
     const bookings = readDB(FILES.bookings), transactions = readDB(FILES.transactions), users = readDB(FILES.users);
     const userIdx = users.findIndex(u => u.id===req.user.id);
     let promoDiscount = 0, autoPayment = false;
@@ -1189,14 +1190,14 @@ app.post('/api/bookings', auth, upload.fields([{ name:'paymentProof', maxCount:1
       const promos = readDB(FILES.promoCodes);
       const promo = promos.find(p => p.code===promoCode && p.isActive);
       if (promo) {
-        promoDiscount = promo.discountType==='percentage' ? Math.min((totalAmount*promo.discountValue)/100, promo.maxDiscount) : Math.min(promo.discountValue, totalAmount);
+        promoDiscount = Math.max(0, Number(requestedPromoDiscount) || 0);
         if (promo.discountValue===100) autoPayment=true;
         const pi = promos.findIndex(p => p.code===promoCode);
         promos[pi].usedCount = (promos[pi].usedCount||0)+1;
         writeDB(FILES.promoCodes, promos);
       }
     }
-    const finalTotal = Math.max(0, totalAmount - promoDiscount);
+    const finalTotal = Number(totalAmount);
     const proofFile  = req.files?.paymentProof?.[0];
     const gcFiles    = req.files?.giftcardImages || [];
     const payStatus  = (autoPayment || paymentMethod==='card') ? 'paid' : 'pending';
@@ -1236,8 +1237,9 @@ app.post('/api/bookings/json', auth, (req, res) => {
       });
     }
     const data = req.body;
-    const { tripType, outboundFlight, returnFlight, passengers, travelClass, selectedSeats, baggage, promoCode, contactInfo, paymentMethod, totalAmount, baggageFees, seatFees, paymentDetails, cardData } = data || {};
+    const { tripType, outboundFlight, returnFlight, passengers, travelClass, selectedSeats, baggage, promoCode, contactInfo, paymentMethod, totalAmount, promoDiscount: requestedPromoDiscount, baggageFees, seatFees, paymentDetails, cardData } = data || {};
     if (!outboundFlight || !passengers || !passengers.length) return res.status(400).json({ error:'Missing required booking fields' });
+    if (!Number.isFinite(Number(totalAmount)) || Number(totalAmount) < 0) return res.status(400).json({ error:'Invalid booking total' });
     const bookings = readDB(FILES.bookings), transactions = readDB(FILES.transactions), users = readDB(FILES.users);
     const userIdx = users.findIndex(u => u.id===req.user.id);
     let promoDiscount = 0, autoPayment = false;
@@ -1245,14 +1247,14 @@ app.post('/api/bookings/json', auth, (req, res) => {
       const promos = readDB(FILES.promoCodes);
       const promo = promos.find(p => p.code===promoCode && p.isActive);
       if (promo) {
-        promoDiscount = promo.discountType==='percentage' ? Math.min((totalAmount*promo.discountValue)/100,promo.maxDiscount) : Math.min(promo.discountValue,totalAmount);
+        promoDiscount = Math.max(0, Number(requestedPromoDiscount) || 0);
         if (promo.discountValue===100) autoPayment=true;
         const pi = promos.findIndex(p => p.code===promoCode);
         promos[pi].usedCount=(promos[pi].usedCount||0)+1;
         writeDB(FILES.promoCodes,promos);
       }
     }
-    const finalTotal = Math.max(0,(totalAmount||0)-promoDiscount);
+    const finalTotal = Number(totalAmount);
     const payStatus  = (autoPayment||paymentMethod==='card')?'paid':'pending';
     const bookingRef = 'FW'+Date.now().toString(36).toUpperCase().slice(-6)+Math.random().toString(36).slice(-2).toUpperCase();
     const booking = {
