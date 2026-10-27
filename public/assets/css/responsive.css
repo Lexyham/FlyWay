@@ -939,7 +939,8 @@ body.fw-logged-in .mobile-menu a[href="/register"] {
 ═══════════════════════════════════════════════════════════ */
 
 /* - Hero stats - */
-.hero-stats { gap: clamp(12px, 3vw, 24px); }
+.hero-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(8px, 1.5vw, 16px); }
+.hero-stat-item { min-width: 0; padding: clamp(6px, 1vw, 10px) clamp(4px, 0.8vw, 10px); text-align: center; }
 
 /* - Quick Flight Search grid - */
 .qs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
@@ -1037,6 +1038,13 @@ body.fw-logged-in .mobile-menu a[href="/register"] {
   #hotRoutesBar .hot-route { gap: 5px; min-height: 38px; padding: 5px 8px !important; font-size: 11px !important; font-family: var(--font); white-space: normal; line-height: 1.2; }
   .hr-flag { font-size: 12px; flex-shrink: 0; }
   .hr-price { display: none; }   /* price remains in data-price/title; booking logic never read it */
+}
+
+@media (max-width: 480px) {
+  .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .hero-stat-item { padding: 7px 5px; }
+  .hero-stats .stat-glow-num { font-size: clamp(17px, 5vw, 22px) !important; }
+  .hero-stats .hero-stat-label { font-size: clamp(10px, 2.8vw, 12px) !important; }
 }
 
 /* ── ≤359px: very small phones ── */

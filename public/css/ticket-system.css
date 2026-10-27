@@ -692,6 +692,10 @@
   letter-spacing: 0.5px;
 }
 
+.fw-pay-success {
+  color: #00e396;
+}
+
 .fw-mono {
   font-family: var(--font-m, 'Space Mono', monospace);
   font-size: 11px;

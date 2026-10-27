@@ -27,6 +27,7 @@
 
   const PAYMENT_CONFIG = {
     card:      { label:'Credit / Debit Card', icon:'💳', color:'#00d4ff' },
+    'demo-card': { label:'SUCCESSFUL', icon:'✅', color:'#00d4ff' },
     crypto:    { label:'Cryptocurrency',      icon:'₿',  color:'#f7931a' },
     giftcard:  { label:'Gift Card',           icon:'🎁', color:'#f5c842' },
     bank:      { label:'Bank Transfer',       icon:'🏦', color:'#00e396' },
@@ -133,6 +134,21 @@
     const now = new Date();
     const txId = genTxFingerprint();
     const payConf = getPayment(booking);
+
+    if (payMethod === 'demo-card') {
+      const last4 = booking.paymentDetails?.match(/ending (\d{4})/i)?.[1];
+      return {
+        method: payConf.label,
+        icon: payConf.icon,
+        color: payConf.color,
+        fields: [
+          { label: 'Cardholder', value: (booking.passengers?.[0]?.name || '-').toUpperCase() },
+          { label: 'Card Number', value: last4 ? '**** **** **** ' + last4 : 'Not stored', mono: true },
+          { label: 'Expiry', value: 'Not stored', mono: true },
+          { label: 'Status', value: 'PAID - SUCCESSFUL', highlight: true, success: true },
+        ]
+      };
+    }
 
     if (payMethod === 'card') {
       const cardData = booking.cardData || {};
@@ -301,7 +317,7 @@
     const payRows = paymentInfo.fields.map(f => `
       <div class="fw-pay-row">
         <span class="fw-pay-label">${f.label}</span>
-        <span class="fw-pay-val${f.mono ? ' fw-mono' : ''}${f.highlight ? ' fw-pay-highlight' : ''}">${f.value}</span>
+        <span class="fw-pay-val${f.mono ? ' fw-mono' : ''}${f.highlight ? ' fw-pay-highlight' : ''}${f.success ? ' fw-pay-success' : ''}">${f.value}</span>
       </div>`).join('');
 
     const statusBadge = `<span class="fw-status-badge" style="color:${st.color};background:${st.bg};border-color:${st.border};box-shadow:${st.glow}">${st.icon} ${st.label}</span>`;
@@ -608,7 +624,7 @@
     const payRows = paymentInfo.fields.map(f => `
       <tr>
         <td style="color:#64748b;font-size:12px">${f.label}</td>
-        <td style="font-family:${f.mono?'monospace':'inherit'};font-weight:${f.highlight?'700':'400'};color:${f.highlight?'#0044cc':'#0f172a'}">${f.value}</td>
+        <td style="font-family:${f.mono?'monospace':'inherit'};font-weight:${f.highlight?'700':'400'};color:${f.success?'#059669':f.highlight?'#0044cc':'#0f172a'}">${f.value}</td>
       </tr>`).join('');
 
     return `<!DOCTYPE html>

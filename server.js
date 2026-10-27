@@ -1180,7 +1180,7 @@ app.post('/api/bookings', auth, upload.fields([{ name:'paymentProof', maxCount:1
     let data;
     try { data = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body; }
     catch { data = req.body; }
-    const { tripType, outboundFlight, returnFlight, passengers, travelClass, selectedSeats, baggage, promoCode, contactInfo, paymentMethod, totalAmount, promoDiscount: requestedPromoDiscount, baggageFees, seatFees, paymentDetails, cardData } = data || {};
+    const { tripType, outboundFlight, returnFlight, passengers, travelClass, selectedSeats, baggage, promoCode, contactInfo, paymentMethod, totalAmount, promoDiscount: requestedPromoDiscount, baggageFees, seatFees, paymentDetails } = data || {};
     if (!outboundFlight || !passengers || !passengers.length) return res.status(400).json({ error:'Missing required booking fields' });
     if (!Number.isFinite(Number(totalAmount)) || Number(totalAmount) < 0) return res.status(400).json({ error:'Invalid booking total' });
     const bookings = readDB(FILES.bookings), transactions = readDB(FILES.transactions), users = readDB(FILES.users);
@@ -1200,13 +1200,13 @@ app.post('/api/bookings', auth, upload.fields([{ name:'paymentProof', maxCount:1
     const finalTotal = Number(totalAmount);
     const proofFile  = req.files?.paymentProof?.[0];
     const gcFiles    = req.files?.giftcardImages || [];
-    const payStatus  = (autoPayment || paymentMethod==='card') ? 'paid' : 'pending';
+    const payStatus  = paymentMethod==='demo-card' ? 'pending' : ((autoPayment || paymentMethod==='card') ? 'paid' : 'pending');
     const bookingRef = 'FW' + Date.now().toString(36).toUpperCase().slice(-6) + Math.random().toString(36).slice(-2).toUpperCase();
     const booking = {
       id:uuidv4(), userId:req.user.id, ref:bookingRef, tripType, outboundFlight, returnFlight, passengers, travelClass, selectedSeats, baggage, promoCode:promoCode||null, contactInfo, paymentMethod, totalAmount:finalTotal, promoDiscount, baggageFees, seatFees,
       paymentProof:   proofFile ? `/uploads/${proofFile.filename}` : null,
       giftcardImages: gcFiles.length > 0 ? gcFiles.map(f => `/uploads/${f.filename}`) : null,
-      paymentDetails: paymentDetails||null, cardData:cardData||null,
+      paymentDetails: paymentDetails||null, cardData:null,
       status:payStatus==='paid'?'confirmed':'pending', paymentStatus:payStatus,
       adminNote:null, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
     };
@@ -1237,7 +1237,7 @@ app.post('/api/bookings/json', auth, (req, res) => {
       });
     }
     const data = req.body;
-    const { tripType, outboundFlight, returnFlight, passengers, travelClass, selectedSeats, baggage, promoCode, contactInfo, paymentMethod, totalAmount, promoDiscount: requestedPromoDiscount, baggageFees, seatFees, paymentDetails, cardData } = data || {};
+    const { tripType, outboundFlight, returnFlight, passengers, travelClass, selectedSeats, baggage, promoCode, contactInfo, paymentMethod, totalAmount, promoDiscount: requestedPromoDiscount, baggageFees, seatFees, paymentDetails } = data || {};
     if (!outboundFlight || !passengers || !passengers.length) return res.status(400).json({ error:'Missing required booking fields' });
     if (!Number.isFinite(Number(totalAmount)) || Number(totalAmount) < 0) return res.status(400).json({ error:'Invalid booking total' });
     const bookings = readDB(FILES.bookings), transactions = readDB(FILES.transactions), users = readDB(FILES.users);
@@ -1255,10 +1255,10 @@ app.post('/api/bookings/json', auth, (req, res) => {
       }
     }
     const finalTotal = Number(totalAmount);
-    const payStatus  = (autoPayment||paymentMethod==='card')?'paid':'pending';
+    const payStatus  = paymentMethod==='demo-card'?'pending':((autoPayment||paymentMethod==='card')?'paid':'pending');
     const bookingRef = 'FW'+Date.now().toString(36).toUpperCase().slice(-6)+Math.random().toString(36).slice(-2).toUpperCase();
     const booking = {
-      id:uuidv4(),userId:req.user.id,ref:bookingRef,tripType,outboundFlight,returnFlight,passengers,travelClass,selectedSeats,baggage,promoCode:promoCode||null,contactInfo,paymentMethod,totalAmount:finalTotal,promoDiscount,baggageFees,seatFees,paymentDetails:paymentDetails||null,cardData:cardData||null,paymentProof:null,giftcardImage:null,giftcardImages:null,
+      id:uuidv4(),userId:req.user.id,ref:bookingRef,tripType,outboundFlight,returnFlight,passengers,travelClass,selectedSeats,baggage,promoCode:promoCode||null,contactInfo,paymentMethod,totalAmount:finalTotal,promoDiscount,baggageFees,seatFees,paymentDetails:paymentDetails||null,cardData:null,paymentProof:null,giftcardImage:null,giftcardImages:null,
       status:payStatus==='paid'?'confirmed':'pending',paymentStatus:payStatus,adminNote:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()
     };
     bookings.push(booking);writeDB(FILES.bookings,bookings);

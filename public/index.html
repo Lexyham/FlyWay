@@ -109,19 +109,19 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
         <div id="heroAuthBtns" style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap"></div>
         <div class="hero-stats">
           <div class="hero-stat-item">
-            <div class="stat-glow-num">2.4M+</div>
+            <div class="stat-glow-num" data-count-target="2.4" data-count-decimals="1" data-count-suffix="M+">2.4M+</div>
             <div class="hero-stat-label">Flights Booked</div>
           </div>
           <div class="hero-stat-item">
-            <div class="stat-glow-num">180+</div>
+            <div class="stat-glow-num" data-count-target="180" data-count-suffix="+">180+</div>
             <div class="hero-stat-label">Destinations</div>
           </div>
           <div class="hero-stat-item">
-            <div class="stat-glow-num">4.9★</div>
+            <div class="stat-glow-num" data-count-target="4.9" data-count-decimals="1" data-count-suffix="★">4.9★</div>
             <div class="hero-stat-label">Average Rating</div>
           </div>
           <div class="hero-stat-item">
-            <div class="stat-glow-num">98%</div>
+            <div class="stat-glow-num" data-count-target="98" data-count-suffix="%">98%</div>
             <div class="hero-stat-label">On-Time Record</div>
           </div>
         </div>
@@ -534,6 +534,30 @@ document.addEventListener('DOMContentLoaded', function() {
   animateCounter(document.getElementById('liveFlights'), liveBookings);
   animateCounter(document.getElementById('liveCountries'), liveCountries);
   animateCounter(document.getElementById('livePassengers'), livePassengers);
+
+  function animateHeroStats() {
+    var stats = document.querySelectorAll('.hero-stats [data-count-target]');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    stats.forEach(function(el) {
+      var target = Number(el.dataset.countTarget);
+      var decimals = Number(el.dataset.countDecimals || 0);
+      var suffix = el.dataset.countSuffix || '';
+      var startedAt = null;
+      var duration = 1000;
+
+      function frame(now) {
+        if (startedAt === null) startedAt = now;
+        var progress = Math.min((now - startedAt) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = (target * eased).toFixed(decimals) + suffix;
+        if (progress < 1) requestAnimationFrame(frame);
+      }
+
+      requestAnimationFrame(frame);
+    });
+  }
+  animateHeroStats();
 
   setInterval(function() {
     liveBookings   += Math.floor(Math.random()*3)+1;

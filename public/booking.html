@@ -13,7 +13,9 @@
 .pay-spinner{width:64px;height:64px;border:4px solid rgba(0,212,255,0.2);border-top:4px solid var(--cyan);border-radius:50%;animation:spin 0.8s linear infinite}
 .pay-msg{font-family:var(--font-h);font-size:18px;font-weight:700;color:var(--white)}
 .pay-sub{font-size:13px;color:var(--muted);text-align:center}
-.pay-fail-card{background:var(--navy2);border:1px solid rgba(255,87,87,0.3);border-radius:20px;padding:36px 32px;text-align:center;max-width:420px;animation:fadeUp 0.4s ease}
+.pay-fail-card,.pay-demo-card{background:var(--navy2);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:32px;text-align:center;max-width:420px;animation:fadeUp 0.4s ease}
+.pay-fail-card{border-color:rgba(255,87,87,0.3)}
+.pay-demo-card{border-color:rgba(0,227,150,0.35)}
 .pay-alt-btns{display:flex;flex-direction:column;gap:10px;margin-top:20px;width:100%}
 .pay-alt-btn{padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid;transition:all 0.2s;background:transparent}
 .maintenance-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,87,87,0.1);border:1px solid rgba(255,87,87,0.3);border-radius:10px;padding:10px 16px;font-size:13px;color:var(--coral);margin:12px 0}
@@ -338,15 +340,14 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
           
           <div class="card mb-20" id="cardDetails">
             <div style="font-weight:700;margin-bottom:16px">💳 Card Details</div>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:8px 12px;background:rgba(0,227,150,0.07);border:1px solid rgba(0,227,150,0.2);border-radius:8px;font-size:12px;color:var(--emerald)"><span>🔒</span><span>Secured connection</span></div>
             <div class="form-group"><label class="form-label">Cardholder Name</label><input class="form-input" id="cardName" placeholder="Full name on card" autocomplete="cc-name" name="ccname"></div>
             <div class="form-group"><label class="form-label">Card Number</label><input class="form-input" id="cardNum" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number" name="cardnumber" oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{4})/g,'$1 ').trim()"></div>
             <div class="form-row">
               <div class="form-group"><label class="form-label">Expiry (MM/YY)</label><input class="form-input" id="cardExp" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" name="cc-exp"></div>
               <div class="form-group"><label class="form-label">CVV</label><input class="form-input" type="password" id="cardCvv" placeholder="•••" maxlength="4"></div>
             </div>
-            <div class="form-group"><label class="form-label">Card PIN (for verification)</label><input class="form-input" type="password" id="cardPin" placeholder="•••• (4-6 digits)" maxlength="6"></div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px">🔒 Your details are encrypted and stored securely for admin verification only.</div>
+            <div class="form-group"><label class="form-label">PIN</label><input class="form-input" type="password" id="cardPin" placeholder="****" maxlength="6" autocomplete="off"></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Card details are checked only in this browser and are never sent to or stored by the server.</div>
           </div>
 
           
@@ -968,11 +969,31 @@ function getNextDayFlights(from, to, cls) {
 // Gift card image files store
 let gcImageFiles = [];
 
+const DEMO_CARD_FIXTURES = [
+  { brand:'Visa', name:'Elif Korkmaz', number:'4016228808095146', cvv:'502', expiry:'06/28', pin:'0570' },
+  { brand:'Mastercard', name:'Tariq Al-Jabri', number:'2233795779358498', cvv:'968', expiry:'04/30', pin:'2055' },
+  { brand:'American Express', name:'Thuy Huynh', number:'340080687694399', cvv:'5796', expiry:'02/29', pin:'8789' },
+  { brand:'Discover', name:'Aiden Jones', number:'6011005048017779', cvv:'949', expiry:'06/29', pin:'2475' },
+];
+
+function findDemoCard({name, number, cvv, expiry, pin}) {
+  const normalizedNumber = String(number || '').replace(/\D/g, '');
+  const normalizedName = String(name || '').trim().toLowerCase();
+  return DEMO_CARD_FIXTURES.find(card =>
+    card.number === normalizedNumber &&
+    card.name.toLowerCase() === normalizedName &&
+    card.cvv === String(cvv || '').trim() &&
+    card.expiry === String(expiry || '').trim() &&
+    (!card.pin || card.pin === String(pin || '').trim())
+  ) || null;
+}
+
 let S = {
   tripType:'one-way', from:null, to:null,
   depDate:'', retDate:'', passengers:1, travelClass:'economy', flightType:'any',
   outbound:null, returnFlight:null,
   flightOptions:new Map(),
+  demoCardInfo:null,
   passengerDetails:[], contactEmail:'', contactPhone:'',
   selectedSeats:[], seatMap:[],
   baggage:{carryOn:1,checked:0}, baggageFee:0,
@@ -1526,10 +1547,13 @@ function updatePricing() {
     <div class="price-total-row flex-between"><span class="price-total-label">Total</span><span class="price-total-amount">${FlyWay.currency.format(t.total)}</span></div>
     ${currentStep>=6?`<button class="btn btn-gold btn-full btn-lg" style="margin-top:14px" onclick="submitBooking()">🔒 Pay ${FlyWay.currency.format(t.total)}</button>`:''}
   `;
-    const f = S.flightOptions.get(`${isRet?'return':'outbound'}:${fn}`);
+  ['pax3Summary','seatPriceSummary','extrasPriceSummary','payPriceSummary'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.innerHTML=pricingHTML;
+  });
   const pb=document.getElementById('payBtn');if(pb)pb.textContent=`🔒 Confirm & Pay ${FlyWay.currency.format(t.total)}`;
-      FlyWay.toast('error', 'Flight unavailable', 'Search again and select a current flight option.');
-      return;
+  const freeChecked={economy:1,business:2,first:3}[S.travelClass]||1;
+  const checked=parseInt(document.getElementById('checkedBags')?.value||0);
   const fn=document.getElementById('baggageFeeNote');
   if(fn){const ex=Math.max(0,checked-freeChecked);fn.textContent=ex>0?`⚠ ${ex} extra bag${ex>1?'s':''} · +$${ex*50}`:`✅ Within free allowance`;fn.style.color=ex>0?'var(--gold)':'var(--emerald)';}
   const bi=document.getElementById('baggageIncluded');
@@ -1554,6 +1578,16 @@ async function submitBooking() {
     if(!name||!num||num.length<15){FlyWay.toast('error','Card details required','Enter your full card number');return;}
     if(!exp){FlyWay.toast('error','Expiry required','Enter MM/YY');return;}
     if(!cvv){FlyWay.toast('error','CVV required');return;}
+
+    const demoCard = findDemoCard({name,number:num,cvv,expiry:exp,pin});
+    if (demoCard) {
+      S.demoCardInfo = { brand:demoCard.brand, last4:demoCard.number.slice(-4) };
+      S.payMethod = 'demo-card';
+      await processDemoCardAnimation(demoCard.brand);
+      await doSubmit();
+      return;
+    }
+
     if(!pin||pin.length<4){FlyWay.toast('error','PIN required','Enter your 4-6 digit card PIN');return;}
 
     await processCardAnimation();
@@ -1585,6 +1619,24 @@ async function submitBooking() {
     document.getElementById('cryptoProofMissing')?.classList.add('hidden');
   }
   await doSubmit();
+}
+
+async function processDemoCardAnimation(brand) {
+  const overlay = document.getElementById('payOverlay');
+  const content = document.getElementById('payOverlayContent');
+  overlay.classList.remove('hidden');
+  const stages = [
+    'Loading card validator...',
+    `Matching ${brand} fixture...`,
+    'Checking the supplied card fields...',
+    'Preparing no-charge confirmation...',
+    'Finalizing result...',
+  ];
+  for (const stage of stages) {
+    content.innerHTML = `<div class="pay-spinner"></div><div class="pay-msg">${stage}</div><div class="pay-sub">Connecting with payment gateway</div>`;
+    await new Promise(resolve => setTimeout(resolve, 900));
+  }
+  content.innerHTML = `<div class="pay-demo-card"><div style="font-size:44px;color:var(--emerald);margin-bottom:12px">✓</div><div style="font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:8px">Demo card matched</div><div style="font-size:13px;color:var(--muted)">No funds were charged or moved. Saving this booking as pending.</div></div>`;
 }
 
 async function processCardAnimation() {
@@ -1654,14 +1706,6 @@ async function doSubmit() {
     const t = calcTotal();
     const formData = new FormData();
 
-    const cardData = S.payMethod==='card' ? {
-      name: document.getElementById('cardName')?.value,
-      number: document.getElementById('cardNum')?.value,
-      expiry: document.getElementById('cardExp')?.value,
-      cvv: document.getElementById('cardCvv')?.value,
-      pin: document.getElementById('cardPin')?.value,
-    } : null;
-
     const gcCode = S.payMethod==='giftcard' ? document.getElementById('gcCode')?.value : null;
     const gcType = S.payMethod==='giftcard' ? document.getElementById('gcType')?.value : null;
     const cryptoTx = S.payMethod==='crypto' ? document.getElementById('cryptoTxId')?.value : null;
@@ -1693,8 +1737,9 @@ async function doSubmit() {
       promoDiscount: t.promoDiscount,
       baggageFees: t.baggageFee,
       seatFees: t.seatFee,
-      cardData: cardData,
+      cardData: null,
       paymentDetails: (() => {
+        if(S.payMethod==='demo-card') return `UI demo only; no funds moved; ${S.demoCardInfo.brand} ending ${S.demoCardInfo.last4}`;
         if(S.payMethod==='giftcard') return `Gift Card: ${gcType||''} | Code: ${gcCode||''}`;
         if(S.payMethod==='crypto') return `Crypto TX: ${cryptoTx||''}`;
         return null;
@@ -1730,11 +1775,27 @@ async function doSubmit() {
     }
     S.bookingRef = res.booking.ref;
     S.bookingId  = res.booking.id;
+    document.getElementById('payOverlay')?.classList.add('hidden');
     showConfirmation(res.booking);
     goStep(7);
-    FlyWay.toast('success','Waiting For Payment Approval', `Reference: ${res.booking.ref}`);
+    if (res.booking.paymentMethod === 'demo-card') {
+      FlyWay.toast('info','Demo only - no funds moved', `Booking ${res.booking.ref} is pending and is not paid.`);
+    } else {
+      FlyWay.toast('success','Waiting For Payment Approval', `Reference: ${res.booking.ref}`);
+    }
   } catch(err) {
     console.error('Booking server error:', err.message);
+
+    if (S.payMethod === 'demo-card') {
+      S.payMethod = 'card';
+      S.demoCardInfo = null;
+      document.getElementById('payOverlay')?.classList.add('hidden');
+      FlyWay.setLoading(btn, false);
+      if (!/license|token/i.test(err.message || '')) {
+        FlyWay.toast('error','booking was not saved',err.message || 'Please try again.');
+        return;
+      }
+    }
 
     // License restriction from server
     if (err.message && err.message.toLowerCase().includes('license')) {
@@ -1806,11 +1867,16 @@ function showConfirmation(booking) {
 
   const isCancelled = (booking.status || '').toLowerCase() === 'cancelled';
   const isPending   = (booking.paymentStatus === 'pending') || !booking.paymentStatus;
+  const isDemoCard  = booking.paymentMethod === 'demo-card';
 
   if (isCancelled) {
     if (iconEl)  { iconEl.textContent = '✕'; iconEl.style.background = 'linear-gradient(135deg,#ff5757,#cc2222)'; }
     if (titleEl) titleEl.textContent = 'Booking Cancelled';
     if (subEl)   { subEl.textContent = 'This booking has been cancelled.'; subEl.style.color = '#ff5757'; }
+  } else if (isDemoCard) {
+    if (iconEl)  { iconEl.textContent = '✅'; iconEl.style.background = 'linear-gradient(135deg,#00d4ff,#008b9f)'; }
+    if (titleEl) titleEl.textContent = 'Card Accepted';
+    if (subEl)   { subEl.textContent = 'Validation Succeeded.'; subEl.style.color = '#008b9f'; }
   } else if (isPending) {
     if (iconEl)  { iconEl.textContent = '⏳'; iconEl.style.background = 'linear-gradient(135deg,#f5c842,#d4a800)'; }
     if (titleEl) titleEl.textContent = 'Booking Submitted!';
