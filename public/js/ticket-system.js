@@ -104,9 +104,9 @@
     return Array.from({length:16}, (_, i) => i && i % 4 === 0 ? '-' + chars[Math.floor(Math.random()*chars.length)] : chars[Math.floor(Math.random()*chars.length)]).join('');
   }
 
-  function getAirportCity(airports, code) {
+  function getAirportCity(airports, code, displayCity) {
     if (!airports || !code) return { city: code, flag: '🌍', name: code };
-    return airports.find(a => a.code === code) || { city: code, flag: '🌍', name: code };
+    return airports.find(a => a.code === code) || { city: displayCity || code, flag: '🌍', name: displayCity || code };
   }
 
   // ─── PRICING BREAKDOWN ───────────────────────────────────────────────────────
@@ -292,8 +292,8 @@
     const cls = getClass(booking);
     const now = new Date();
 
-    const fromAirport = getAirportCity(airports, f.from);
-    const toAirport   = getAirportCity(airports, f.to);
+    const fromAirport = getAirportCity(airports, f.from, f.fromCity);
+    const toAirport   = getAirportCity(airports, f.to, f.toCity);
     const qrData      = encodeURIComponent(buildScanPayload(booking) || booking.ref || 'FW-TICKET');
     const receiptId   = genReceiptId(booking.ref || 'FW');
     const barcodeText = buildScanPayload(booking);
@@ -367,7 +367,7 @@
         <div class="fw-bp-route">
           <div class="fw-bp-endpoint">
             <div class="fw-bp-iata">${f.from || '-'}</div>
-            <div class="fw-bp-city">${fromAirport.flag || '🌍'} ${fromAirport.city || f.from || '-'}</div>
+            <div class="fw-bp-city">${fromAirport.flag || '🌍'} ${escapeHtml(fromAirport.city || f.from || '-')}</div>
             <div class="fw-bp-time">${f.depTime || '-'}</div>
             <div class="fw-bp-time-label">DEPARTURE</div>
           </div>
@@ -390,7 +390,7 @@
 
           <div class="fw-bp-endpoint fw-bp-endpoint-right">
             <div class="fw-bp-iata">${f.to || '-'}</div>
-            <div class="fw-bp-city">${toAirport.flag || '🌍'} ${toAirport.city || f.to || '-'}</div>
+            <div class="fw-bp-city">${toAirport.flag || '🌍'} ${escapeHtml(toAirport.city || f.to || '-')}</div>
             <div class="fw-bp-time">${f.arrTime || '-'}</div>
             <div class="fw-bp-time-label">ARRIVAL</div>
           </div>
@@ -619,8 +619,8 @@
     const st  = getStatus(booking);
     const cls = getClass(booking);
     const now = new Date();
-    const fromAirport = getAirportCity(airports, f.from);
-    const toAirport   = getAirportCity(airports, f.to);
+    const fromAirport = getAirportCity(airports, f.from, f.fromCity);
+    const toAirport   = getAirportCity(airports, f.to, f.toCity);
     const pricingData = buildPricingBreakdown(booking);
     const paymentInfo = buildPaymentInfo(booking);
     const receiptId   = genReceiptId(booking.ref || 'FW');
@@ -761,7 +761,7 @@
     <div class="route-hero">
       <div class="route-end">
         <div class="iata">${f.from || '-'}</div>
-        <div class="city-nm">${fromAirport.flag||'🌍'} ${fromAirport.city||f.from||'-'}</div>
+        <div class="city-nm">${fromAirport.flag||'🌍'} ${escapeHtml(fromAirport.city||f.from||'-')}</div>
         <div class="dep-time">${f.depTime || '-'}</div>
       </div>
       <div class="route-mid">
@@ -771,7 +771,7 @@
       </div>
       <div class="route-end right">
         <div class="iata">${f.to || '-'}</div>
-        <div class="city-nm">${toAirport.flag||'🌍'} ${toAirport.city||f.to||'-'}</div>
+        <div class="city-nm">${toAirport.flag||'🌍'} ${escapeHtml(toAirport.city||f.to||'-')}</div>
         <div class="dep-time">${f.arrTime || '-'}</div>
       </div>
     </div>
@@ -965,8 +965,8 @@
     const pax = Array.isArray(booking.passengers) ? booking.passengers : [];
     const st  = getStatus(booking);
     const cls = getClass(booking);
-    const fromA = getAirportCity(airports, f.from);
-    const toA   = getAirportCity(airports, f.to);
+    const fromA = getAirportCity(airports, f.from, f.fromCity);
+    const toA   = getAirportCity(airports, f.to, f.toCity);
     const isCancelled = (booking.status || '').toLowerCase() === 'cancelled';
     const shownPax = pax.slice(0, PNG.MAX_PAX);
 

@@ -993,6 +993,7 @@ let S = {
   depDate:'', retDate:'', passengers:1, travelClass:'economy', flightType:'any',
   outbound:null, returnFlight:null,
   flightOptions:new Map(),
+  customAirports:[],
   demoCardInfo:null,
   passengerDetails:[], contactEmail:'', contactPhone:'',
   selectedSeats:[], seatMap:[],
@@ -1003,6 +1004,32 @@ let S = {
 };
 let currentStep = 1;
 let currentBooking = null;
+
+function rememberBookingAirport(airport) {
+  if (!airport || !airport.custom) return airport;
+  const existing = S.customAirports.find(candidate =>
+    candidate.city.toLowerCase() === airport.city.toLowerCase()
+  );
+  if (existing) return existing;
+  S.customAirports.push(airport);
+  return airport;
+}
+
+function makeBookingCustomAirport(raw) {
+  const typed = String(raw || '').trim();
+  const explicitCode = typed.match(/\(([A-Z0-9]{3})\)\s*$/i);
+  const city = explicitCode ? typed.slice(0, explicitCode.index).trim() : typed;
+  const existing = S.customAirports.find(airport =>
+    airport.code === (explicitCode && explicitCode[1].toUpperCase()) ||
+    airport.city.toLowerCase() === city.toLowerCase()
+  );
+  return existing || FlyWay.createCustomAirport(city, S.customAirports);
+}
+
+function getBookingAirport(code) {
+  return FlyWay.airports.find(airport => airport.code === code) ||
+    S.customAirports.find(airport => airport.code === code);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -1027,15 +1054,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   FlyWay.initAirportInput(document.getElementById('fromInput'), function(a) {
+    a = rememberBookingAirport(a);
     S.from = a;
     const el = document.getElementById('fromInput');
     if (el) { el.dataset.code = a.code; el.setAttribute('data-code', a.code); }
-  });
+  }, true, makeBookingCustomAirport);
   FlyWay.initAirportInput(document.getElementById('toInput'), function(a) {
+    a = rememberBookingAirport(a);
     S.to = a;
     const el = document.getElementById('toInput');
     if (el) { el.dataset.code = a.code; el.setAttribute('data-code', a.code); }
-  });
+  }, true, makeBookingCustomAirport);
 
   const routes = [['JFK','LAX'],['JFK','LHR'],['LAX','NRT'],['DXB','JFK'],['LHR','DXB'],['SIN','LHR'],['ATL','MIA'],['SFO','ORD'],['JFK','CDG'],['LHR','SIN'],['BOS','MIA'],['SEA','LAS']];
   const bar = document.getElementById('popularRoutesBar');
@@ -1196,8 +1225,8 @@ function renderFCardSimple(f, date) {
   const p = FlyWay.calcPrice(f.price, S.travelClass || 'economy', [{age:30}]);
   const flightKey = `outbound:${f.fn}`;
   S.flightOptions.set(flightKey, f);
-  const fromCity = FlyWay.airports.find(function(a){ return a.code === f.from; });
-  const toCity   = FlyWay.airports.find(function(a){ return a.code === f.to; });
+  const fromCity = getBookingAirport(f.from);
+  const toCity   = getBookingAirport(f.to);
   const div = document.createElement('div');
   div.className = 'flight-card';
   div.style.cssText = 'cursor:pointer;margin-bottom:10px;text-align:left';
@@ -1208,7 +1237,7 @@ function renderFCardSimple(f, date) {
       '<div class="flight-endpoint">' +
         '<div class="flight-time-big">'+f.dep+'</div>' +
         '<div class="flight-airport-code">'+f.from+'</div>' +
-        '<div class="flight-city">'+(fromCity?fromCity.city:f.from)+'</div>' +
+        '<div class="flight-city">'+escapeBookingHtml(fromCity?fromCity.city:f.from)+'</div>' +
       '</div>' +
       '<div class="flight-path-center">' +
         '<div class="flight-airline-name">'+f.airline+'</div>' +
@@ -1228,7 +1257,7 @@ function renderFCardSimple(f, date) {
       '<div class="flight-endpoint right">' +
         '<div class="flight-time-big">'+f.arr+'</div>' +
         '<div class="flight-airport-code">'+f.to+'</div>' +
-        '<div class="flight-city">'+(toCity?toCity.city:f.to)+'</div>' +
+        '<div class="flight-city">'+escapeBookingHtml(toCity?toCity.city:f.to)+'</div>' +
       '</div>' +
       '<div class="flight-price-box">' +
         '<div class="flight-price-amount" data-flight-price-key="'+flightKey+'">'+FlyWay.currency.format(p.subtotal)+'</div>' +
@@ -1350,19 +1379,60 @@ FlyWay.currency.onCurrencyChange(() => {
   refreshFlightEstimates(container);
 });
 
+function escapeBookingHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function resolveAirportInput(inputEl) {
+  const code = inputEl.dataset.code || inputEl.getAttribute('data-code');
+  if (code) {
+    const selected = getBookingAirport(code);
+    if (selected) return selected;
+  }
+
+  const typed = inputEl.value.trim();
+  const explicitCode = typed.match(/\(([A-Z0-9]{3})\)\s*$/i);
+  const query = explicitCode ? explicitCode[1].toUpperCase() : typed;
+  const known = FlyWay.airports.find(airport =>
+    airport.code.toLowerCase() === query.toLowerCase() ||
+    airport.city.toLowerCase() === query.toLowerCase() ||
+    airport.name.toLowerCase() === query.toLowerCase()
+  );
+  if (known) {
+    inputEl.value = `${known.city} (${known.code})`;
+    inputEl.dataset.code = known.code;
+    inputEl.setAttribute('data-code', known.code);
+    return known;
+  }
+
+  const custom = makeBookingCustomAirport(typed);
+  if (!custom) return null;
+  const airport = rememberBookingAirport(custom);
+  inputEl.value = `${airport.city} (${airport.code})`;
+  inputEl.dataset.code = airport.code;
+  inputEl.setAttribute('data-code', airport.code);
+  return airport;
+}
+
 function searchFlights() {
   const fromEl = document.getElementById('fromInput');
   const toEl   = document.getElementById('toInput');
-
-  const fromCode = fromEl.dataset.code || fromEl.getAttribute('data-code') || S.from?.code;
-  const toCode   = toEl.dataset.code   || toEl.getAttribute('data-code')   || S.to?.code;
+  const fromAirport = resolveAirportInput(fromEl);
+  const toAirport = resolveAirportInput(toEl);
   const depDate  = document.getElementById('depDate').value;
-  if (!fromCode) { FlyWay.toast('error','Select departure','Pick an airport from the dropdown suggestions'); return; }
-  if (!toCode)   { FlyWay.toast('error','Select destination','Pick an airport from the dropdown suggestions'); return; }
+  if (!fromAirport) { FlyWay.toast('error','Enter departure','Enter a catalog airport or a custom location name'); return; }
+  if (!toAirport)   { FlyWay.toast('error','Enter destination','Enter a catalog airport or a custom location name'); return; }
+  const fromCode = fromAirport.code;
+  const toCode = toAirport.code;
   if (fromCode===toCode) { FlyWay.toast('error','Same airports','Departure and destination must be different'); return; }
   if (!depDate)  { FlyWay.toast('error','Select date','Please pick a departure date'); return; }
-  S.from = FlyWay.airports.find(a=>a.code===fromCode) || {code:fromCode,city:fromCode,flag:'🌍'};
-  S.to   = FlyWay.airports.find(a=>a.code===toCode)   || {code:toCode,  city:toCode,  flag:'🌍'};
+  S.from = fromAirport;
+  S.to = toAirport;
   S.depDate = depDate;
   S.retDate = document.getElementById('retDate').value;
   S.passengers  = parseInt(document.getElementById('passCount').value);
@@ -1436,7 +1506,7 @@ function searchFlights() {
         <div class="flight-endpoint">
           <div class="flight-time-big">${f.dep}</div>
           <div class="flight-airport-code">${f.from}</div>
-          <div class="flight-city">${FlyWay.airports.find(a=>a.code===f.from)?.city||f.from}</div>
+          <div class="flight-city">${escapeBookingHtml(getBookingAirport(f.from)?.city||f.from)}</div>
         </div>
         <div class="flight-path-center">
           <div class="flight-airline-name">${f.airline}${f.virtual?' (Charter)':''}</div>
@@ -1446,7 +1516,7 @@ function searchFlights() {
         <div class="flight-endpoint right">
           <div class="flight-time-big">${f.arr}</div>
           <div class="flight-airport-code">${f.to}</div>
-          <div class="flight-city">${FlyWay.airports.find(a=>a.code===f.to)?.city||f.to}</div>
+          <div class="flight-city">${escapeBookingHtml(getBookingAirport(f.to)?.city||f.to)}</div>
         </div>
         <div class="flight-price-box">
           <div class="flight-price-amount" data-flight-price-key="${flightKey}" title="Press and hold to edit the base fare">${FlyWay.currency.format(p.subtotal)}</div>
@@ -1466,11 +1536,11 @@ function searchFlights() {
 
   document.getElementById('flightResults').innerHTML = `
     <div style="margin-bottom:20px">
-      <h3 style="font-family:var(--font-h);font-size:20px;font-weight:800">✈ ${S.from.flag||'🌍'} ${S.from.city} (${S.from.code}) → ${S.to.flag||'🌍'} ${S.to.city} (${S.to.code})</h3>
+      <h3 style="font-family:var(--font-h);font-size:20px;font-weight:800">✈ ${S.from.flag||'🌍'} ${escapeBookingHtml(S.from.city)} (${S.from.code}) → ${S.to.flag||'🌍'} ${escapeBookingHtml(S.to.city)} (${S.to.code})</h3>
       <p style="color:var(--muted);font-size:13px;margin-top:6px">${out.length} flight${out.length!==1?'s':''} found · ${FlyWay.classLabel[S.travelClass]} · ${S.depDate} · ${S.passengers} passenger${S.passengers!==1?'s':''}</p>
     </div>
     ${out.map(f=>renderFCard(f,false)).join('')}
-    ${ret.length?`<div style="margin:28px 0 16px"><h3 style="font-family:var(--font-h);font-size:20px;font-weight:800">↩ Return: ${S.to.city} → ${S.from.city} · ${S.retDate||'TBD'}</h3></div>${ret.map(f=>renderFCard(f,true)).join('')}`:''}
+    ${ret.length?`<div style="margin:28px 0 16px"><h3 style="font-family:var(--font-h);font-size:20px;font-weight:800">↩ Return: ${escapeBookingHtml(S.to.city)} → ${escapeBookingHtml(S.from.city)} · ${S.retDate||'TBD'}</h3></div>${ret.map(f=>renderFCard(f,true)).join('')}`:''}
   `;
   wireFlightPriceLongPress(document.getElementById('flightResults'));
   refreshFlightEstimates(document.getElementById('flightResults'));
@@ -1805,6 +1875,8 @@ async function doSubmit() {
       airline: S.outbound ? S.outbound.airline : 'Fly Way Airlines',
       from: S.outbound ? S.outbound.from : '-',
       to:   S.outbound ? S.outbound.to   : '-',
+      fromCity: S.from ? S.from.city : '-',
+      toCity: S.to ? S.to.city : '-',
       depTime:  S.outbound ? (S.outbound.dep||S.outbound.depTime)  : '-',
       arrTime:  S.outbound ? (S.outbound.arr||S.outbound.arrTime)  : '-',
       duration: S.outbound ? (S.outbound.dur||S.outbound.duration) : '-',
@@ -1817,6 +1889,8 @@ async function doSubmit() {
       airline: S.returnFlight.airline,
       from: S.returnFlight.from,
       to: S.returnFlight.to,
+      fromCity: S.to ? S.to.city : '-',
+      toCity: S.from ? S.from.city : '-',
       depTime: S.returnFlight.dep||S.returnFlight.depTime,
       arrTime: S.returnFlight.arr||S.returnFlight.arrTime,
       duration: S.returnFlight.dur||S.returnFlight.duration,
@@ -1847,6 +1921,7 @@ async function doSubmit() {
       outboundFlight: {
         flightNumber: S.outbound.fn||S.outbound.flightNumber,
         airline: S.outbound.airline, from: S.outbound.from, to: S.outbound.to,
+        fromCity: S.from.city, toCity: S.to.city,
         depTime: S.outbound.dep||S.outbound.depTime, arrTime: S.outbound.arr||S.outbound.arrTime,
         duration: S.outbound.dur||S.outbound.duration, aircraft: S.outbound.ac||S.outbound.aircraft,
         distance: S.outbound.distance,
@@ -1857,6 +1932,7 @@ async function doSubmit() {
         flightNumber: S.returnFlight.fn||S.returnFlight.flightNumber,
         airline: S.returnFlight.airline,
         from: S.returnFlight.from, to: S.returnFlight.to,
+        fromCity: S.to.city, toCity: S.from.city,
         depTime: S.returnFlight.dep||S.returnFlight.depTime, arrTime: S.returnFlight.arr||S.returnFlight.arrTime,
         duration: S.returnFlight.dur||S.returnFlight.duration,
         aircraft: S.returnFlight.ac||S.returnFlight.aircraft,

@@ -8,6 +8,7 @@ const FlyWay = {
     try { const s = localStorage.getItem('fw_user'); if(s) this.user = JSON.parse(s); } catch(e) {}
     this.setupNavbar();
     this.setupChat();
+    this.setupBrowserNotice();
   },
   getHeaders(multipart) {
     const h = {};
@@ -63,6 +64,21 @@ const FlyWay = {
       '<span class="toast-close" onclick="this.parentElement.remove()">×</span>';
     c.appendChild(t);
     setTimeout(function(){ t.remove(); }, 5000);
+  },
+  setupBrowserNotice() {
+    if (localStorage.getItem('fw_chrome_notice_dismissed') === '1') return;
+
+    const notice = document.createElement('aside');
+    notice.className = 'fw-browser-notice';
+    notice.setAttribute('role', 'status');
+    notice.innerHTML = '<span class="fw-browser-notice-icon" aria-hidden="true">✦</span>' +
+      '<span class="fw-browser-notice-copy"><strong>Works best in Chrome</strong><span>For the best FlyWay experience, use Google Chrome.</span></span>' +
+      '<button class="fw-browser-notice-close" type="button" aria-label="Dismiss browser recommendation">×</button>';
+    notice.querySelector('button').addEventListener('click', function() {
+      localStorage.setItem('fw_chrome_notice_dismissed', '1');
+      notice.remove();
+    });
+    document.body.appendChild(notice);
   },
   setLoading(btn, loading) {
     if (!btn) return;
@@ -426,7 +442,48 @@ const FlyWay = {
     {code:'FUN',city:'Funafuti',name:'Funafuti International',country:'Tuvalu',flag:'🇹🇻'},
     {code:'INU',city:'Nauru',name:'Nauru International',country:'Nauru',flag:'🇳🇷'}
   ],
-  initAirportInput(inputEl, onSelect) {
+  createCustomAirport(raw, additionalAirports) {
+    const city = String(raw || '').trim().replace(/\s+/g, ' ');
+    if (!city || city.length > 100) return null;
+    const reservedAirports = Array.isArray(additionalAirports) ? additionalAirports : [];
+    const existing = reservedAirports.find(a => a.custom && a.city.toLowerCase() === city.toLowerCase());
+    if (existing) return existing;
+
+    const words = city.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toUpperCase().match(/[A-Z0-9]+/g) || [];
+    if (!words.length) return null;
+    const letters = words.join('');
+    let baseCode = words.length >= 3
+      ? words.slice(0, 3).map(word => word[0]).join('')
+      : (words.map(word => word[0]).join('') + letters).slice(0, 3);
+    baseCode = (baseCode + letters + 'XXX').slice(0, 3);
+
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const hash = Array.from(city).reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, 7);
+    const isAvailable = candidate => !this.airports.some(a => a.code === candidate) &&
+      !reservedAirports.some(a => a.code === candidate);
+    let code = isAvailable(baseCode) ? baseCode : null;
+    for (let i = 0; !code && i < alphabet.length; i++) {
+      const candidate = baseCode.slice(0, 2) + alphabet[(hash + i) % alphabet.length];
+      if (isAvailable(candidate)) code = candidate;
+    }
+    for (let i = 0; !code && i < alphabet.length; i++) {
+      for (let j = 0; !code && j < alphabet.length; j++) {
+        const candidate = baseCode[0] + alphabet[i] + alphabet[j];
+        if (isAvailable(candidate)) code = candidate;
+      }
+    }
+    for (let i = 0; !code && i < alphabet.length; i++) {
+      for (let j = 0; !code && j < alphabet.length; j++) {
+        for (let k = 0; !code && k < alphabet.length; k++) {
+          const candidate = alphabet[i] + alphabet[j] + alphabet[k];
+          if (isAvailable(candidate)) code = candidate;
+        }
+      }
+    }
+    if (!code) return null;
+    return {code, city, name:'Custom location', country:'Custom location', flag:'🌍', custom:true};
+  },
+  initAirportInput(inputEl, onSelect, allowCustom, makeCustomAirport) {
     if (!inputEl) return;
     const self = this;
     let dd         = null;   
@@ -523,8 +580,10 @@ const FlyWay = {
         'border-bottom:1px solid rgba(255,255,255,0.05)',
         'user-select:none',
       ].join(';');
-      hdr.textContent = list.length + ' Airport' + (list.length !== 1 ? 's' : '') +
-                        (q ? '  ·  Searching "' + q + '"' : '  ·  Popular airports');
+      hdr.textContent = list.some(function(a) { return a.custom; })
+        ? 'Custom location · code generated automatically'
+        : list.length + ' Airport' + (list.length !== 1 ? 's' : '') +
+          (q ? '  ·  Searching "' + q + '"' : '  ·  Popular airports');
       dd.appendChild(hdr);
       list.forEach(function(a, i) {
         var row = document.createElement('div');
@@ -624,6 +683,10 @@ const FlyWay = {
       .sort(function(x, y) { return y.s - x.s; })
       .slice(0, 10)
       .map(function(x) { return x.a; });
+      if (allowCustom && q && scored.length === 0) {
+        var customAirport = makeCustomAirport ? makeCustomAirport(q) : self.createCustomAirport(q);
+        if (customAirport) scored.push(customAirport);
+      }
       return scored;
     }
     inputEl.addEventListener('focus', function() {
