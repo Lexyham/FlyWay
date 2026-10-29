@@ -183,6 +183,8 @@ const AdminUI = (() => {
         ${b.returnFlight ? `<label class="form-group"><span class="form-label">Flight leg</span><select class="form-input" onchange="AdminController.openBookingDetail('${b.id}',this.value)"><option value="outboundFlight" ${leg === 'outboundFlight' ? 'selected' : ''}>Outbound</option><option value="returnFlight" ${leg === 'returnFlight' ? 'selected' : ''}>Return</option></select></label>` : ''}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:10px">${flightInputs}</div>
         <label class="form-group"><span class="form-label">Flight details</span><textarea class="form-input" name="details" rows="3" maxlength="1000">${escapeHtml(f.details)}</textarea></label>
+        <label class="form-group"><span class="form-label">Booking total (USD)</span><input class="form-input" name="totalAmount" type="number" min="0" max="1000000" step="0.01" value="${Number(b.totalAmount || 0).toFixed(2)}" required></label>
+        <div style="font-size:11px;color:var(--muted);margin:-8px 0 12px">Updates the amount shown on this booking and its receipt. It does not charge or refund a payment automatically.</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
           <label class="form-group"><span class="form-label">Booking status</span><select class="form-input" name="status">${statusOptions}</select></label>
           <label class="form-group"><span class="form-label">Payment status</span><select class="form-input" name="paymentStatus">${paymentOptions}</select></label>

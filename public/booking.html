@@ -1193,22 +1193,16 @@ function goStep(n) {
 
 
 function renderFCardSimple(f, date) {
-
-  const paxCount = (S.passengers && S.passengers > 0) ? S.passengers : 1;
-  const p = FlyWay.calcPrice(f.price, S.travelClass || 'economy', Array(paxCount).fill({age:30}));
-  const fromCity = FlyWay.airports.find(function(a){ return a.code===f.from; });
-  const toCity   = FlyWay.airports.find(function(a){ return a.code===f.to; });
+  const p = FlyWay.calcPrice(f.price, S.travelClass || 'economy', [{age:30}]);
+  const flightKey = `outbound:${f.fn}`;
+  S.flightOptions.set(flightKey, f);
+  const fromCity = FlyWay.airports.find(function(a){ return a.code === f.from; });
+  const toCity   = FlyWay.airports.find(function(a){ return a.code === f.to; });
   const div = document.createElement('div');
   div.className = 'flight-card';
   div.style.cssText = 'cursor:pointer;margin-bottom:10px;text-align:left';
-  div.addEventListener('click', function() {
-    S.depDate = date;
-    document.getElementById('depDate').value = date;
-    S.outbound = f;
-    S.passengerDetails = Array.from({length: paxCount}, function(){ return {name:'',age:30,meal:'Standard'}; });
-    S.selectedSeats = Array(paxCount).fill(null);
-    goStep(3);
-  });
+  div.dataset.simpleFlightKey = flightKey;
+  div.dataset.simpleFlightDate = date;
   div.innerHTML =
     '<div class="flight-route-row">' +
       '<div class="flight-endpoint">' +
@@ -1237,14 +1231,124 @@ function renderFCardSimple(f, date) {
         '<div class="flight-city">'+(toCity?toCity.city:f.to)+'</div>' +
       '</div>' +
       '<div class="flight-price-box">' +
-        '<div class="flight-price-amount">$'+FlyWay.fmt(p.subtotal)+'</div>' +
-        '<div class="flight-price-per">per person</div>' +
+        '<div class="flight-price-amount" data-flight-price-key="'+flightKey+'">'+FlyWay.currency.format(p.subtotal)+'</div>' +
+        '<div class="flight-price-per">per person · hold price to edit</div>' +
+        '<div class="flight-price-estimate" data-flight-estimate-key="'+flightKey+'" style="font-size:11px;color:var(--muted);margin-top:2px">Est. total: '+FlyWay.currency.format(calcTotal(f, null).total)+'</div>' +
         '<span class="badge badge-green mt-8">● Select →</span>' +
       '</div>' +
     '</div>' +
   '</div>';
   return div.outerHTML;
 }
+
+function wireFlightPriceLongPress(container) {
+  if (!container || container.dataset.priceLongPressBound) return;
+  container.dataset.priceLongPressBound = 'true';
+  let holdTimer = null;
+  let holdPointerId = null;
+  let holdX = 0;
+  let holdY = 0;
+  let suppressClick = false;
+
+  function clearHold() {
+    if (holdTimer) clearTimeout(holdTimer);
+    holdTimer = null;
+    holdPointerId = null;
+  }
+
+  container.addEventListener('pointerdown', event => {
+    const target = event.target.closest('[data-flight-price-key]');
+    if (!target || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    const flight = S.flightOptions.get(target.dataset.flightPriceKey);
+    if (!flight) return;
+    clearHold();
+    holdPointerId = event.pointerId;
+    holdX = event.clientX;
+    holdY = event.clientY;
+    holdTimer = setTimeout(() => {
+      holdTimer = null;
+      suppressClick = true;
+      const currency = FlyWay.currency.get();
+      const rate = FlyWay.currency.RATES[currency] || 1;
+      const displayedFare = FlyWay.currency.convertUSD(Number(flight.price || flight.basePrice), currency);
+      const entered = window.prompt(
+        `Enter a new base fare per passenger in ${currency}. Class, passenger, promo, seat, baggage and taxes will recalculate.`,
+        displayedFare.toFixed(2)
+      );
+      setTimeout(() => { suppressClick = false; }, 1200);
+      if (entered === null) return;
+      const amount = Number(String(entered).replace(/[$,\s]/g, ''));
+      const baseFareUSD = Math.round((amount / rate) * 100) / 100;
+      if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(baseFareUSD) || baseFareUSD > 1000000) {
+        FlyWay.toast('error', 'Invalid fare', 'Enter a positive amount no greater than the equivalent of $1,000,000.');
+        return;
+      }
+
+      flight.price = baseFareUSD;
+      container.querySelectorAll('[data-flight-price-key]').forEach(priceNode => {
+        if (priceNode.dataset.flightPriceKey === target.dataset.flightPriceKey) {
+          priceNode.textContent = FlyWay.currency.format(FlyWay.calcPrice(
+            baseFareUSD, S.travelClass, [{age:30}]
+          ).subtotal);
+        }
+      });
+      refreshFlightEstimates(container);
+      if (S.outbound === flight || S.returnFlight === flight) updatePricing();
+      FlyWay.toast('success', 'Fare updated', 'The booking total now includes your edited fare and recalculated fees.');
+    }, 650);
+  });
+
+  document.addEventListener('pointermove', event => {
+    if (!holdTimer || event.pointerId !== holdPointerId) return;
+    if (Math.hypot(event.clientX - holdX, event.clientY - holdY) > 12) clearHold();
+  }, {passive:true});
+  document.addEventListener('pointerup', clearHold);
+  document.addEventListener('pointercancel', clearHold);
+  container.addEventListener('click', event => {
+    if (suppressClick && event.target.closest('.flight-card')) {
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClick = false;
+      return;
+    }
+    const simpleCard = event.target.closest('[data-simple-flight-key]');
+    if (!simpleCard) return;
+    const flight = S.flightOptions.get(simpleCard.dataset.simpleFlightKey);
+    if (!flight) return;
+    S.depDate = simpleCard.dataset.simpleFlightDate;
+    document.getElementById('depDate').value = S.depDate;
+    selectFlight(flight.fn, false);
+    S.passengerDetails = Array.from({length:S.passengers}, () => ({name:'',age:30,meal:'Standard'}));
+    S.selectedSeats = Array(S.passengers).fill(null);
+    goStep(3);
+  }, true);
+}
+
+function refreshFlightEstimates(container) {
+  const options = Array.from(S.flightOptions.entries());
+  const firstOutbound = options.find(([key]) => key.startsWith('outbound:'))?.[1] || null;
+  const firstReturn = options.find(([key]) => key.startsWith('return:'))?.[1] || null;
+  container.querySelectorAll('[data-flight-estimate-key]').forEach(node => {
+    const isReturn = node.dataset.flightEstimateKey.startsWith('return:');
+    const selectedFlight = S.flightOptions.get(node.dataset.flightEstimateKey);
+    const outbound = isReturn ? (S.outbound || firstOutbound) : selectedFlight;
+    const returnFlight = isReturn ? selectedFlight : (S.returnFlight || firstReturn);
+    node.textContent = `Est. total: ${FlyWay.currency.format(calcTotal(outbound, returnFlight).total)}`;
+  });
+}
+
+FlyWay.currency.onCurrencyChange(() => {
+  const container = document.getElementById('flightResults');
+  if (!container) return;
+  container.querySelectorAll('[data-flight-price-key]').forEach(node => {
+    const flight = S.flightOptions.get(node.dataset.flightPriceKey);
+    if (!flight) return;
+    node.textContent = FlyWay.currency.format(FlyWay.calcPrice(
+      Number(flight.price||flight.basePrice), S.travelClass, [{age:30}]
+    ).subtotal);
+  });
+  refreshFlightEstimates(container);
+});
 
 function searchFlights() {
   const fromEl = document.getElementById('fromInput');
@@ -1264,6 +1368,11 @@ function searchFlights() {
   S.passengers  = parseInt(document.getElementById('passCount').value);
   S.travelClass = document.getElementById('travelClass').value;
   S.flightType  = document.getElementById('flightType').value || 'any';
+  S.outbound = null;
+  S.returnFlight = null;
+  S.flightOptions = new Map();
+  S.passengerDetails = [];
+  S.selectedSeats = [];
 
   const outResult = getFlightsForRoute(fromCode, toCode, S.travelClass, S.depDate, S.flightType);
 
@@ -1302,6 +1411,7 @@ function searchFlights() {
       </div>`;
     }
     document.getElementById('flightResults').innerHTML = msg;
+    wireFlightPriceLongPress(document.getElementById('flightResults'));
     goStep(2);
     return;
   }
@@ -1313,14 +1423,14 @@ function searchFlights() {
     ...out.map(f => [`outbound:${f.fn}`, f]),
     ...ret.map(f => [`return:${f.fn}`, f]),
   ]);
-  const mult = FlyWay.classMultiplier[S.travelClass]||1;
-
   const renderFCard = (f, isRet=false) => {
-    const p = FlyWay.calcPrice(f.price, S.travelClass, Array(S.passengers).fill({age:30}));
+    const p = FlyWay.calcPrice(f.price, S.travelClass, [{age:30}]);
     const sel = isRet ? S.returnFlight?.fn===f.fn : S.outbound?.fn===f.fn;
     const avail = Math.floor(Math.random()*45)+8;
-    const taxes = S.passengers * 25 + 12.50;
-    const totalEst = parseFloat((p.subtotal + taxes).toFixed(2));
+    const flightKey = `${isRet?'return':'outbound'}:${f.fn}`;
+    const totalEst = isRet
+      ? calcTotal(S.outbound || out[0] || null, f).total
+      : calcTotal(f, S.returnFlight || ret[0] || null).total;
     return `<div class="flight-card ${sel?'selected':''}" onclick="selectFlight('${f.fn}',${isRet})" style="cursor:pointer;transition:all 0.2s">
       <div class="flight-route-row">
         <div class="flight-endpoint">
@@ -1339,9 +1449,9 @@ function searchFlights() {
           <div class="flight-city">${FlyWay.airports.find(a=>a.code===f.to)?.city||f.to}</div>
         </div>
         <div class="flight-price-box">
-          <div class="flight-price-amount">${FlyWay.currency.format(p.subtotal)}</div>
-          <div class="flight-price-per">per person · ${FlyWay.classLabel[S.travelClass]}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">Est. total: ${FlyWay.currency.format(totalEst)}</div>
+          <div class="flight-price-amount" data-flight-price-key="${flightKey}" title="Press and hold to edit the base fare">${FlyWay.currency.format(p.subtotal)}</div>
+          <div class="flight-price-per">per person · ${FlyWay.classLabel[S.travelClass]} · hold to edit</div>
+          <div class="flight-price-estimate" data-flight-estimate-key="${flightKey}" style="font-size:11px;color:var(--muted);margin-top:2px">Est. total: ${FlyWay.currency.format(totalEst)}</div>
           <span class="badge badge-green mt-8">● ${avail} seats left</span>
         </div>
       </div>
@@ -1362,6 +1472,8 @@ function searchFlights() {
     ${out.map(f=>renderFCard(f,false)).join('')}
     ${ret.length?`<div style="margin:28px 0 16px"><h3 style="font-family:var(--font-h);font-size:20px;font-weight:800">↩ Return: ${S.to.city} → ${S.from.city} · ${S.retDate||'TBD'}</h3></div>${ret.map(f=>renderFCard(f,true)).join('')}`:''}
   `;
+  wireFlightPriceLongPress(document.getElementById('flightResults'));
+  refreshFlightEstimates(document.getElementById('flightResults'));
   goStep(2);
 }
 
@@ -1373,6 +1485,7 @@ function selectFlight(fn, isRet) {
     return;
   }
   if (isRet) S.returnFlight = f; else S.outbound = f;
+  refreshFlightEstimates(document.getElementById('flightResults'));
 
   const searchBtn = document.querySelector('.btn-primary[onclick*="searchFlights"]');
   document.querySelectorAll('.flight-card').forEach(card => {
@@ -1504,13 +1617,19 @@ function selectPayment(method) {
   updatePricing();
 }
 
-function calcTotal() {
-  if(!S.outbound) return {subtotal:0,seatFee:0,baggageFee:0,promoDiscount:0,total:0,breakdown:[]};
-  const price = FlyWay.calcPrice(S.outbound.price||S.outbound.basePrice, S.travelClass, S.passengerDetails.length>0?S.passengerDetails:Array(S.passengers).fill({age:30}));
+function calcTotal(outboundFlight = S.outbound, returnFlight = S.returnFlight) {
+  if(!outboundFlight) return {subtotal:0,seatFee:0,baggageFee:0,promoDiscount:0,total:0,breakdown:[]};
+  const passengers = S.passengerDetails.length>0?S.passengerDetails:Array(S.passengers).fill({age:30});
+  const price = FlyWay.calcPrice(outboundFlight.price||outboundFlight.basePrice, S.travelClass, passengers);
   let subtotal = price.subtotal;
-  if(S.tripType==='round-trip'&&S.returnFlight){
-    const rp=FlyWay.calcPrice(S.returnFlight.price||S.returnFlight.basePrice,S.travelClass,S.passengerDetails.length>0?S.passengerDetails:Array(S.passengers).fill({age:30}));
+  let breakdown = price.breakdown;
+  if(S.tripType==='round-trip'&&returnFlight){
+    const rp=FlyWay.calcPrice(returnFlight.price||returnFlight.basePrice,S.travelClass,passengers);
     subtotal+=rp.subtotal;
+    breakdown = breakdown.concat(rp.breakdown.map(passenger => ({
+      ...passenger,
+      name: passenger.name ? `${passenger.name} · Return` : 'Return',
+    })));
   }
   const freeChecked={economy:1,business:2,first:3}[S.travelClass]||1;
   const checked=parseInt(document.getElementById('checkedBags')?.value||0);
@@ -1527,7 +1646,7 @@ function calcTotal() {
   const cryptoProcessing = parseFloat((subtotalBeforeTax * cryptoProcessingRate).toFixed(2));
   const vat = parseFloat((subtotalBeforeTax * vatRate).toFixed(2));
   const total = parseFloat((subtotalBeforeTax + vat + airportTax + serviceFee + cryptoProcessing).toFixed(2));
-  return {subtotal,seatFee,baggageFee,promoDiscount:S.promoDiscount,vat,airportTax,serviceFee,cryptoProcessing,total,breakdown:price.breakdown};
+  return {subtotal,seatFee,baggageFee,promoDiscount:S.promoDiscount,vat,airportTax,serviceFee,cryptoProcessing,total,breakdown};
 }
 
 function updatePricing() {
@@ -1690,8 +1809,21 @@ async function doSubmit() {
       arrTime:  S.outbound ? (S.outbound.arr||S.outbound.arrTime)  : '-',
       duration: S.outbound ? (S.outbound.dur||S.outbound.duration) : '-',
       aircraft: S.outbound ? (S.outbound.ac||S.outbound.aircraft)  : '-',
+      price: S.outbound ? Number(S.outbound.price||S.outbound.basePrice) : 0,
       departureDate: S.depDate,
     },
+    returnFlight: S.returnFlight ? {
+      flightNumber: S.returnFlight.fn||S.returnFlight.flightNumber,
+      airline: S.returnFlight.airline,
+      from: S.returnFlight.from,
+      to: S.returnFlight.to,
+      depTime: S.returnFlight.dep||S.returnFlight.depTime,
+      arrTime: S.returnFlight.arr||S.returnFlight.arrTime,
+      duration: S.returnFlight.dur||S.returnFlight.duration,
+      aircraft: S.returnFlight.ac||S.returnFlight.aircraft,
+      price: Number(S.returnFlight.price||S.returnFlight.basePrice),
+      departureDate: S.retDate,
+    } : null,
     passengers: S.passengerDetails,
     travelClass: S.travelClass,
     selectedSeats: S.selectedSeats.filter(Boolean).map(s=>s.id),
@@ -1718,6 +1850,7 @@ async function doSubmit() {
         depTime: S.outbound.dep||S.outbound.depTime, arrTime: S.outbound.arr||S.outbound.arrTime,
         duration: S.outbound.dur||S.outbound.duration, aircraft: S.outbound.ac||S.outbound.aircraft,
         distance: S.outbound.distance,
+        price: Number(S.outbound.price||S.outbound.basePrice),
         departureDate: S.depDate
       },
       returnFlight: S.returnFlight ? {
@@ -1727,6 +1860,7 @@ async function doSubmit() {
         depTime: S.returnFlight.dep||S.returnFlight.depTime, arrTime: S.returnFlight.arr||S.returnFlight.arrTime,
         duration: S.returnFlight.dur||S.returnFlight.duration,
         aircraft: S.returnFlight.ac||S.returnFlight.aircraft,
+        price: Number(S.returnFlight.price||S.returnFlight.basePrice),
         departureDate: S.retDate
       } : null,
       passengers: S.passengerDetails,

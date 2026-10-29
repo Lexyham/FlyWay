@@ -112,9 +112,16 @@ const AdminController = (() => {
       name,
       form.elements.namedItem(name).value.trim(),
     ]));
+    const totalValue = form.elements.namedItem('totalAmount').value.trim();
+    const totalAmount = Number(totalValue);
+    if (!totalValue || !Number.isFinite(totalAmount) || totalAmount < 0 || totalAmount > 1000000) {
+      AdminUI.toast('error', 'Invalid booking total', 'Enter an amount between $0 and $1,000,000.');
+      return;
+    }
     const updates = {
       flightLeg: leg,
       flight,
+      totalAmount,
       status: form.elements.namedItem('status').value,
       paymentStatus: form.elements.namedItem('paymentStatus').value,
       adminNote: form.elements.namedItem('adminNote').value.trim(),
@@ -125,7 +132,7 @@ const AdminController = (() => {
       const updatedBooking = { ...current, ...saved };
       AdminState.updateItem('bookings', id, updatedBooking);
       AdminUI.renderBookingDetail(updatedBooking, leg);
-      AdminUI.toast('success', 'Booking updated', 'Flight and status changes were saved and the user was notified.');
+      AdminUI.toast('success', 'Booking updated', 'Flight, price and status changes were saved and the user was notified.');
       loadBookings();
     });
   }

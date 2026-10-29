@@ -1539,9 +1539,10 @@ app.get('/api/admin/bookings', adminAuth, (req, res) => {
   res.json([...bookings].reverse().map(b=>{const u=users.find(u=>u.id===b.userId);return{...b,userName:u?.username,userEmail:u?.email,userPhone:u?.phone};}));
 });
 app.patch('/api/admin/bookings/:id', adminAuth, (req, res) => {
-  const {status,paymentStatus,adminNote,flightLeg,flight}=req.body;
+  const {status,paymentStatus,adminNote,flightLeg,flight,totalAmount}=req.body;
   const allowedStatuses=['pending','confirmed','cancelled','completed'];
   const allowedPaymentStatuses=['pending','proof_submitted','paid','refunded'];
+  if(totalAmount!==undefined&&(totalAmount===''||!Number.isFinite(Number(totalAmount))||Number(totalAmount)<0||Number(totalAmount)>1000000)) return res.status(400).json({error:'Booking total must be between 0 and 1,000,000'});
   if(status!==undefined&&!allowedStatuses.includes(status)) return res.status(400).json({error:'Invalid booking status'});
   if(paymentStatus!==undefined&&!allowedPaymentStatuses.includes(paymentStatus)) return res.status(400).json({error:'Invalid payment status'});
   if(adminNote!==undefined&&(typeof adminNote!=='string'||adminNote.length>1000)) return res.status(400).json({error:'Invalid admin note'});
@@ -1568,11 +1569,24 @@ app.patch('/api/admin/bookings/:id', adminAuth, (req, res) => {
     }
   }
   const prev=bookings[idx].status;
+  const previousTotal=Number(bookings[idx].totalAmount)||0;
+  const priceChanged=totalAmount!==undefined&&Number(totalAmount)!==previousTotal;
   if(status) bookings[idx].status=status;
   if(paymentStatus) bookings[idx].paymentStatus=paymentStatus;
   if(paymentStatus==='paid' && status===undefined && bookings[idx].status!=='cancelled') bookings[idx].status='confirmed';
   if(adminNote!==undefined) bookings[idx].adminNote=adminNote;
   if(flight!==undefined) bookings[idx][flightLeg]={...bookings[idx][flightLeg],...flight};
+  if(priceChanged){
+    const updatedTotal=Math.round(Number(totalAmount)*100)/100;
+    bookings[idx].totalAmount=updatedTotal;
+    const priceHistory=Array.isArray(bookings[idx].adminPriceHistory)?bookings[idx].adminPriceHistory:[];
+    bookings[idx].adminPriceHistory=[...priceHistory,{
+      previousAmount:previousTotal,
+      updatedAmount:updatedTotal,
+      updatedAt:new Date().toISOString(),
+      adminId:req.user.id
+    }].slice(-20);
+  }
   bookings[idx].updatedAt=new Date().toISOString();
   writeDB(FILES.bookings,bookings);
   if(paymentStatus){const txs=readDB(FILES.transactions);const ti=txs.findIndex(t=>t.bookingId===req.params.id);if(ti>=0){txs[ti].status=paymentStatus;writeDB(FILES.transactions,txs);}}
@@ -1583,7 +1597,8 @@ app.patch('/api/admin/bookings/:id', adminAuth, (req, res) => {
   } else if(status==='cancelled'){createNotification(bookings[idx].userId,'booking_cancelled','❌ Booking Cancelled',`Booking ${bookings[idx].ref} cancelled.${adminNote?` Reason: "${adminNote}"`:''}`);
   } else if(paymentStatus==='paid'){createNotification(bookings[idx].userId,'payment_confirmed','💳 Payment Confirmed',`Payment for ${bookings[idx].ref} verified!${adminNote?` Note: "${adminNote}"`:''}`);}
   if(flight!==undefined) createNotification(bookings[idx].userId,'flight_updated','✈ Flight Details Updated',`An admin updated the ${flightLeg==='returnFlight'?'return':'outbound'} flight details for booking ${bookings[idx].ref}.`);
-  io.emit(`booking_updated_${bookings[idx].userId}`,{bookingId:req.params.id,status:bookings[idx].status,paymentStatus:bookings[idx].paymentStatus,flightUpdated:flight!==undefined});
+  if(priceChanged) createNotification(bookings[idx].userId,'booking_price_updated','💰 Booking Price Updated',`The total for booking ${bookings[idx].ref} was updated from $${previousTotal.toFixed(2)} to $${bookings[idx].totalAmount.toFixed(2)}. This change does not automatically charge or refund a payment.`);
+  io.emit(`booking_updated_${bookings[idx].userId}`,{bookingId:req.params.id,status:bookings[idx].status,paymentStatus:bookings[idx].paymentStatus,flightUpdated:flight!==undefined,priceChanged,totalAmount:bookings[idx].totalAmount});
   res.json(bookings[idx]);
 });
 app.delete('/api/admin/bookings/:id', adminAuth, (req, res) => {

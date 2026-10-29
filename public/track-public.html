@@ -56,6 +56,94 @@
   50% { transform: translateX(0px); }
   75% { transform: translateX(3px) rotate(2deg); }
 }
+@media (max-width: 768px) {
+  .pub-hero { padding: 76px 0 28px; }
+  #trackCard { flex-direction: column; align-items: stretch; justify-content: flex-start; }
+  .pub-flight-heading { padding: 16px 16px 0 !important; gap: 8px !important; }
+  .pub-flight-heading > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .pub-flight-heading > div:first-child > div:first-child { font-size: 17px !important; }
+  .pub-flight-heading > div:first-child > div:last-child { font-size: 12px !important; }
+  .pub-flight-content { padding: 18px !important; }
+  .pub-route-layout { gap: 10px !important; }
+  .pub-route-airport { min-width: 76px; }
+  .pub-route-airport .airport-big { font-size: clamp(26px, 7vw, 34px); }
+  .pub-route-center { min-width: 90px !important; padding: 0 4px !important; }
+  .pub-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
+  .pub-stat-grid .stat-box { padding: 10px 8px; }
+  #globe3d-wrap { height: 300px !important; margin-top: 16px !important; }
+  #globe3d-header { padding: 10px 12px; }
+  #globe3d-footer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; padding: 8px; }
+  .g3d-stat { min-width: 0; justify-content: center; gap: 5px; padding: 5px 6px; font-size: 10px; }
+  .pub-sim-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px !important;
+    margin-top: 12px !important;
+  }
+  .pub-sim-actions button:first-child { grid-column: 1 / -1; }
+  .pub-sim-actions button {
+    min-width: 0 !important;
+    min-height: 36px;
+    padding: 7px 8px !important;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+    line-height: 1.3;
+    gap: 5px !important;
+  }
+  .pub-sim-actions button span { font-size: 15px !important; }
+  .pub-upcoming-note { padding: 18px !important; border-radius: 14px !important; }
+  .pub-upcoming-actions { gap: 8px !important; }
+  .pub-upcoming-actions .btn { flex: 1 1 140px; min-width: 0 !important; padding: 9px 12px !important; }
+  .pub-small-actions { gap: 8px !important; margin-top: 14px !important; }
+  .pub-small-actions button { padding: 7px 10px !important; font-size: 12px; }
+  .public-track-actions { gap: 8px !important; margin-top: 16px !important; }
+  .public-reviews { margin-top: 24px !important; }
+}
+@media (max-width: 480px) {
+  .pub-hero { padding: 72px 0 24px; }
+  .pub-hero .live-badge { margin-bottom: 12px; }
+  .pub-hero #trackTitle { overflow-wrap: anywhere; }
+  .pub-hero #trackSub { font-size: 13px !important; }
+  .pub-route-layout { flex-wrap: nowrap !important; gap: 6px !important; }
+  .pub-route-airport { flex: 0 0 68px; min-width: 0; }
+  .pub-route-airport .airport-big { font-size: clamp(22px, 7vw, 30px); }
+  .pub-route-airport .pub-route-city { font-size: 11px !important; overflow-wrap: anywhere; }
+  .pub-route-time { font-size: 18px !important; }
+  .pub-route-center { min-width: 0 !important; flex: 1 1 auto; }
+  .pub-route-center #pubPlane { font-size: 24px !important; }
+  .pub-route-center .progress-track { margin-top: 14px; }
+  .pub-flight-content { padding: 14px !important; }
+  .pub-upcoming-note { margin-top: 16px !important; padding: 14px !important; }
+  .pub-upcoming-note > div:first-child { font-size: 26px !important; }
+  .pub-upcoming-actions .btn { flex: 1 1 140px; }
+  .pub-stat-grid .stat-lbl { font-size: 9px; letter-spacing: .6px; }
+  .pub-stat-grid .stat-val { font-size: 14px; overflow-wrap: anywhere; }
+  .pub-stat-grid .stat-val[style] { font-size: 11px !important; }
+  #globe3d-wrap { height: 270px !important; }
+  #globe3d-controls { right: 8px; gap: 5px; }
+  .g3d-ctrl { width: 30px; height: 30px; }
+  .g3d-stat > span:last-child:not(.g3d-stat-val) { display: none; }
+  .pub-small-actions { gap: 6px !important; }
+  .pub-small-actions > * { padding: 6px 8px !important; font-size: 11px; text-align: center; }
+  .pub-flight-info { padding: 12px 14px !important; font-size: 12px !important; }
+  .navbar .nav-inner { padding: 0 12px; }
+  .navbar .nav-actions { gap: 5px; }
+  .navbar .nav-actions .btn { padding: 5px 7px; font-size: 9.5px; }
+}
+@media (max-width: 360px) {
+  .pub-hero { padding: 68px 0 22px; }
+  .pub-flight-heading { padding: 14px 14px 0 !important; }
+  .pub-flight-content { padding: 12px !important; }
+  .pub-route-airport { flex-basis: 62px; }
+  .pub-route-airport .airport-big { font-size: 22px; }
+  .pub-route-time { font-size: 16px !important; }
+  .navbar .nav-inner { padding: 0 8px; }
+  .navbar .nav-logo { gap: 6px; }
+  .navbar .nav-logo-text { font-size: 13px; letter-spacing: .7px; }
+  .navbar .nav-logo-icon { width: 26px; height: 26px; font-size: 12px; }
+  .navbar .nav-actions { gap: 4px; }
+  .navbar .nav-actions .btn { padding: 4px 5px; font-size: 8.5px; }
+}
 </style>
 </head>
 <body>
@@ -83,12 +171,12 @@
     <div id="trackCard" class="card" style="min-height:200px;display:flex;align-items:center;justify-content:center">
       <div style="text-align:center;color:var(--muted)"><div style="font-size:32px;margin-bottom:12px">⏳</div>Loading flight data...</div>
     </div>
-    <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+    <div class="public-track-actions" style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
       <button class="btn btn-ghost" onclick="navigator.clipboard.writeText(window.location.href).then(()=>alert('Tracking link copied!'))">🔗 Copy This Link</button>
       <a href="/booking" class="btn btn-primary">✈ Book a Flight</a>
       <a href="/track" class="btn btn-ghost">🔍 Track Another Flight</a>
     </div>
-    <div style="margin-top:32px" id="publicReviews"></div>
+    <div class="public-reviews" style="margin-top:32px" id="publicReviews"></div>
   </div>
 </div>
 
@@ -238,11 +326,11 @@ function renderFull(){
   var remH=Math.floor(remMins/60),remM=Math.floor(remMins%60);
   var remain=r.prog>=100?'Arrived':(remH>0?remH+'h '+String(remM).padStart(2,'0')+'m left':Math.floor(remMins)+'m left');
   var isUpcoming = r.status==='Scheduled';
-  var upcomingNote = isUpcoming ? '<div style="margin-top:24px;padding:28px;border-radius:20px;background:linear-gradient(135deg,rgba(124,58,237,0.08),rgba(0,212,255,0.05));border:1px solid rgba(124,58,237,0.2);text-align:center">'+
+  var upcomingNote = isUpcoming ? '<div class="pub-upcoming-note" style="margin-top:24px;padding:28px;border-radius:20px;background:linear-gradient(135deg,rgba(124,58,237,0.08),rgba(0,212,255,0.05));border:1px solid rgba(124,58,237,0.2);text-align:center">'+
       '<div style="font-size:32px;margin-bottom:10px">✈</div>'+ 
       '<div style="font-weight:700;font-size:16px;margin-bottom:6px">Flight '+(f.fn||code)+' has not yet started</div>'+ 
       '<div style="color:var(--muted);font-size:13px;margin-bottom:16px">The runway is warming up - stay here for live updates, or jump into the cockpit simulator or game while you wait.</div>'+ 
-      '<div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">'+
+      '<div class="pub-upcoming-actions" style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">'+
         '<button class="btn btn-ghost" onclick="stayOnTrackPublic()" style="min-width:170px;padding:12px 20px">Stay Here</button>'+ 
         '<button class="btn btn-primary" onclick="launchFlightGame()" style="min-width:170px;padding:12px 20px">Have Fun</button>'+ 
       '</div>'+ 
@@ -250,22 +338,22 @@ function renderFull(){
   document.getElementById('trackTitle').textContent=f.from+' → '+f.to+(f.bookingRef?' ('+f.bookingRef+')':'');
   document.getElementById('trackSub').textContent=(f.fn||code)+' · '+(f.airline||'Fly Way Airlines')+' · '+r.status;
   document.getElementById('trackCard').innerHTML=
-    '<div style="padding:24px 24px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'+
+    '<div class="pub-flight-heading" style="padding:24px 24px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'+
       '<div><div style="font-family:var(--font-h);font-size:20px;font-weight:800">'+(f.fn||code)+'</div>'+
       '<div style="color:var(--muted);font-size:13px">'+(f.airline||'Fly Way Airlines')+' · '+(f.ac||'Boeing 737')+' '+(f.bookingRef?'· Ref: '+f.bookingRef:'')+'</div></div>'+
       '<div id="pubStatus" class="flight-status-badge" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3)"><div class="status-dot inflight" id="pubDot"></div><span id="pubStatusTxt">'+r.status+'</span></div>'+
     '</div>'+
-    '<div style="padding:28px">'+
-      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:8px">'+
-        '<div class="airport-card"><div class="airport-big">'+f.from+'</div><div style="color:var(--muted);font-size:13px">'+(fa.flag||'')+'  '+(fa.city||f.from)+'</div><div style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px">'+(f.dep||'-')+'</div></div>'+
-        '<div style="flex:1;min-width:140px;padding:0 16px">'+
+    '<div class="pub-flight-content" style="padding:28px">'+
+      '<div class="pub-route-layout" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:8px">'+
+        '<div class="airport-card pub-route-airport"><div class="airport-big">'+f.from+'</div><div class="pub-route-city" style="color:var(--muted);font-size:13px">'+(fa.flag||'')+'  '+(fa.city||f.from)+'</div><div class="pub-route-time" style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px">'+(f.dep||'-')+'</div></div>'+
+        '<div class="pub-route-center" style="flex:1;min-width:140px;padding:0 16px">'+
           '<div id="pubPlane" style="text-align:center;font-size:30px;transition:all 0.5s">✈</div>'+
           '<div class="progress-track" id="pubProgTrack"><div class="progress-fill" id="pubFill" style="width:'+r.prog+'%"></div><div class="progress-plane" id="pubPlanePip" style="left:'+Math.min(95,r.prog)+'%">✈</div></div>'+
           '<div id="pubDurLine" style="font-size:12px;color:var(--muted);text-align:center">'+(f.dur||'-')+' · '+r.prog.toFixed(1)+'% · '+remain+'</div>'+
         '</div>'+
-        '<div class="airport-card" style="text-align:right"><div class="airport-big">'+f.to+'</div><div style="color:var(--muted);font-size:13px">'+(ta.flag||'')+'  '+(ta.city||f.to)+'</div><div style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px">'+(f.arr||'-')+'</div></div>'+
+        '<div class="airport-card pub-route-airport" style="text-align:right"><div class="airport-big">'+f.to+'</div><div class="pub-route-city" style="color:var(--muted);font-size:13px">'+(ta.flag||'')+'  '+(ta.city||f.to)+'</div><div class="pub-route-time" style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px">'+(f.arr||'-')+'</div></div>'+
       '</div>'+
-      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:20px">'+
+      '<div class="pub-stat-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:20px">'+
         '<div class="stat-box"><div class="stat-lbl">🚪 GATE</div><div class="stat-val">'+stableGate+'</div></div>'+
         '<div class="stat-box"><div class="stat-lbl">🏢 TERMINAL</div><div class="stat-val">'+stableTerminal+'</div></div>'+
         '<div class="stat-box"><div class="stat-lbl">✈ AIRCRAFT</div><div class="stat-val" style="font-size:12px">'+(f.ac||'Boeing 737')+'</div></div>'+
@@ -295,7 +383,7 @@ function renderFull(){
           '<div class="g3d-stat"><span>⏱</span><span class="g3d-stat-val" id="g3dETA">-</span><span style="color:var(--muted);font-size:10px">remaining</span></div>'+
         '</div>'+
       '</div>'+
-      '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">'+
+      '<div class="pub-sim-actions" style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">'+
         '<button onclick="launch3dSim()" style="flex:1;min-width:200px;padding:13px 20px;background:linear-gradient(135deg,rgba(0,68,204,0.9),rgba(0,212,255,0.8));border:1px solid rgba(0,212,255,0.4);border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform 0.15s,box-shadow 0.2s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 8px 24px rgba(0,212,255,0.3)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">'+
           '<span style="font-size:20px">🌍</span> View Realistic 3D Live Simulation'+
         '</button>'+
@@ -306,7 +394,7 @@ function renderFull(){
           '<span style="font-size:20px" class="flying-plane">✈</span> Experience Cockpit Simulator'+
         '</button>'+
       '</div>'+
-      '<div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap">'+
+      '<div class="pub-small-actions" style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap">'+
         '<button onclick="navigator.clipboard.writeText(window.location.href).then(()=>alert(\'Tracking link copied!\'))" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;padding:8px 16px;color:#00d4ff;font-weight:600">🔗 Copy Tracking Link</button>'+
         '<button onclick="init()" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;padding:8px 16px;color:#00d4ff;font-weight:600">🔄 Refresh</button>'+
         '<a href="/booking" class="btn btn-primary">✈ Book a Flight</a>'+
@@ -316,6 +404,7 @@ function renderFull(){
     '</div>';
   if(f.stopDescription||f.details){
     var flightInfo=document.createElement('div');
+    flightInfo.className='pub-flight-info';
     flightInfo.style.cssText='padding:14px 24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border)';
     flightInfo.textContent=[f.departureDate?'Date: '+f.departureDate:'',f.stopDescription?'Stops: '+f.stopDescription:'',f.flightType?'Type: '+f.flightType:'',f.details].filter(Boolean).join(' · ');
     document.getElementById('trackCard').appendChild(flightInfo);

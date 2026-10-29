@@ -356,6 +356,8 @@ async function openBD(id,leg='outboundFlight'){
       ${b.returnFlight?`<label class="form-group"><span class="form-label">Flight leg</span><select class="form-input" onchange="openBD('${b.id}',this.value)"><option value="outboundFlight" ${leg==='outboundFlight'?'selected':''}>Outbound</option><option value="returnFlight" ${leg==='returnFlight'?'selected':''}>Return</option></select></label>`:''}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:10px">${flightInputs}</div>
       <label class="form-group"><span class="form-label">Flight details</span><textarea class="form-input" name="details" rows="3" maxlength="1000">${adminEscapeHtml(f.details)}</textarea></label>
+      <label class="form-group"><span class="form-label">Booking total (USD)</span><input class="form-input" name="totalAmount" type="number" min="0" max="1000000" step="0.01" value="${Number(b.totalAmount||0).toFixed(2)}" required></label>
+      <div style="font-size:11px;color:var(--muted);margin:-8px 0 12px">Updates the amount shown on this booking and its receipt. It does not charge or refund a payment automatically.</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
         <label class="form-group"><span class="form-label">Booking status</span><select class="form-input" name="status">${statusOptions}</select></label>
         <label class="form-group"><span class="form-label">Payment status</span><select class="form-input" name="paymentStatus">${paymentOptions}</select></label>
@@ -375,13 +377,16 @@ async function saveBookingEdits(id,leg){
   if(!form)return;
   const keys=['from','to','airline','flightNumber','departureDate','depTime','arrTime','duration','stops','type','aircraft','details'];
   const flight=Object.fromEntries(keys.map(key=>[key,form.elements.namedItem(key).value.trim()]));
+  const totalValue=form.elements.namedItem('totalAmount').value.trim();
+  const totalAmount=Number(totalValue);
+  if(!totalValue||!Number.isFinite(totalAmount)||totalAmount<0||totalAmount>1000000){FlyWay.toast('error','Invalid booking total','Enter an amount between $0 and $1,000,000.');return;}
   try{
     await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{
-      flightLeg:leg,flight,status:form.elements.namedItem('status').value,
+      flightLeg:leg,flight,totalAmount,status:form.elements.namedItem('status').value,
       paymentStatus:form.elements.namedItem('paymentStatus').value,
       adminNote:form.elements.namedItem('adminNote').value.trim()
     });
-    FlyWay.toast('success','Booking updated','Flight and status changes were saved and the user was notified.');
+    FlyWay.toast('success','Booking updated','Flight, price and status changes were saved and the user was notified.');
     await loadBookings();
     await openBD(id,leg);
   }catch(error){FlyWay.toast('error','Update failed',error.message);}
