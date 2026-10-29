@@ -1747,10 +1747,14 @@ app.get('/api/track/:code', (req, res) => {
   const bookings = readDB(FILES.bookings);
   const booking = bookings.find(b =>
     normalizeTrackCode(b.ref) === code ||
-    (b.outboundFlight && normalizeTrackCode(b.outboundFlight.flightNumber) === code)
+    (b.outboundFlight && normalizeTrackCode(b.outboundFlight.flightNumber) === code) ||
+    (b.returnFlight && normalizeTrackCode(b.returnFlight.flightNumber) === code)
   );
   if (booking) {
-    const flight = booking.outboundFlight || {};
+    const flight = normalizeTrackCode(booking.ref) === code
+      || normalizeTrackCode(booking.outboundFlight?.flightNumber) === code
+      ? booking.outboundFlight || {}
+      : booking.returnFlight || booking.outboundFlight || {};
     res.json({found:true,type:'booking',flightNumber:flight.flightNumber||'FW-'+(Math.floor(Math.random()*900)+100),airline:flight.airline||'Fly Way Airlines',aircraft:flight.aircraft||'Boeing 737-800',from:flight.from,to:flight.to,dep:flight.depTime||'08:00',arr:flight.arrTime||'12:00',dur:flight.duration||'4h 00m',departureDate:flight.departureDate||booking.createdAt?.split('T')[0],passengers:(booking.passengers||[]).length,travelClass:booking.travelClass,bookingRef:booking.ref,status:booking.status,paymentStatus:booking.paymentStatus});
     return;
   }
@@ -1766,33 +1770,51 @@ function parseDurMs(durStr) {
   return ((parseInt(m[1]||0)*60) + parseInt(m[2]||0)) * 60000;
 }
 
+function parseFlightDeparture(date, time) {
+  if (typeof date !== 'string' || typeof time !== 'string') return null;
+  const dateMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const timeMatch = time.match(/^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
+  if (!dateMatch || !timeMatch) return null;
+
+  const [, year, month, day] = dateMatch;
+  const [, hour, minute, second = '0'] = timeMatch;
+  const departure = new Date(
+    Number(year), Number(month) - 1, Number(day),
+    Number(hour), Number(minute), Number(second)
+  );
+  if (departure.getFullYear() !== Number(year)
+      || departure.getMonth() !== Number(month) - 1
+      || departure.getDate() !== Number(day)
+      || departure.getHours() !== Number(hour)
+      || departure.getMinutes() !== Number(minute)
+      || departure.getSeconds() !== Number(second)) return null;
+  return departure.getTime();
+}
+
 app.get('/api/flightmap/:code', (req, res) => {
   const code = normalizeTrackCode(req.params.code);
   const bookings = readDB(FILES.bookings);
 
   const booking = bookings.find(b =>
     normalizeTrackCode(b.ref) === code ||
-    (b.outboundFlight && normalizeTrackCode(b.outboundFlight.flightNumber) === code)
+    (b.outboundFlight && normalizeTrackCode(b.outboundFlight.flightNumber) === code) ||
+    (b.returnFlight && normalizeTrackCode(b.returnFlight.flightNumber) === code)
   );
 
   if (booking) {
-    const flight = booking.outboundFlight || {};
+    const flight = normalizeTrackCode(booking.ref) === code
+      || normalizeTrackCode(booking.outboundFlight?.flightNumber) === code
+      ? booking.outboundFlight || {}
+      : booking.returnFlight || booking.outboundFlight || {};
     const durMs = parseDurMs(flight.duration) || 5*60*60000; 
 
     
-    let progress = 0.001;
-    let startTime = null;
-    if (flight.departureDate && flight.depTime) {
-      try {
-        const dep = new Date(`${flight.departureDate}T${flight.depTime}`);
-        if (!isNaN(dep.getTime())) {
-          startTime = dep.getTime();
-          const elapsed = Date.now() - startTime;
-          progress = Math.min(0.999, Math.max(0.001, elapsed / durMs));
-        }
-      } catch(e) {}
-    }
-    if (!startTime) startTime = Date.now() - durMs * 0.001;
+    const now = Date.now();
+    const departureTime = parseFlightDeparture(flight.departureDate, flight.depTime);
+    const startTime = departureTime ?? now;
+    const progress = departureTime === null
+      ? 0
+      : Math.min(0.999, Math.max(0, (now - departureTime) / durMs));
 
     return res.json({
       found: true,

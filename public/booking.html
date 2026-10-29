@@ -1722,8 +1722,11 @@ async function doSubmit() {
       },
       returnFlight: S.returnFlight ? {
         flightNumber: S.returnFlight.fn||S.returnFlight.flightNumber,
+        airline: S.returnFlight.airline,
         from: S.returnFlight.from, to: S.returnFlight.to,
         depTime: S.returnFlight.dep||S.returnFlight.depTime, arrTime: S.returnFlight.arr||S.returnFlight.arrTime,
+        duration: S.returnFlight.dur||S.returnFlight.duration,
+        aircraft: S.returnFlight.ac||S.returnFlight.aircraft,
         departureDate: S.retDate
       } : null,
       passengers: S.passengerDetails,
@@ -2023,4 +2026,3 @@ function copyTrackLink() {
 <script src="/js/anime-labels.js"></script>
 </body>
 </html>
-

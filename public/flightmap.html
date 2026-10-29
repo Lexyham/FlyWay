@@ -505,8 +505,8 @@ function normalizeBookingFlight(raw) {
 
   const durMs    = raw.durMs   || 5 * 3600000;
   const progress = raw.progress != null
-    ? Math.min(0.999, Math.max(0.001, raw.progress))
-    : 0.001;
+    ? Math.min(0.999, Math.max(0, raw.progress))
+    : 0;
 
   return {
     id:          raw.flightCode || raw.bookingRef || raw.flightNumber || '?',
@@ -534,41 +534,66 @@ function normalizeBookingFlight(raw) {
 function normalizeBookingsList(bookings) {
   return (bookings || [])
     .filter(b => b.outboundFlight && b.outboundFlight.from && b.outboundFlight.to)
-    .map(b => {
-      const f   = b.outboundFlight;
-      const durMs = parseDurStr(f.duration) || 5 * 3600000;
-      let progress = 0.001;
-      if (f.departureDate && f.depTime) {
-        try {
-          const dep = new Date(`${f.departureDate}T${f.depTime}`);
-          if (!isNaN(dep)) progress = Math.min(0.999, Math.max(0.001, (Date.now() - dep.getTime()) / durMs));
-        } catch(_) {}
-      }
-      const fromAP = AIRPORTS.find(a => a.code === f.from);
-      const toAP   = AIRPORTS.find(a => a.code === f.to);
-      if (!fromAP || !toAP) return null;
-      return {
-        id:          b.ref,
-        origin:      f.from,
-        destination: f.to,
-        fromAP, toAP,
-        latitude:    fromAP.lat + (toAP.lat - fromAP.lat) * progress,
-        longitude:   fromAP.lng + (toAP.lng - fromAP.lng) * progress,
-        progress,
-        status:      b.paymentStatus === 'approved' ? 'active' : (b.status || 'pending'),
-        durMs,
-        startTime:   Date.now() - progress * durMs,
-        depTime:     f.depTime  || '--:--',
-        arrTime:     f.arrTime  || '--:--',
-        travelClass: b.travelClass || '',
-        airline:     f.airline  || 'FlyWay Airlines',
-        aircraft:    f.aircraft || '',
-        passengers:  (b.passengers || []).length,
-        bookingRef:  b.ref,
-        source:      'booking',
-      };
-    })
+    .flatMap(b => [b.outboundFlight, b.returnFlight]
+      .filter(f => f && f.from && f.to)
+      .map((f, index) => {
+        const isReturn = index === 1;
+        const durMs = parseDurStr(f.duration) || 5 * 3600000;
+        const now = Date.now();
+        const departureTime = getDepartureTimestamp(f.departureDate, f.depTime);
+        const startTime = departureTime ?? now;
+        const progress = departureTime === null
+          ? 0
+          : Math.min(0.999, Math.max(0, (now - departureTime) / durMs));
+        const fromAP = AIRPORTS.find(a => a.code === f.from);
+        const toAP   = AIRPORTS.find(a => a.code === f.to);
+        if (!fromAP || !toAP) return null;
+        return {
+          id:          `${b.ref} · ${isReturn ? 'RETURN' : 'OUTBOUND'}`,
+          origin:      f.from,
+          destination: f.to,
+          fromAP, toAP,
+          latitude:    fromAP.lat + (toAP.lat - fromAP.lat) * progress,
+          longitude:   fromAP.lng + (toAP.lng - fromAP.lng) * progress,
+          progress,
+          status:      departureTime !== null && departureTime > now
+            ? 'scheduled'
+            : (b.paymentStatus === 'approved' ? 'active' : (b.status || 'pending')),
+          durMs,
+          startTime,
+          depTime:     f.depTime  || '--:--',
+          arrTime:     f.arrTime  || '--:--',
+          travelClass: b.travelClass || '',
+          airline:     f.airline  || 'FlyWay Airlines',
+          aircraft:    f.aircraft || '',
+          passengers:  (b.passengers || []).length,
+          bookingRef:  b.ref,
+          trackCode:   f.flightNumber || b.ref,
+          source:      'booking',
+        };
+      }))
     .filter(Boolean);
+}
+
+function getDepartureTimestamp(date, time) {
+  if (typeof date !== 'string' || typeof time !== 'string') return null;
+  const dateMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const timeMatch = time.match(/^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
+  if (!dateMatch || !timeMatch) return null;
+
+  const [, year, month, day] = dateMatch;
+  const [, hour, minute, second = '0'] = timeMatch;
+  const departure = new Date(
+    Number(year), Number(month) - 1, Number(day),
+    Number(hour), Number(minute), Number(second)
+  );
+  if (departure.getFullYear() !== Number(year)
+      || departure.getMonth() !== Number(month) - 1
+      || departure.getDate() !== Number(day)
+      || departure.getHours() !== Number(hour)
+      || departure.getMinutes() !== Number(minute)
+      || departure.getSeconds() !== Number(second)) return null;
+  return departure.getTime();
 }
 
 function parseDurStr(s) {
@@ -1232,10 +1257,10 @@ const UI = (() => {
         `;
         d.addEventListener('click', () => {
           Engine.setFlight(f);
-          startPolling(f.bookingRef);
+          startPolling(f.trackCode);
           showRoutePreview(f);
           showPanel('search');
-          document.getElementById('flightCodeInput').value = f.bookingRef || f.id;
+          document.getElementById('flightCodeInput').value = f.trackCode || f.bookingRef || f.id;
         });
         list.appendChild(d);
       });
