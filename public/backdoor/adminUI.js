@@ -6,6 +6,11 @@ const AdminUI = (() => {
   function el(id)  { return document.getElementById(id); }
   function set(id, html) { const e = el(id); if (e) e.innerHTML = html; }
   function setText(id, v) { const e = el(id); if (e) e.textContent = v; }
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;',
+    })[char]);
+  }
 
   function emptyState(icon, title, desc = '') {
     return `<div class="empty-state">
@@ -137,8 +142,24 @@ const AdminUI = (() => {
   }
 
   
-  function renderBookingDetail(b) {
-    const f = b.outboundFlight || {};
+  function renderBookingDetail(b, leg = 'outboundFlight') {
+    if (leg !== 'returnFlight' || !b.returnFlight) leg = 'outboundFlight';
+    const f = b[leg] || {};
+    const flightFields = [
+      ['airline','Airline'], ['flightNumber','Flight name / number'], ['from','From'], ['to','To'],
+      ['departureDate','Departure date'], ['depTime','Departure time'], ['arrTime','Arrival time'],
+      ['duration','Duration'], ['stops','Stops / layover'], ['type','Flight type'], ['aircraft','Aircraft'],
+    ];
+    const flightInputs = flightFields.map(([name,label]) => `
+      <label class="form-group" style="margin:0"><span class="form-label">${label}</span>
+        <input class="form-input" name="${name}" value="${escapeHtml(name === 'departureDate' ? (f[name] || '').slice(0,10) : f[name])}" ${name === 'departureDate' ? 'type="date"' : ''}>
+      </label>`).join('');
+    const statusOptions = [
+      ['pending','Pending / unapproved'], ['confirmed','Confirmed'], ['cancelled','Cancelled'], ['completed','Completed'],
+    ].map(([value,label]) => `<option value="${value}" ${b.status === value ? 'selected' : ''}>${label}</option>`).join('');
+    const paymentOptions = [
+      ['pending','Pending / unapproved'], ['proof_submitted','Proof submitted'], ['paid','Paid / approved'], ['refunded','Refunded'],
+    ].map(([value,label]) => `<option value="${value}" ${b.paymentStatus === value ? 'selected' : ''}>${label}</option>`).join('');
     el('bdTitle').textContent = `Booking ${b.ref}`;
     set('bdContent', `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;margin-bottom:16px">
@@ -157,6 +178,19 @@ const AdminUI = (() => {
         <div style="font-size:10px;color:var(--muted);margin-bottom:6px">PASSENGERS</div>
         ${(b.passengers || []).map((p, i) => `<div style="padding:7px 10px;background:var(--navy3);border-radius:7px;margin-bottom:4px;font-size:12px">${p.name || 'Pax ' + (i + 1)} · Age ${p.age} · ${p.meal || 'Standard'} · Seat: ${b.selectedSeats?.[i] || 'Auto'}</div>`).join('')}
       </div>
+      <form id="editBookingForm-${b.id}" onsubmit="return false" style="padding:14px;background:var(--navy3);border:1px solid var(--border);border-radius:10px;margin-bottom:14px">
+        <div style="font-weight:700;margin-bottom:10px">Edit flight and booking</div>
+        ${b.returnFlight ? `<label class="form-group"><span class="form-label">Flight leg</span><select class="form-input" onchange="AdminController.openBookingDetail('${b.id}',this.value)"><option value="outboundFlight" ${leg === 'outboundFlight' ? 'selected' : ''}>Outbound</option><option value="returnFlight" ${leg === 'returnFlight' ? 'selected' : ''}>Return</option></select></label>` : ''}
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:10px">${flightInputs}</div>
+        <label class="form-group"><span class="form-label">Flight details</span><textarea class="form-input" name="details" rows="3" maxlength="1000">${escapeHtml(f.details)}</textarea></label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+          <label class="form-group"><span class="form-label">Booking status</span><select class="form-input" name="status">${statusOptions}</select></label>
+          <label class="form-group"><span class="form-label">Payment status</span><select class="form-input" name="paymentStatus">${paymentOptions}</select></label>
+        </div>
+        <label class="form-group"><span class="form-label">Admin note</span><textarea class="form-input" name="adminNote" rows="2" maxlength="1000">${escapeHtml(b.adminNote)}</textarea></label>
+        <button type="button" class="btn btn-primary" onclick="AdminController.saveBookingEdits('${b.id}','${leg}')">Save changes</button>
+        <span style="font-size:11px;color:var(--muted);margin-left:8px">Edits are allowed even after departure.</span>
+      </form>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${b.status !== 'confirmed' ? `<button class="btn btn-success" onclick="AdminController.approveBooking('${b.id}');FlyWay.hideModal('bdModal')">✅ Approve</button>` : ''}
         ${b.status !== 'cancelled' ? `<button class="btn btn-danger" onclick="AdminController.cancelBooking('${b.id}');FlyWay.hideModal('bdModal')">❌ Cancel</button>` : ''}

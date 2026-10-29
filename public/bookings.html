@@ -111,6 +111,7 @@
 </script>
 <script>
 let allBookings=[], currentProofBookingId=null;
+function escapeBookingText(value){return String(value==null?'':value).replace(/[&<>"']/g,function(char){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]);});}
 document.addEventListener('DOMContentLoaded', async ()=>{
   if(!FlyWay.requireAuth()) return;
   FlyWay.setupSidebar();
@@ -239,7 +240,9 @@ function renderBookings(bookings) {
             '<div class="fw-bcard-meta">' +
               '<span class="fw-bcard-meta-item">👤 ' + paxStr + '</span>' +
               (f.aircraft ? '<span class="fw-bcard-meta-item">🛩 ' + f.aircraft + '</span>' : '') +
+              (f.stops || f.type ? '<span class="fw-bcard-meta-item">🛑 ' + escapeBookingText(f.stops || f.type) + '</span>' : '') +
             '</div>' +
+            (f.details ? '<div class="fw-bcard-meta"><span class="fw-bcard-meta-item">ℹ ' + escapeBookingText(f.details) + '</span></div>' : '') +
             adminNote + payProof +
           '</div>' +
           '<div class="fw-bcard-right">' +
@@ -430,4 +433,3 @@ function copyTrack(ref) {
 </script>
 
 </body></html>
-

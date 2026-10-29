@@ -326,10 +326,16 @@ async function approveBk(id){const note=prompt('Note for user (optional):')||'Bo
 async function confirmPay(id){await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{status:'confirmed',paymentStatus:'paid',adminNote:'Payment verified by admin'});FlyWay.toast('success','Payment confirmed!');loadBookings();}
 async function cancelBk(id){const reason=prompt('Reason for cancellation (required - shown to user):');if(!reason){FlyWay.toast('error','Reason required');return;}await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{status:'cancelled',adminNote:reason});FlyWay.toast('info','Cancelled');loadBookings();}
 
-async function openBD(id){
+function adminEscapeHtml(value){return String(value==null?'':value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));}
+async function openBD(id,leg='outboundFlight'){
   const all=await FlyWay.api('GET','/api/admin/bookings').catch(()=>[]);
   const b=all.find(x=>x.id===id);if(!b)return;
-  const f=b.outboundFlight||{};
+  if(leg!=='returnFlight'||!b.returnFlight)leg='outboundFlight';
+  const f=b[leg]||{};
+  const flightFields=[['airline','Airline'],['flightNumber','Flight name / number'],['from','From'],['to','To'],['departureDate','Departure date'],['depTime','Departure time'],['arrTime','Arrival time'],['duration','Duration'],['stops','Stops / layover'],['type','Flight type'],['aircraft','Aircraft']];
+  const flightInputs=flightFields.map(([name,label])=>`<label class="form-group" style="margin:0"><span class="form-label">${label}</span><input class="form-input" name="${name}" value="${adminEscapeHtml(name==='departureDate'?(f[name]||'').slice(0,10):f[name])}" ${name==='departureDate'?'type="date"':''}></label>`).join('');
+  const statusOptions=[['pending','Pending / unapproved'],['confirmed','Confirmed'],['cancelled','Cancelled'],['completed','Completed']].map(([value,label])=>`<option value="${value}" ${b.status===value?'selected':''}>${label}</option>`).join('');
+  const paymentOptions=[['pending','Pending / unapproved'],['proof_submitted','Proof submitted'],['paid','Paid / approved'],['refunded','Refunded']].map(([value,label])=>`<option value="${value}" ${b.paymentStatus===value?'selected':''}>${label}</option>`).join('');
   document.getElementById('bdTitle').textContent=`Booking ${b.ref}`;
   document.getElementById('bdContent').innerHTML=`
     <div class="split-grid" style="font-size:13px;margin-bottom:16px">
@@ -345,11 +351,40 @@ async function openBD(id){
     ${b.giftcardCode?`<div style="padding:10px;background:rgba(245,200,66,0.07);border-radius:8px;margin-bottom:12px"><div style="font-size:10px;color:var(--gold)">GIFT CARD CODE</div><div style="font-family:var(--font-m);font-size:16px;color:var(--gold)">${b.giftcardCode}</div></div>`:''}
     ${b.paymentDetails?`<div style="padding:10px;background:var(--navy3);border-radius:8px;margin-bottom:12px;font-size:12px"><div style="color:var(--muted);font-size:10px;margin-bottom:4px">PAYMENT DETAILS</div>${b.paymentDetails}</div>`:''}
     <div style="margin-bottom:16px"><div style="font-size:10px;color:var(--muted);margin-bottom:6px">PASSENGERS</div>${(b.passengers||[]).map((p,i)=>`<div style="padding:7px 10px;background:var(--navy3);border-radius:7px;margin-bottom:4px;font-size:12px">${p.name||'Pax '+(i+1)} · Age ${p.age} · ${p.meal||'Standard'} · Seat: ${b.selectedSeats?.[i]||'Auto'}</div>`).join('')}</div>
+    <form id="editBookingForm-${b.id}" onsubmit="return false" style="padding:14px;background:var(--navy3);border:1px solid var(--border);border-radius:10px;margin-bottom:14px">
+      <div style="font-weight:700;margin-bottom:10px">Edit flight and booking</div>
+      ${b.returnFlight?`<label class="form-group"><span class="form-label">Flight leg</span><select class="form-input" onchange="openBD('${b.id}',this.value)"><option value="outboundFlight" ${leg==='outboundFlight'?'selected':''}>Outbound</option><option value="returnFlight" ${leg==='returnFlight'?'selected':''}>Return</option></select></label>`:''}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:10px">${flightInputs}</div>
+      <label class="form-group"><span class="form-label">Flight details</span><textarea class="form-input" name="details" rows="3" maxlength="1000">${adminEscapeHtml(f.details)}</textarea></label>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+        <label class="form-group"><span class="form-label">Booking status</span><select class="form-input" name="status">${statusOptions}</select></label>
+        <label class="form-group"><span class="form-label">Payment status</span><select class="form-input" name="paymentStatus">${paymentOptions}</select></label>
+      </div>
+      <label class="form-group"><span class="form-label">Admin note</span><textarea class="form-input" name="adminNote" rows="2" maxlength="1000">${adminEscapeHtml(b.adminNote)}</textarea></label>
+      <button type="button" class="btn btn-primary" onclick="saveBookingEdits('${b.id}','${leg}')">Save changes</button>
+      <span style="font-size:11px;color:var(--muted);margin-left:8px">Edits are allowed even after departure.</span>
+    </form>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       ${b.status!=='confirmed'?`<button class="btn btn-success" onclick="approveBk('${b.id}');FlyWay.hideModal('bdModal')">✅ Approve</button>`:''}
       ${b.status!=='cancelled'?`<button class="btn btn-danger" onclick="cancelBk('${b.id}');FlyWay.hideModal('bdModal')">❌ Cancel</button>`:''}
     </div>`;
   FlyWay.showModal('bdModal');
+}
+async function saveBookingEdits(id,leg){
+  const form=document.getElementById(`editBookingForm-${id}`);
+  if(!form)return;
+  const keys=['from','to','airline','flightNumber','departureDate','depTime','arrTime','duration','stops','type','aircraft','details'];
+  const flight=Object.fromEntries(keys.map(key=>[key,form.elements.namedItem(key).value.trim()]));
+  try{
+    await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{
+      flightLeg:leg,flight,status:form.elements.namedItem('status').value,
+      paymentStatus:form.elements.namedItem('paymentStatus').value,
+      adminNote:form.elements.namedItem('adminNote').value.trim()
+    });
+    FlyWay.toast('success','Booking updated','Flight and status changes were saved and the user was notified.');
+    await loadBookings();
+    await openBD(id,leg);
+  }catch(error){FlyWay.toast('error','Update failed',error.message);}
 }
 
 async function loadPayments(){

@@ -157,7 +157,7 @@ async function init(){
   try{
     var r=await fetch('/api/track/'+code.toUpperCase()).then(function(x){return x.json();}).catch(function(){return{found:false};});
     if(r.found){
-      currentFlight={fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,departureDate:r.departureDate,bookingRef:r.bookingRef};
+      currentFlight={fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,departureDate:r.departureDate,bookingRef:r.bookingRef,stopDescription:r.stops,flightType:r.flightType,details:r.details};
       setupTracking();return;
     }
   }catch(e){}
@@ -314,6 +314,12 @@ function renderFull(){
       upcomingNote +
       '<div id="pubLastUpdate" style="text-align:center;font-size:11px;color:rgba(255,255,255,0.25);margin-top:16px">Live · '+new Date().toLocaleTimeString()+'</div>'+
     '</div>';
+  if(f.stopDescription||f.details){
+    var flightInfo=document.createElement('div');
+    flightInfo.style.cssText='padding:14px 24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border)';
+    flightInfo.textContent=[f.departureDate?'Date: '+f.departureDate:'',f.stopDescription?'Stops: '+f.stopDescription:'',f.flightType?'Type: '+f.flightType:'',f.details].filter(Boolean).join(' · ');
+    document.getElementById('trackCard').appendChild(flightInfo);
+  }
 }
 
 function renderLiveUpdate(){

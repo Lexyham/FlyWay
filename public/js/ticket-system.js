@@ -55,6 +55,12 @@
     return { label: 'PENDING VERIFICATION', success: false };
   }
 
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;',
+    })[char]);
+  }
+
   function getClass(booking) {
     const c = (booking.travelClass || 'economy').toLowerCase();
     return CLASS_CONFIG[c] || CLASS_CONFIG.economy;
@@ -427,6 +433,11 @@
             <div class="fw-detail-label">TRIP TYPE</div>
             <div class="fw-detail-val">${isRoundTrip ? '↩ Round-Trip' : '→ One-Way'}</div>
           </div>
+          <div class="fw-detail-item">
+            <div class="fw-detail-label">STOPS</div>
+            <div class="fw-detail-val">${escapeHtml(f.stops || f.type || 'Non-stop')}</div>
+          </div>
+          ${f.details ? `<div class="fw-detail-item"><div class="fw-detail-label">FLIGHT DETAILS</div><div class="fw-detail-val">${escapeHtml(f.details)}</div></div>` : ''}
         </div>
 
         <!-- QR + Barcode -->
@@ -775,21 +786,22 @@
   </div>
 
   <!-- FLIGHT DETAILS -->
-  ${!isReceipt ? `
   <div class="section">
-    <div class="section-title">✈ Flight Information</div>
+    <div class="section-title">✈ ${isReceipt ? 'Flight Summary' : 'Flight Information'}</div>
     <div class="detail-grid">
       <div class="detail-item"><div class="detail-label">Date</div><div class="detail-val">${fmtDate(f.departureDate)}</div></div>
-      <div class="detail-item"><div class="detail-label">Class</div><div class="detail-val">${cls.label}</div></div>
       <div class="detail-item"><div class="detail-label">Aircraft</div><div class="detail-val">${f.aircraft||'-'}</div></div>
       <div class="detail-item"><div class="detail-label">Airline</div><div class="detail-val">${f.airline||'Fly Way Airlines'}</div></div>
-      <div class="detail-item"><div class="detail-label">Terminal</div><div class="detail-val">${booking.terminal||'Main'}</div></div>
-      <div class="detail-item"><div class="detail-label">Gate</div><div class="detail-val">${booking.gate||'TBA'}</div></div>
       <div class="detail-item"><div class="detail-label">Departure</div><div class="detail-val">${f.depTime||'-'}</div></div>
       <div class="detail-item"><div class="detail-label">Arrival</div><div class="detail-val">${f.arrTime||'-'}</div></div>
+      <div class="detail-item"><div class="detail-label">Stops</div><div class="detail-val">${escapeHtml(f.stops||f.type||'Non-stop')}</div></div>
+      ${f.details ? `<div class="detail-item"><div class="detail-label">Flight details</div><div class="detail-val">${escapeHtml(f.details)}</div></div>` : ''}
+      ${!isReceipt ? `<div class="detail-item"><div class="detail-label">Class</div><div class="detail-val">${cls.label}</div></div>
+      <div class="detail-item"><div class="detail-label">Terminal</div><div class="detail-val">${booking.terminal||'Main'}</div></div>
+      <div class="detail-item"><div class="detail-label">Gate</div><div class="detail-val">${booking.gate||'TBA'}</div></div>` : ''}
     </div>
   </div>
-  <hr class="divider">` : ''}
+  <hr class="divider">
 
   <!-- PASSENGER TABLE -->
   ${pax.length > 0 ? `

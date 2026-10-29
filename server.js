@@ -1539,14 +1539,40 @@ app.get('/api/admin/bookings', adminAuth, (req, res) => {
   res.json([...bookings].reverse().map(b=>{const u=users.find(u=>u.id===b.userId);return{...b,userName:u?.username,userEmail:u?.email,userPhone:u?.phone};}));
 });
 app.patch('/api/admin/bookings/:id', adminAuth, (req, res) => {
-  const {status,paymentStatus,adminNote}=req.body;
+  const {status,paymentStatus,adminNote,flightLeg,flight}=req.body;
+  const allowedStatuses=['pending','confirmed','cancelled','completed'];
+  const allowedPaymentStatuses=['pending','proof_submitted','paid','refunded'];
+  if(status!==undefined&&!allowedStatuses.includes(status)) return res.status(400).json({error:'Invalid booking status'});
+  if(paymentStatus!==undefined&&!allowedPaymentStatuses.includes(paymentStatus)) return res.status(400).json({error:'Invalid payment status'});
+  if(adminNote!==undefined&&(typeof adminNote!=='string'||adminNote.length>1000)) return res.status(400).json({error:'Invalid admin note'});
+  if(flightLeg!==undefined&&!['outboundFlight','returnFlight'].includes(flightLeg)) return res.status(400).json({error:'Invalid flight leg'});
+  if(flight!==undefined&&(!flight||typeof flight!=='object'||Array.isArray(flight))) return res.status(400).json({error:'Flight details must be an object'});
+  if(flight!==undefined&&!flightLeg) return res.status(400).json({error:'A flight leg is required to update flight details'});
   const bookings=readDB(FILES.bookings); const idx=bookings.findIndex(b=>b.id===req.params.id);
   if(idx<0) return res.status(404).json({error:'Not found'});
+  if(flightLeg==='returnFlight'&&!bookings[idx].returnFlight) return res.status(400).json({error:'This booking has no return flight'});
+  const flightFields={
+    from:120,to:120,airline:160,flightNumber:40,departureDate:40,depTime:20,arrTime:20,
+    duration:40,stops:200,type:80,aircraft:120,details:1000
+  };
+  if(flight!==undefined){
+    for(const [key,value] of Object.entries(flight)){
+      if(!Object.prototype.hasOwnProperty.call(flightFields,key)) return res.status(400).json({error:`Unsupported flight field: ${key}`});
+      if(typeof value!=='string'||value.length>flightFields[key]) return res.status(400).json({error:`Invalid ${key} value`});
+      if(key==='departureDate'&&value){
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(value)) return res.status(400).json({error:'Departure date must be a valid YYYY-MM-DD date'});
+        const parsedDate=new Date(`${value}T00:00:00Z`);
+        if(Number.isNaN(parsedDate.getTime())||parsedDate.toISOString().slice(0,10)!==value) return res.status(400).json({error:'Departure date must be a valid YYYY-MM-DD date'});
+      }
+      if(['depTime','arrTime'].includes(key)&&value&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return res.status(400).json({error:`${key} must use 24-hour HH:MM format`});
+    }
+  }
   const prev=bookings[idx].status;
   if(status) bookings[idx].status=status;
   if(paymentStatus) bookings[idx].paymentStatus=paymentStatus;
-  if(paymentStatus==='paid' && bookings[idx].status!=='cancelled') bookings[idx].status='confirmed';
+  if(paymentStatus==='paid' && status===undefined && bookings[idx].status!=='cancelled') bookings[idx].status='confirmed';
   if(adminNote!==undefined) bookings[idx].adminNote=adminNote;
+  if(flight!==undefined) bookings[idx][flightLeg]={...bookings[idx][flightLeg],...flight};
   bookings[idx].updatedAt=new Date().toISOString();
   writeDB(FILES.bookings,bookings);
   if(paymentStatus){const txs=readDB(FILES.transactions);const ti=txs.findIndex(t=>t.bookingId===req.params.id);if(ti>=0){txs[ti].status=paymentStatus;writeDB(FILES.transactions,txs);}}
@@ -1556,7 +1582,8 @@ app.patch('/api/admin/bookings/:id', adminAuth, (req, res) => {
       createNotification(bookings[idx].userId,'booking_confirmed','✅ Booking Approved!',`Booking ${bookings[idx].ref} confirmed!${adminNote?` Admin: "${adminNote}"`:''}`);}
   } else if(status==='cancelled'){createNotification(bookings[idx].userId,'booking_cancelled','❌ Booking Cancelled',`Booking ${bookings[idx].ref} cancelled.${adminNote?` Reason: "${adminNote}"`:''}`);
   } else if(paymentStatus==='paid'){createNotification(bookings[idx].userId,'payment_confirmed','💳 Payment Confirmed',`Payment for ${bookings[idx].ref} verified!${adminNote?` Note: "${adminNote}"`:''}`);}
-  io.emit(`booking_updated_${bookings[idx].userId}`,{bookingId:req.params.id,status:bookings[idx].status,paymentStatus:bookings[idx].paymentStatus});
+  if(flight!==undefined) createNotification(bookings[idx].userId,'flight_updated','✈ Flight Details Updated',`An admin updated the ${flightLeg==='returnFlight'?'return':'outbound'} flight details for booking ${bookings[idx].ref}.`);
+  io.emit(`booking_updated_${bookings[idx].userId}`,{bookingId:req.params.id,status:bookings[idx].status,paymentStatus:bookings[idx].paymentStatus,flightUpdated:flight!==undefined});
   res.json(bookings[idx]);
 });
 app.delete('/api/admin/bookings/:id', adminAuth, (req, res) => {
@@ -1771,7 +1798,7 @@ app.get('/api/track/:code', (req, res) => {
       || normalizeTrackCode(booking.outboundFlight?.flightNumber) === code
       ? booking.outboundFlight || {}
       : booking.returnFlight || booking.outboundFlight || {};
-    res.json({found:true,type:'booking',flightNumber:flight.flightNumber||'FW-'+(Math.floor(Math.random()*900)+100),airline:flight.airline||'Fly Way Airlines',aircraft:flight.aircraft||'Boeing 737-800',from:flight.from,to:flight.to,dep:flight.depTime||'08:00',arr:flight.arrTime||'12:00',dur:flight.duration||'4h 00m',departureDate:flight.departureDate||booking.createdAt?.split('T')[0],passengers:(booking.passengers||[]).length,travelClass:booking.travelClass,bookingRef:booking.ref,status:booking.status,paymentStatus:booking.paymentStatus});
+    res.json({found:true,type:'booking',flightNumber:flight.flightNumber||'FW-'+(Math.floor(Math.random()*900)+100),airline:flight.airline||'Fly Way Airlines',aircraft:flight.aircraft||'Boeing 737-800',from:flight.from,to:flight.to,dep:flight.depTime||'08:00',arr:flight.arrTime||'12:00',dur:flight.duration||'4h 00m',departureDate:flight.departureDate||booking.createdAt?.split('T')[0],stops:flight.stops||'',flightType:flight.type||'',details:flight.details||'',passengers:(booking.passengers||[]).length,travelClass:booking.travelClass,bookingRef:booking.ref,status:booking.status,paymentStatus:booking.paymentStatus});
     return;
   }
   res.json({found:false,code});
@@ -1844,6 +1871,9 @@ app.get('/api/flightmap/:code', (req, res) => {
       depTime: flight.depTime || '08:00',
       arrTime: flight.arrTime || '12:00',
       departureDate: flight.departureDate,
+      stops: flight.stops || '',
+      flightType: flight.type || '',
+      details: flight.details || '',
       durMs,
       progress,
       startTime,

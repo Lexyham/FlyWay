@@ -208,12 +208,14 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
             <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">🚪</div><div style="font-size:10px;color:var(--muted)">GATE</div><div style="font-family:var(--font-h);font-weight:700" id="trGate">-</div></div>
             <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">🏢</div><div style="font-size:10px;color:var(--muted)">TERMINAL</div><div style="font-family:var(--font-h);font-weight:700" id="trTerminal">-</div></div>
             <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">✈</div><div style="font-size:10px;color:var(--muted)">AIRCRAFT</div><div style="font-family:var(--font-h);font-weight:700;font-size:11px" id="trAircraft">-</div></div>
+            <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">🛑</div><div style="font-size:10px;color:var(--muted)">STOPS</div><div style="font-family:var(--font-h);font-weight:700;font-size:11px" id="trStops">-</div></div>
             <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">📊</div><div style="font-size:10px;color:var(--muted)">PROGRESS</div><div style="font-family:var(--font-h);font-weight:700" id="trProgress">-</div></div>
             <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">🏔</div><div style="font-size:10px;color:var(--muted)">ALTITUDE</div><div style="font-family:var(--font-h);font-weight:700;font-size:12px" id="trAlt">-</div></div>
             <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">💨</div><div style="font-size:10px;color:var(--muted)">AIRSPEED</div><div style="font-family:var(--font-h);font-weight:700;font-size:12px" id="trSpd">-</div></div>
             <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">🌡</div><div style="font-size:10px;color:var(--muted)">DEP WEATHER</div><div style="font-family:var(--font-h);font-weight:700;font-size:11px" id="trWeatherDep">-</div></div>
             <div class="track-stat"><div style="font-size:20px;margin-bottom:5px">🌡</div><div style="font-size:10px;color:var(--muted)">ARR WEATHER</div><div style="font-family:var(--font-h);font-weight:700;font-size:11px" id="trWeatherArr">-</div></div>
           </div>
+          <div id="trFlightDetails" style="display:none;padding:12px 14px;margin-top:12px;background:var(--navy3);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:12px"></div>
 
           <div id="globe3d-wrap" style="height:clamp(220px,45vw,340px);margin-top:20px">
             <canvas id="globe3d-canvas"></canvas>
@@ -586,7 +588,7 @@ async function trackFlight(){
   if(!code){FlyWay.toast('error','Enter flight number or booking reference');return;}
   try{
     var r=await fetch('/api/track/'+code).then(function(x){return x.json();}).catch(function(){return{found:false};});
-    if(r.found){startTracking({fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,departureDate:r.departureDate,bookingRef:r.bookingRef});return;}
+    if(r.found){startTracking({fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,departureDate:r.departureDate,bookingRef:r.bookingRef,stops:r.stops,flightType:r.flightType,details:r.details});return;}
   }catch(e){}
   var f=FLIGHTS.find(function(x){return x.fn===code||x.fn.replace('-','')===code.replace('-','');});
   if(f){startTracking(f);return;}
@@ -622,6 +624,17 @@ function renderFull(f){
   S('trArrTime',f.arr||f.arrTime||'-');
   S('trGate',cachedGate);S('trTerminal',cachedTerminal);
   S('trAircraft',f.ac||f.aircraft||'-');
+  S('trStops',f.stops||f.flightType||'Non-stop');
+  var flightDetails=document.getElementById('trFlightDetails');
+  if(flightDetails){
+    flightDetails.textContent=[
+      f.departureDate?'Date: '+f.departureDate:'',
+      f.stops?'Stops: '+f.stops:'',
+      f.flightType?'Type: '+f.flightType:'',
+      f.details||'',
+    ].filter(Boolean).join(' · ');
+    flightDetails.style.display=flightDetails.textContent?'block':'none';
+  }
   S('trWeatherDep',cachedWeatherDep);S('trWeatherArr',cachedWeatherArr);
   renderLive(f);
 }

@@ -101,7 +101,36 @@ const AdminController = (() => {
     });
   }
 
-  async function openBookingDetail(id) {
+  async function saveBookingEdits(id, leg) {
+    const form = document.getElementById(`editBookingForm-${id}`);
+    if (!form) return;
+    const flightFields = [
+      'from','to','airline','flightNumber','departureDate','depTime','arrTime',
+      'duration','stops','type','aircraft','details',
+    ];
+    const flight = Object.fromEntries(flightFields.map(name => [
+      name,
+      form.elements.namedItem(name).value.trim(),
+    ]));
+    const updates = {
+      flightLeg: leg,
+      flight,
+      status: form.elements.namedItem('status').value,
+      paymentStatus: form.elements.namedItem('paymentStatus').value,
+      adminNote: form.elements.namedItem('adminNote').value.trim(),
+    };
+    await _run(async () => {
+      const saved = await AdminAPI.updateBooking(id, updates);
+      const current = (AdminState.get('bookings') || []).find(item => item.id === id) || {};
+      const updatedBooking = { ...current, ...saved };
+      AdminState.updateItem('bookings', id, updatedBooking);
+      AdminUI.renderBookingDetail(updatedBooking, leg);
+      AdminUI.toast('success', 'Booking updated', 'Flight and status changes were saved and the user was notified.');
+      loadBookings();
+    });
+  }
+
+  async function openBookingDetail(id, leg = 'outboundFlight') {
     const bookings = AdminState.get('bookings');
     let b = bookings.find(x => x.id === id);
     if (!b) {
@@ -111,7 +140,7 @@ const AdminController = (() => {
       b = fresh.find(x => x.id === id);
     }
     if (!b) return;
-    AdminUI.renderBookingDetail(b);
+    AdminUI.renderBookingDetail(b, leg);
   }
 
   
@@ -693,7 +722,7 @@ const AdminController = (() => {
     loadOverview, loadBookings, loadPayments, loadTransactions,
     loadUsers, loadNotify, loadMessages, loadPromos, loadLicenses, loadUploads, loadLogs,
     filterBookings,
-    approveBooking, confirmPayment, cancelBooking, openBookingDetail, clearAllBookings,
+    approveBooking, confirmPayment, cancelBooking, openBookingDetail, saveBookingEdits, clearAllBookings,
     approvePayment, rejectPayment,
     toggleUser, deleteUser,
     sendNotification, broadcastNotification, goToNotifyUser,
