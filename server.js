@@ -189,6 +189,21 @@ const writeDB = (file, data) => {
 };
 if (!USE_MONGO) Object.values(FILES).forEach(f => { if (!fs.existsSync(f)) writeDB(f, []); });
 
+function repairApprovedBookingStatuses() {
+  const bookings = readDB(FILES.bookings);
+  let repaired = 0;
+  bookings.forEach(booking => {
+    if (['paid', 'approved'].includes(booking.paymentStatus) && booking.status === 'pending') {
+      booking.status = 'confirmed';
+      repaired++;
+    }
+  });
+  if (repaired > 0) {
+    writeDB(FILES.bookings, bookings);
+    console.log(`[Storage] Repaired ${repaired} paid booking(s) left pending.`);
+  }
+}
+
 // emailDeliveryService keeps its own copy of the report log; route it through the same storage.
 emailService.setStore({ load: () => readDB(FILES.emailReports), save: (reports) => writeDB(FILES.emailReports, reports) });
 
@@ -1530,17 +1545,18 @@ app.patch('/api/admin/bookings/:id', adminAuth, (req, res) => {
   const prev=bookings[idx].status;
   if(status) bookings[idx].status=status;
   if(paymentStatus) bookings[idx].paymentStatus=paymentStatus;
+  if(paymentStatus==='paid' && bookings[idx].status!=='cancelled') bookings[idx].status='confirmed';
   if(adminNote!==undefined) bookings[idx].adminNote=adminNote;
   bookings[idx].updatedAt=new Date().toISOString();
   writeDB(FILES.bookings,bookings);
   if(paymentStatus){const txs=readDB(FILES.transactions);const ti=txs.findIndex(t=>t.bookingId===req.params.id);if(ti>=0){txs[ti].status=paymentStatus;writeDB(FILES.transactions,txs);}}
-  if(status==='confirmed'&&prev!=='confirmed'){
+  if(bookings[idx].status==='confirmed'&&prev!=='confirmed'){
     const users=readDB(FILES.users);const ui=users.findIndex(u=>u.id===bookings[idx].userId);
     if(ui>=0){const earned=Math.floor(Math.random()*150)+50;users[ui].loyaltyPoints=(users[ui].loyaltyPoints||0)+earned;writeDB(FILES.users,users);
       createNotification(bookings[idx].userId,'booking_confirmed','✅ Booking Approved!',`Booking ${bookings[idx].ref} confirmed!${adminNote?` Admin: "${adminNote}"`:''}`);}
   } else if(status==='cancelled'){createNotification(bookings[idx].userId,'booking_cancelled','❌ Booking Cancelled',`Booking ${bookings[idx].ref} cancelled.${adminNote?` Reason: "${adminNote}"`:''}`);
   } else if(paymentStatus==='paid'){createNotification(bookings[idx].userId,'payment_confirmed','💳 Payment Confirmed',`Payment for ${bookings[idx].ref} verified!${adminNote?` Note: "${adminNote}"`:''}`);}
-  io.emit(`booking_updated_${bookings[idx].userId}`,{bookingId:req.params.id,status,paymentStatus});
+  io.emit(`booking_updated_${bookings[idx].userId}`,{bookingId:req.params.id,status:bookings[idx].status,paymentStatus:bookings[idx].paymentStatus});
   res.json(bookings[idx]);
 });
 app.delete('/api/admin/bookings/:id', adminAuth, (req, res) => {
@@ -1995,6 +2011,7 @@ async function start() {
     }
   }
   seed();
+  repairApprovedBookingStatuses();
   server.listen(PORT, () => console.log(`\n✈  FlyWay v6 running at http://localhost:${PORT}\n   Admin panel: /backdoor\n   Environment: ${process.env.NODE_ENV || 'development'}\n   Storage: ${USE_MONGO ? 'MongoDB Atlas' : 'JSON files'}\n`));
 }
 

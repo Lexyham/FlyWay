@@ -39,8 +39,20 @@
   // ─── UTILITIES ────────────────────────────────────────────────────────────────
 
   function getStatus(booking) {
-    const s = (booking.status || 'pending').toLowerCase();
+    const bookingStatus = (booking.status || 'pending').toLowerCase();
+    const paymentStatus = (booking.paymentStatus || '').toLowerCase();
+    const s = bookingStatus === 'pending' && ['paid', 'approved'].includes(paymentStatus)
+      ? 'confirmed'
+      : bookingStatus;
     return STATUS_CONFIG[s] || STATUS_CONFIG.pending;
+  }
+
+  function getPaymentStatus(booking) {
+    const status = (booking.paymentStatus || 'pending').toLowerCase();
+    if (status === 'paid' || status === 'approved') return { label: 'APPROVED', success: true };
+    if (status === 'proof_submitted') return { label: 'PROOF SUBMITTED - VERIFICATION PENDING', success: false };
+    if (status === 'refunded') return { label: 'REFUNDED', success: false };
+    return { label: 'PENDING VERIFICATION', success: false };
   }
 
   function getClass(booking) {
@@ -134,6 +146,7 @@
     const now = new Date();
     const txId = genTxFingerprint();
     const payConf = getPayment(booking);
+    const paymentStatus = getPaymentStatus(booking);
 
     if (payMethod === 'demo-card') {
       const last4 = booking.paymentDetails?.match(/ending (\d{4})/i)?.[1];
@@ -145,7 +158,7 @@
           { label: 'Cardholder', value: (booking.passengers?.[0]?.name || '-').toUpperCase() },
           { label: 'Card Number', value: last4 ? '**** **** **** ' + last4 : 'Not stored', mono: true },
           { label: 'Expiry', value: 'Not stored', mono: true },
-          { label: 'Status', value: 'PAID - SUCCESSFUL', highlight: true, success: true },
+          { label: 'Status', value: paymentStatus.label, highlight: true, success: paymentStatus.success },
         ]
       };
     }
@@ -166,7 +179,7 @@
           { label: 'Transaction ID', value: txId, mono: true },
           { label: 'Authorization', value: 'AUTH-' + Math.random().toString(36).slice(2,8).toUpperCase() },
           { label: 'Processed At', value: fmtDateTime(now) },
-          { label: 'Status', value: booking.paymentStatus === 'paid' ? 'APPROVED' : 'PENDING VERIFICATION', highlight: true },
+          { label: 'Status', value: paymentStatus.label, highlight: true, success: paymentStatus.success },
         ]
       };
     }
@@ -183,7 +196,7 @@
           { label: 'Confirmation Block', value: '#' + (Math.floor(Math.random() * 900000) + 100000) },
           { label: 'Confirmations', value: Math.floor(Math.random() * 8 + 3) + ' / 6 required' },
           { label: 'Broadcast At', value: fmtDateTime(now) },
-          { label: 'Status', value: 'PROOF SUBMITTED - VERIFICATION PENDING', highlight: true },
+          { label: 'Status', value: paymentStatus.label, highlight: true, success: paymentStatus.success },
         ]
       };
     }
@@ -201,7 +214,7 @@
           { label: 'Card Code', value: gcCode.slice(0,4) + '-****-****', mono: true },
           { label: 'Redemption ID', value: 'GC-' + txId.slice(0,12), mono: true },
           { label: 'Submitted At', value: fmtDateTime(now) },
-          { label: 'Status', value: 'PENDING ADMIN VERIFICATION', highlight: true },
+          { label: 'Status', value: paymentStatus.label, highlight: true, success: paymentStatus.success },
         ]
       };
     }
@@ -215,7 +228,7 @@
         { label: 'Reference', value: txId, mono: true },
         { label: 'Method', value: payConf.label },
         { label: 'Processed At', value: fmtDateTime(now) },
-        { label: 'Status', value: 'PENDING VERIFICATION', highlight: true },
+        { label: 'Status', value: paymentStatus.label, highlight: true, success: paymentStatus.success },
       ]
     };
   }

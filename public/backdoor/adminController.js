@@ -83,8 +83,8 @@ const AdminController = (() => {
 
   async function confirmPayment(id) {
     await _run(async () => {
-      await AdminAPI.updateBooking(id, { paymentStatus: 'paid', adminNote: 'Payment verified by admin' });
-      AdminState.updateItem('bookings', id, { paymentStatus: 'paid' });
+      await AdminAPI.updateBooking(id, { status: 'confirmed', paymentStatus: 'paid', adminNote: 'Payment verified by admin' });
+      AdminState.updateItem('bookings', id, { status: 'confirmed', paymentStatus: 'paid' });
       AdminUI.toast('success', 'Payment confirmed!');
       loadBookings();
     });

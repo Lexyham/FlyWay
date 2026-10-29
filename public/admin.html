@@ -323,7 +323,7 @@ function renderB(list){
 }
 
 async function approveBk(id){const note=prompt('Note for user (optional):')||'Booking approved by admin';await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{status:'confirmed',paymentStatus:'paid',adminNote:note});FlyWay.toast('success','Approved!');loadBookings();}
-async function confirmPay(id){await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{paymentStatus:'paid',adminNote:'Payment verified by admin'});FlyWay.toast('success','Payment confirmed!');loadBookings();}
+async function confirmPay(id){await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{status:'confirmed',paymentStatus:'paid',adminNote:'Payment verified by admin'});FlyWay.toast('success','Payment confirmed!');loadBookings();}
 async function cancelBk(id){const reason=prompt('Reason for cancellation (required - shown to user):');if(!reason){FlyWay.toast('error','Reason required');return;}await FlyWay.api('PATCH',`/api/admin/bookings/${id}`,{status:'cancelled',adminNote:reason});FlyWay.toast('info','Cancelled');loadBookings();}
 
 async function openBD(id){
@@ -622,4 +622,3 @@ async function loadLogs(){
 
 </body>
 </html>
-
