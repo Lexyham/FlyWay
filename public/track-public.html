@@ -211,6 +211,7 @@ var FLIGHTS=[
 
 var code = window.location.pathname.split('/track/').pop() || '';
 var currentFlight = null;
+var bookingRefreshInterval = null;
 var stableGate='', stableTerminal='', stableWxDep='', stableWxArr='';
 var WX=[{dep:'☀ 22°C Clear',arr:'⛅ 18°C Cloudy'},{dep:'🌤 26°C Sunny',arr:'🌧 14°C Rainy'},{dep:'⛅ 17°C Overcast',arr:'☀ 28°C Clear'},{dep:'🌧 13°C Rainy',arr:'🌤 22°C Sunny'}];
 
@@ -245,7 +246,7 @@ async function init(){
   try{
     var r=await fetch('/api/track/'+code.toUpperCase()).then(function(x){return x.json();}).catch(function(){return{found:false};});
     if(r.found){
-      currentFlight={fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,departureDate:r.departureDate,bookingRef:r.bookingRef,stopDescription:r.stops,flightType:r.flightType,details:r.details};
+      currentFlight={fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,departureDate:r.departureDate,bookingRef:r.bookingRef,flightLeg:r.flightLeg,updatedAt:r.updatedAt,bookingStatus:r.status,paymentStatus:r.paymentStatus,stopDescription:r.stops,flightType:r.flightType,details:r.details};
       setupTracking();return;
     }
   }catch(e){}
@@ -265,7 +266,58 @@ function setupTracking(){
   stableWxDep=w.dep; stableWxArr=w.arr;
   renderFull();
   setInterval(renderLiveUpdate,1000);
+  if(currentFlight.bookingRef) bookingRefreshInterval=setInterval(refreshTrackedBooking,3000);
   Globe3D.attach(currentFlight,calcProg);
+}
+
+async function refreshTrackedBooking(){
+  if(!currentFlight||!currentFlight.bookingRef)return;
+  try{
+    var endpoint='/api/track/'+encodeURIComponent(currentFlight.bookingRef)+'?leg='+encodeURIComponent(currentFlight.flightLeg||'outboundFlight');
+    var response=await fetch(endpoint);
+    if(!response.ok) throw new Error('Flight update request failed: '+response.status);
+    var data=await response.json();
+    if(!data.found||data.updatedAt===currentFlight.updatedAt)return;
+    var updatedFlight={fn:data.flightNumber,airline:data.airline,ac:data.aircraft,from:data.from,to:data.to,dep:data.dep,arr:data.arr,dur:data.dur,departureDate:data.departureDate,bookingRef:data.bookingRef,flightLeg:data.flightLeg,updatedAt:data.updatedAt,bookingStatus:data.status,paymentStatus:data.paymentStatus,stopDescription:data.stops,flightType:data.flightType,details:data.details};
+    var flightFields=['fn','airline','ac','from','to','dep','arr','dur','departureDate','stopDescription','flightType','details'];
+    var flightChanged=flightFields.some(function(field){return String(updatedFlight[field]||'')!==String(currentFlight[field]||'');});
+    currentFlight=updatedFlight;
+    if(!flightChanged)return;
+    refreshPublicFlightDetails();
+    Globe3D.attach(currentFlight,calcProg);
+    if(window.FlyWay&&typeof FlyWay.toast==='function') FlyWay.toast('info','Booking updated','The flight details were refreshed automatically.');
+  }catch(error){console.warn('Could not refresh tracked booking:',error.message);}
+}
+
+function refreshPublicFlightDetails(){
+  var f=currentFlight;
+  var fromAirport=FlyWay.airports.find(function(airport){return airport.code===f.from;})||{city:f.from,flag:'🌍'};
+  var toAirport=FlyWay.airports.find(function(airport){return airport.code===f.to;})||{city:f.to,flag:'🌍'};
+  document.getElementById('trackTitle').textContent=f.from+' → '+f.to+(f.bookingRef?' ('+f.bookingRef+')':'');
+  document.getElementById('trackSub').textContent=(f.fn||code)+' · '+(f.airline||'Fly Way Airlines')+' · '+calcProg(f).status;
+  var flightNumber=document.getElementById('pubFlightNum');
+  if(flightNumber)flightNumber.textContent=f.fn||code;
+  var flightMeta=document.getElementById('pubFlightMeta');
+  if(flightMeta)flightMeta.textContent=(f.airline||'Fly Way Airlines')+' · '+(f.ac||'Boeing 737')+(f.bookingRef?' · Ref: '+f.bookingRef:'');
+  var fromCode=document.getElementById('pubFromCode');
+  var toCode=document.getElementById('pubToCode');
+  var fromCity=document.getElementById('pubFromCity');
+  var toCity=document.getElementById('pubToCity');
+  var depTime=document.getElementById('pubDepTime');
+  var arrTime=document.getElementById('pubArrTime');
+  var aircraft=document.getElementById('pubAircraft');
+  var globeLabel=document.getElementById('g3dFlightLabel');
+  var flightInfo=document.getElementById('pubFlightInfo');
+  var infoText=[f.departureDate?'Date: '+f.departureDate:'',f.stopDescription?'Stops: '+f.stopDescription:'',f.flightType?'Type: '+f.flightType:'',f.details||''].filter(Boolean).join(' · ');
+  if(fromCode)fromCode.textContent=f.from;
+  if(toCode)toCode.textContent=f.to;
+  if(fromCity)fromCity.textContent=(fromAirport.flag||'')+'  '+(fromAirport.city||f.from);
+  if(toCity)toCity.textContent=(toAirport.flag||'')+'  '+(toAirport.city||f.to);
+  if(depTime)depTime.textContent=f.dep||'-';
+  if(arrTime)arrTime.textContent=f.arr||'-';
+  if(aircraft)aircraft.textContent=f.ac||'Boeing 737';
+  if(globeLabel)globeLabel.textContent=(f.fn||code)+'  '+f.from+' → '+f.to;
+  if(flightInfo){flightInfo.textContent=infoText;flightInfo.style.display=infoText?'block':'none';}
 }
 
 function calcProg(f){
@@ -339,24 +391,24 @@ function renderFull(){
   document.getElementById('trackSub').textContent=(f.fn||code)+' · '+(f.airline||'Fly Way Airlines')+' · '+r.status;
   document.getElementById('trackCard').innerHTML=
     '<div class="pub-flight-heading" style="padding:24px 24px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'+
-      '<div><div style="font-family:var(--font-h);font-size:20px;font-weight:800">'+(f.fn||code)+'</div>'+
-      '<div style="color:var(--muted);font-size:13px">'+(f.airline||'Fly Way Airlines')+' · '+(f.ac||'Boeing 737')+' '+(f.bookingRef?'· Ref: '+f.bookingRef:'')+'</div></div>'+
+      '<div><div id="pubFlightNum" style="font-family:var(--font-h);font-size:20px;font-weight:800">'+(f.fn||code)+'</div>'+
+      '<div id="pubFlightMeta" style="color:var(--muted);font-size:13px">'+(f.airline||'Fly Way Airlines')+' · '+(f.ac||'Boeing 737')+' '+(f.bookingRef?'· Ref: '+f.bookingRef:'')+'</div></div>'+
       '<div id="pubStatus" class="flight-status-badge" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3)"><div class="status-dot inflight" id="pubDot"></div><span id="pubStatusTxt">'+r.status+'</span></div>'+
     '</div>'+
     '<div class="pub-flight-content" style="padding:28px">'+
       '<div class="pub-route-layout" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:8px">'+
-        '<div class="airport-card pub-route-airport"><div class="airport-big">'+f.from+'</div><div class="pub-route-city" style="color:var(--muted);font-size:13px">'+(fa.flag||'')+'  '+(fa.city||f.from)+'</div><div class="pub-route-time" style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px">'+(f.dep||'-')+'</div></div>'+
+        '<div class="airport-card pub-route-airport"><div class="airport-big" id="pubFromCode">'+f.from+'</div><div class="pub-route-city" id="pubFromCity" style="color:var(--muted);font-size:13px">'+(fa.flag||'')+'  '+(fa.city||f.from)+'</div><div class="pub-route-time" id="pubDepTime" style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px">'+(f.dep||'-')+'</div></div>'+
         '<div class="pub-route-center" style="flex:1;min-width:140px;padding:0 16px">'+
           '<div id="pubPlane" style="text-align:center;font-size:30px;transition:all 0.5s">✈</div>'+
           '<div class="progress-track" id="pubProgTrack"><div class="progress-fill" id="pubFill" style="width:'+r.prog+'%"></div><div class="progress-plane" id="pubPlanePip" style="left:'+Math.min(95,r.prog)+'%">✈</div></div>'+
           '<div id="pubDurLine" style="font-size:12px;color:var(--muted);text-align:center">'+(f.dur||'-')+' · '+r.prog.toFixed(1)+'% · '+remain+'</div>'+
         '</div>'+
-        '<div class="airport-card pub-route-airport" style="text-align:right"><div class="airport-big">'+f.to+'</div><div class="pub-route-city" style="color:var(--muted);font-size:13px">'+(ta.flag||'')+'  '+(ta.city||f.to)+'</div><div class="pub-route-time" style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px">'+(f.arr||'-')+'</div></div>'+
+        '<div class="airport-card pub-route-airport" style="text-align:right"><div class="airport-big" id="pubToCode">'+f.to+'</div><div class="pub-route-city" id="pubToCity" style="color:var(--muted);font-size:13px">'+(ta.flag||'')+'  '+(ta.city||f.to)+'</div><div class="pub-route-time" id="pubArrTime" style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px">'+(f.arr||'-')+'</div></div>'+
       '</div>'+
       '<div class="pub-stat-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:20px">'+
         '<div class="stat-box"><div class="stat-lbl">🚪 GATE</div><div class="stat-val">'+stableGate+'</div></div>'+
         '<div class="stat-box"><div class="stat-lbl">🏢 TERMINAL</div><div class="stat-val">'+stableTerminal+'</div></div>'+
-        '<div class="stat-box"><div class="stat-lbl">✈ AIRCRAFT</div><div class="stat-val" style="font-size:12px">'+(f.ac||'Boeing 737')+'</div></div>'+
+        '<div class="stat-box"><div class="stat-lbl">✈ AIRCRAFT</div><div class="stat-val" id="pubAircraft" style="font-size:12px">'+(f.ac||'Boeing 737')+'</div></div>'+
         '<div class="stat-box"><div class="stat-lbl">📊 PROGRESS</div><div class="stat-val" id="pubProgPct">'+r.prog.toFixed(1)+'%</div></div>'+
         '<div class="stat-box"><div class="stat-lbl">🏔 ALTITUDE</div><div class="stat-val" id="pubAlt" style="font-size:12px">'+alt+'</div></div>'+
         '<div class="stat-box"><div class="stat-lbl">💨 AIRSPEED</div><div class="stat-val" id="pubSpd" style="font-size:12px">'+spd+'</div></div>'+
@@ -404,6 +456,7 @@ function renderFull(){
     '</div>';
   if(f.stopDescription||f.details){
     var flightInfo=document.createElement('div');
+    flightInfo.id='pubFlightInfo';
     flightInfo.className='pub-flight-info';
     flightInfo.style.cssText='padding:14px 24px;color:var(--muted);font-size:13px;border-top:1px solid var(--border)';
     flightInfo.textContent=[f.departureDate?'Date: '+f.departureDate:'',f.stopDescription?'Stops: '+f.stopDescription:'',f.flightType?'Type: '+f.flightType:'',f.details].filter(Boolean).join(' · ');

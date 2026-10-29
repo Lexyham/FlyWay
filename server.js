@@ -1598,7 +1598,7 @@ app.patch('/api/admin/bookings/:id', adminAuth, (req, res) => {
   } else if(paymentStatus==='paid'){createNotification(bookings[idx].userId,'payment_confirmed','💳 Payment Confirmed',`Payment for ${bookings[idx].ref} verified!${adminNote?` Note: "${adminNote}"`:''}`);}
   if(flight!==undefined) createNotification(bookings[idx].userId,'flight_updated','✈ Flight Details Updated',`An admin updated the ${flightLeg==='returnFlight'?'return':'outbound'} flight details for booking ${bookings[idx].ref}.`);
   if(priceChanged) createNotification(bookings[idx].userId,'booking_price_updated','💰 Booking Price Updated',`The total for booking ${bookings[idx].ref} was updated from $${previousTotal.toFixed(2)} to $${bookings[idx].totalAmount.toFixed(2)}. This change does not automatically charge or refund a payment.`);
-  io.emit(`booking_updated_${bookings[idx].userId}`,{bookingId:req.params.id,status:bookings[idx].status,paymentStatus:bookings[idx].paymentStatus,flightUpdated:flight!==undefined,priceChanged,totalAmount:bookings[idx].totalAmount});
+  io.to(`user_${bookings[idx].userId}`).emit(`booking_updated_${bookings[idx].userId}`,{bookingId:req.params.id,status:bookings[idx].status,paymentStatus:bookings[idx].paymentStatus,flightUpdated:flight!==undefined,priceChanged,totalAmount:bookings[idx].totalAmount,updatedAt:bookings[idx].updatedAt});
   res.json(bookings[idx]);
 });
 app.delete('/api/admin/bookings/:id', adminAuth, (req, res) => {
@@ -1803,17 +1803,19 @@ function normalizeTrackCode(code) {
 app.get('/api/track/:code', (req, res) => {
   const code = normalizeTrackCode(req.params.code);
   const bookings = readDB(FILES.bookings);
+  if(req.query.leg&&!['outboundFlight','returnFlight'].includes(req.query.leg)) return res.status(400).json({error:'Invalid flight leg'});
   const booking = bookings.find(b =>
     normalizeTrackCode(b.ref) === code ||
     (b.outboundFlight && normalizeTrackCode(b.outboundFlight.flightNumber) === code) ||
     (b.returnFlight && normalizeTrackCode(b.returnFlight.flightNumber) === code)
   );
   if (booking) {
-    const flight = normalizeTrackCode(booking.ref) === code
+    const flightLeg = req.query.leg || (normalizeTrackCode(booking.ref) === code
       || normalizeTrackCode(booking.outboundFlight?.flightNumber) === code
-      ? booking.outboundFlight || {}
-      : booking.returnFlight || booking.outboundFlight || {};
-    res.json({found:true,type:'booking',flightNumber:flight.flightNumber||'FW-'+(Math.floor(Math.random()*900)+100),airline:flight.airline||'Fly Way Airlines',aircraft:flight.aircraft||'Boeing 737-800',from:flight.from,to:flight.to,dep:flight.depTime||'08:00',arr:flight.arrTime||'12:00',dur:flight.duration||'4h 00m',departureDate:flight.departureDate||booking.createdAt?.split('T')[0],stops:flight.stops||'',flightType:flight.type||'',details:flight.details||'',passengers:(booking.passengers||[]).length,travelClass:booking.travelClass,bookingRef:booking.ref,status:booking.status,paymentStatus:booking.paymentStatus});
+      ? 'outboundFlight'
+      : 'returnFlight');
+    const flight = booking[flightLeg] || booking.outboundFlight || {};
+    res.json({found:true,type:'booking',flightLeg,flightNumber:flight.flightNumber||'FW-'+(Math.floor(Math.random()*900)+100),airline:flight.airline||'Fly Way Airlines',aircraft:flight.aircraft||'Boeing 737-800',from:flight.from,to:flight.to,dep:flight.depTime||'08:00',arr:flight.arrTime||'12:00',dur:flight.duration||'4h 00m',departureDate:flight.departureDate||booking.createdAt?.split('T')[0],stops:flight.stops||'',flightType:flight.type||'',details:flight.details||'',passengers:(booking.passengers||[]).length,travelClass:booking.travelClass,bookingRef:booking.ref,status:booking.status,paymentStatus:booking.paymentStatus,updatedAt:booking.updatedAt});
     return;
   }
   res.json({found:false,code});

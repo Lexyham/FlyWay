@@ -230,6 +230,38 @@
 
 <script src="/js/main.js"></script>
 <script>
+async function loadRecent() {
+  try {
+    const bookings = await FlyWay.api('GET', '/api/bookings');
+    const txs = await FlyWay.api('GET', '/api/transactions');
+    const spent = txs.filter(t=>t.status==='paid').reduce((s,t)=>s+t.amount,0);
+    const confirmed = bookings.filter(b=>b.status==='confirmed').length;
+
+    document.getElementById('statBookings').textContent = bookings.length;
+    document.getElementById('statConfirmed').textContent = confirmed;
+    document.getElementById('statSpent').textContent = `$${FlyWay.fmt(spent)}`;
+    document.getElementById('statPoints').textContent = FlyWay.fmtInt(FlyWay.user.loyaltyPoints);
+
+    document.getElementById('recentBookings').innerHTML = bookings.length
+      ? bookings.slice(0,5).map(b => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-family:var(--font-h);font-weight:700;font-size:16px">${b.outboundFlight?.from||'-'} → ${b.outboundFlight?.to||'-'}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">
+              ${b.ref} · ${b.outboundFlight?.flightNumber||''} · ${FlyWay.fmtDate(b.createdAt)}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${FlyWay.statusBadge(b.status)}
+            <div style="font-family:var(--font-h);font-weight:700;color:var(--cyan)">$${FlyWay.fmt(b.totalAmount)}</div>
+            <a href="/bookings" class="btn btn-ghost btn-sm">View</a>
+          </div>
+        </div>
+      `).join('')
+      : '<div class="empty-state"><div class="empty-icon">✈</div><div class="empty-title">No flights yet</div><div class="empty-desc">Start exploring destinations and book your adventure</div><a href="/booking" class="btn btn-primary mt-16">Book First Flight</a></div>';
+  } catch(e) { console.error('Failed to refresh dashboard bookings:', e); }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   if (!FlyWay.requireAuth()) return;
   FlyWay.setupSidebar();
@@ -262,35 +294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   refreshNotifBadge();
   setInterval(refreshNotifBadge, 15000);
 
-  try {
-    const bookings = await FlyWay.api('GET', '/api/bookings');
-    const txs = await FlyWay.api('GET', '/api/transactions');
-    const spent = txs.filter(t=>t.status==='paid').reduce((s,t)=>s+t.amount,0);
-    const confirmed = bookings.filter(b=>b.status==='confirmed').length;
-
-    document.getElementById('statBookings').textContent = bookings.length;
-    document.getElementById('statConfirmed').textContent = confirmed;
-    document.getElementById('statSpent').textContent = `$${FlyWay.fmt(spent)}`;
-    document.getElementById('statPoints').textContent = FlyWay.fmtInt(FlyWay.user.loyaltyPoints);
-
-    if (bookings.length > 0) {
-      document.getElementById('recentBookings').innerHTML = bookings.slice(0,5).map(b => `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;">
-          <div>
-            <div style="font-family:var(--font-h);font-weight:700;font-size:16px">${b.outboundFlight?.from||'-'} → ${b.outboundFlight?.to||'-'}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px">
-              ${b.ref} · ${b.outboundFlight?.flightNumber||''} · ${FlyWay.fmtDate(b.createdAt)}
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            ${FlyWay.statusBadge(b.status)}
-            <div style="font-family:var(--font-h);font-weight:700;color:var(--cyan)">$${FlyWay.fmt(b.totalAmount)}</div>
-            <a href="/bookings" class="btn btn-ghost btn-sm">View</a>
-          </div>
-        </div>
-      `).join('') + (bookings.length===0?'':'');
-    }
-  } catch(e) { console.error(e); }
+  await loadRecent();
 
   function updateUserUI(u) {
     document.getElementById('statPoints').textContent = FlyWay.fmtInt(u.loyaltyPoints);
@@ -369,17 +373,8 @@ function activateLicenseRenewal() {
   try { var s = localStorage.getItem('fw_user'); if(s) user = JSON.parse(s); } catch(e){}
   if (!user || !user.id) return;
 
-  var socket = io();
-  socket.on('connect', function(){ socket.emit('join_user', user.id); });
-  socket.emit('join_user', user.id);
-
-  socket.on('notification_' + user.id, function(note){
-    if(typeof FlyWay !== 'undefined' && FlyWay._incrementNotifBadge) FlyWay._incrementNotifBadge();
-    if(typeof FlyWay !== 'undefined' && FlyWay.toast) FlyWay.toast('info', note.title || 'Notification', note.message || '');
-  });
-  socket.on('booking_updated_' + user.id, function(){
-    if (typeof loadRecent === 'function') loadRecent();
-  });
+  var socket = FlyWay._socket;
+  if (!socket) return;
 
   if (typeof FWLicense !== 'undefined') FWLicense.connectSocket(socket);
 })();
@@ -398,4 +393,3 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="/js/anime-labels.js"></script>
 </body>
 </html>
-

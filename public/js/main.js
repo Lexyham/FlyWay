@@ -1056,6 +1056,7 @@ FlyWay.initSocket = function() {
       });
       this._socket.on('booking_updated_' + uid, function() {
         if (typeof loadBookings === 'function') loadBookings();
+        if (typeof loadRecent === 'function') loadRecent();
       });
     }
   } catch(e) {  }

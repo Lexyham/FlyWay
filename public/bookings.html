@@ -100,17 +100,14 @@
   var user = null;
   try { user = JSON.parse(localStorage.getItem('fw_user') || '{}'); } catch(e){}
   if (!user || !user.id) return;
-  var socket = io();
+  var socket = (typeof FlyWay !== 'undefined' && FlyWay._socket) || io();
   socket.on('connect', function(){ socket.emit('join_user', user.id); });
   socket.emit('join_user', user.id);
-  socket.on('notification_' + user.id, function(note){
-    if(typeof FlyWay !== 'undefined' && FlyWay.toast) FlyWay.toast('info', note.title||'', note.message||'');
-  });
   if (typeof FWLicense !== 'undefined') FWLicense.connectSocket(socket);
 })();
 </script>
 <script>
-let allBookings=[], currentProofBookingId=null;
+let allBookings=[], currentProofBookingId=null, currentTicketBookingId=null;
 function escapeBookingText(value){return String(value==null?'':value).replace(/[&<>"']/g,function(char){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]);});}
 document.addEventListener('DOMContentLoaded', async ()=>{
   if(!FlyWay.requireAuth()) return;
@@ -141,6 +138,12 @@ async function loadBookings() {
   try {
     allBookings=await FlyWay.api('GET','/api/bookings');
     renderBookings(allBookings);
+    const ticketModal=document.getElementById('ticketModal');
+    if(currentTicketBookingId&&ticketModal&&!ticketModal.classList.contains('hidden')){
+      const currentBooking=allBookings.find(booking=>booking.id===currentTicketBookingId);
+      if(currentBooking&&currentBooking.status==='confirmed') openTicketModal(currentTicketBookingId);
+      else FlyWay.hideModal('ticketModal');
+    }
   } catch(e){ document.getElementById('bookingsList').innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Failed to load bookings</div></div>`; }
 }
 
@@ -300,6 +303,7 @@ function openProofModal(id) {
 function openTicketModal(id) {
   const b = allBookings.find(x => x.id === id);
   if (!b) { FlyWay.toast('error','Not found','Booking not found'); return; }
+  currentTicketBookingId = id;
   FlyWay.showModal('ticketModal');
   const titleEl = document.getElementById('modalTitle');
   if (titleEl) titleEl.textContent = '🎫 Booking · ' + b.ref;
@@ -410,26 +414,6 @@ function copyTrack(ref) {
 }
 
 
-</script>
-
-<script src="/socket.io/socket.io.js"></script>
-<script>
-(function(){
-  if (typeof io === 'undefined') return;
-  var user = null;
-  try { var s = localStorage.getItem('fw_user'); if(s) user = JSON.parse(s); } catch(e){}
-  if (!user || !user.id) return;
-  var socket = io();
-  socket.on('connect', function(){ socket.emit('join_user', user.id); });
-  socket.emit('join_user', user.id);
-  socket.on('booking_updated_' + user.id, function(){
-    if (typeof load === 'function') load();
-  });
-  socket.on('notification_' + user.id, function(note){
-    if(typeof FlyWay !== 'undefined' && FlyWay.toast) FlyWay.toast('info', note.title || 'Update', note.message || '');
-    if (typeof load === 'function') load();
-  });
-})();
 </script>
 
 </body></html>
