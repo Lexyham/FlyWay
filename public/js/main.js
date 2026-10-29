@@ -8,7 +8,6 @@ const FlyWay = {
     try { const s = localStorage.getItem('fw_user'); if(s) this.user = JSON.parse(s); } catch(e) {}
     this.setupNavbar();
     this.setupChat();
-    this.setupBrowserNotice();
   },
   getHeaders(multipart) {
     const h = {};
@@ -64,21 +63,6 @@ const FlyWay = {
       '<span class="toast-close" onclick="this.parentElement.remove()">×</span>';
     c.appendChild(t);
     setTimeout(function(){ t.remove(); }, 5000);
-  },
-  setupBrowserNotice() {
-    if (localStorage.getItem('fw_chrome_notice_dismissed') === '1') return;
-
-    const notice = document.createElement('aside');
-    notice.className = 'fw-browser-notice';
-    notice.setAttribute('role', 'status');
-    notice.innerHTML = '<span class="fw-browser-notice-icon" aria-hidden="true">✦</span>' +
-      '<span class="fw-browser-notice-copy"><strong>Works best in Chrome</strong><span>For the best FlyWay experience, use Google Chrome.</span></span>' +
-      '<button class="fw-browser-notice-close" type="button" aria-label="Dismiss browser recommendation">×</button>';
-    notice.querySelector('button').addEventListener('click', function() {
-      localStorage.setItem('fw_chrome_notice_dismissed', '1');
-      notice.remove();
-    });
-    document.body.appendChild(notice);
   },
   setLoading(btn, loading) {
     if (!btn) return;

@@ -53,56 +53,6 @@
   --container-pad-xs:      12px;
 }
 
-.fw-browser-notice {
-  position: fixed;
-  z-index: 9998;
-  top: 78px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: min(340px, calc(100vw - 24px));
-  padding: 11px 12px;
-  color: #e8f2ff;
-  background: rgba(8, 18, 38, 0.96);
-  border: 1px solid rgba(0, 212, 255, 0.28);
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(12px);
-  font: 12px/1.4 var(--font);
-}
-.fw-browser-notice-icon {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  place-items: center;
-  color: var(--cyan);
-  background: rgba(0, 212, 255, 0.1);
-  border-radius: 9px;
-  font-size: 15px;
-}
-.fw-browser-notice-copy { display: grid; gap: 2px; }
-.fw-browser-notice-copy strong { color: #fff; font-size: 12px; }
-.fw-browser-notice-copy span { color: var(--muted); font-size: 11px; }
-.fw-browser-notice-close {
-  align-self: flex-start;
-  margin: -4px -3px 0 auto;
-  padding: 2px 4px;
-  color: var(--muted);
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  font: inherit;
-  font-size: 18px;
-  line-height: 1;
-}
-.fw-browser-notice-close:hover,
-.fw-browser-notice-close:focus-visible { color: #fff; }
-@media (max-width: 480px) {
-  .fw-browser-notice { top: 68px; right: 10px; }
-}
-
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html {
