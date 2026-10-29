@@ -586,7 +586,7 @@ async function trackFlight(){
   if(!code){FlyWay.toast('error','Enter flight number or booking reference');return;}
   try{
     var r=await fetch('/api/track/'+code).then(function(x){return x.json();}).catch(function(){return{found:false};});
-    if(r.found){startTracking({fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,bookingRef:r.bookingRef});return;}
+    if(r.found){startTracking({fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,departureDate:r.departureDate,bookingRef:r.bookingRef});return;}
   }catch(e){}
   var f=FLIGHTS.find(function(x){return x.fn===code||x.fn.replace('-','')===code.replace('-','');});
   if(f){startTracking(f);return;}

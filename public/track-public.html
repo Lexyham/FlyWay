@@ -157,7 +157,7 @@ async function init(){
   try{
     var r=await fetch('/api/track/'+code.toUpperCase()).then(function(x){return x.json();}).catch(function(){return{found:false};});
     if(r.found){
-      currentFlight={fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,bookingRef:r.bookingRef};
+      currentFlight={fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,departureDate:r.departureDate,bookingRef:r.bookingRef};
       setupTracking();return;
     }
   }catch(e){}
