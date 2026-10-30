@@ -615,8 +615,9 @@ const DataService = (() => {
     return h;
   }
 
-  async function fetchFlight(code) {
-    const res = await fetch('/api/flightmap/' + encodeURIComponent(code), { headers: headers() });
+  async function fetchFlight(code, leg) {
+    const legQuery = leg ? '?leg=' + encodeURIComponent(leg) : '';
+    const res = await fetch('/api/flightmap/' + encodeURIComponent(code) + legQuery, { headers: headers() });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return res.json();
   }
@@ -1142,13 +1143,14 @@ const UI = (() => {
 
     try {
 
-      const raw1 = await DataService.fetchFlight(raw);
+      const requestedLeg = new URLSearchParams(window.location.search).get('leg');
+      const raw1 = await DataService.fetchFlight(raw, requestedLeg);
       if (raw1 && raw1.found) {
         const flight = normalizeBookingFlight(raw1);
         if (flight) {
           MapState.flights = [flight];
           Engine.setFlight(flight);
-          startPolling(raw);
+          startPolling(raw, requestedLeg);
           showRoutePreview(flight);
           return;
         }
@@ -1345,7 +1347,7 @@ const UI = (() => {
 })();
 
 
-function startPolling(code) {
+function startPolling(code, leg) {
   if (MapState.pollTimer) clearInterval(MapState.pollTimer);
 
   const badge = document.getElementById('poll-badge');
@@ -1356,7 +1358,7 @@ function startPolling(code) {
     try {
       if (badge) { badge.textContent = 'SYNCING'; badge.classList.add('syncing'); }
 
-      const raw = await DataService.fetchFlight(code);
+      const raw = await DataService.fetchFlight(code, leg);
       if (raw && raw.found) {
         const fresh = normalizeBookingFlight(raw);
         if (fresh && MapState.activeFlight) {

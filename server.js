@@ -1814,8 +1814,25 @@ app.get('/api/track/:code', (req, res) => {
       || normalizeTrackCode(booking.outboundFlight?.flightNumber) === code
       ? 'outboundFlight'
       : 'returnFlight');
-    const flight = booking[flightLeg] || booking.outboundFlight || {};
-    res.json({found:true,type:'booking',flightLeg,flightNumber:flight.flightNumber||'FW-'+(Math.floor(Math.random()*900)+100),airline:flight.airline||'Fly Way Airlines',aircraft:flight.aircraft||'Boeing 737-800',from:flight.from,to:flight.to,dep:flight.depTime||'08:00',arr:flight.arrTime||'12:00',dur:flight.duration||'4h 00m',departureDate:flight.departureDate||booking.createdAt?.split('T')[0],stops:flight.stops||'',flightType:flight.type||'',details:flight.details||'',passengers:(booking.passengers||[]).length,travelClass:booking.travelClass,bookingRef:booking.ref,status:booking.status,paymentStatus:booking.paymentStatus,updatedAt:booking.updatedAt});
+    const flight = booking[flightLeg];
+    if(!flight) return res.status(404).json({error:'This booking has no '+(flightLeg==='returnFlight'?'return':'outbound')+' flight'});
+    const toTrackFlight = leg => leg ? {
+      flightNumber:leg.flightNumber||'',
+      airline:leg.airline||'Fly Way Airlines',
+      aircraft:leg.aircraft||'Boeing 737-800',
+      from:leg.from,
+      to:leg.to,
+      depTime:leg.depTime||'08:00',
+      arrTime:leg.arrTime||'12:00',
+      duration:leg.duration||'4h 00m',
+      departureDate:leg.departureDate||'',
+      stops:leg.stops||'',
+      type:leg.type||'',
+      details:leg.details||''
+    } : null;
+    const outboundFlight=toTrackFlight(booking.outboundFlight);
+    const returnFlight=toTrackFlight(booking.returnFlight);
+    res.json({found:true,type:'booking',flightLeg,flightNumber:flight.flightNumber||'FW-'+(Math.floor(Math.random()*900)+100),airline:flight.airline||'Fly Way Airlines',aircraft:flight.aircraft||'Boeing 737-800',from:flight.from,to:flight.to,dep:flight.depTime||'08:00',arr:flight.arrTime||'12:00',dur:flight.duration||'4h 00m',departureDate:flight.departureDate||booking.createdAt?.split('T')[0],stops:flight.stops||'',flightType:flight.type||'',details:flight.details||'',outboundFlight,returnFlight,passengers:(booking.passengers||[]).length,travelClass:booking.travelClass,bookingRef:booking.ref,status:booking.status,paymentStatus:booking.paymentStatus,updatedAt:booking.updatedAt});
     return;
   }
   res.json({found:false,code});
@@ -1854,6 +1871,7 @@ function parseFlightDeparture(date, time) {
 app.get('/api/flightmap/:code', (req, res) => {
   const code = normalizeTrackCode(req.params.code);
   const bookings = readDB(FILES.bookings);
+  if(req.query.leg&&!['outboundFlight','returnFlight'].includes(req.query.leg)) return res.status(400).json({error:'Invalid flight leg'});
 
   const booking = bookings.find(b =>
     normalizeTrackCode(b.ref) === code ||
@@ -1862,10 +1880,16 @@ app.get('/api/flightmap/:code', (req, res) => {
   );
 
   if (booking) {
-    const flight = normalizeTrackCode(booking.ref) === code
-      || normalizeTrackCode(booking.outboundFlight?.flightNumber) === code
-      ? booking.outboundFlight || {}
-      : booking.returnFlight || booking.outboundFlight || {};
+    let flight;
+    if(req.query.leg){
+      flight=booking[req.query.leg];
+      if(!flight) return res.status(404).json({error:'This booking has no '+(req.query.leg==='returnFlight'?'return':'outbound')+' flight'});
+    }else if(normalizeTrackCode(booking.ref)===code
+      || normalizeTrackCode(booking.outboundFlight?.flightNumber)===code){
+      flight=booking.outboundFlight||{};
+    }else{
+      flight=booking.returnFlight||booking.outboundFlight||{};
+    }
     const durMs = parseDurMs(flight.duration) || 5*60*60000; 
 
     

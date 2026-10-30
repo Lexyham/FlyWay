@@ -210,6 +210,7 @@ var FLIGHTS=[
 ];
 
 var code = window.location.pathname.split('/track/').pop() || '';
+var initialLeg = new URLSearchParams(window.location.search).get('leg')==='returnFlight'?'returnFlight':'outboundFlight';
 var currentFlight = null;
 var bookingRefreshInterval = null;
 var stableGate='', stableTerminal='', stableWxDep='', stableWxArr='';
@@ -244,9 +245,10 @@ async function init(){
   if(!code){showNotFound('No tracking code provided.');return;}
   // Try server lookup (booking references like FWIYQ9WT)
   try{
-    var r=await fetch('/api/track/'+code.toUpperCase()).then(function(x){return x.json();}).catch(function(){return{found:false};});
+    var endpoint='/api/track/'+encodeURIComponent(code.toUpperCase())+(initialLeg==='returnFlight'?'?leg=returnFlight':'');
+    var r=await fetch(endpoint).then(function(x){return x.json();}).catch(function(){return{found:false};});
     if(r.found){
-      currentFlight={fn:r.flightNumber,airline:r.airline,ac:r.aircraft,from:r.from,to:r.to,dep:r.dep,arr:r.arr,dur:r.dur,departureDate:r.departureDate,bookingRef:r.bookingRef,flightLeg:r.flightLeg,updatedAt:r.updatedAt,bookingStatus:r.status,paymentStatus:r.paymentStatus,stopDescription:r.stops,flightType:r.flightType,details:r.details};
+      currentFlight=trackedPublicFlightFromResponse(r);
       setupTracking();return;
     }
   }catch(e){}
@@ -257,6 +259,28 @@ async function init(){
   var synthetic=createSyntheticFlight(code);
   if(synthetic){currentFlight=synthetic;setupTracking();return;}
   showNotFound('"'+code+'" - check your booking confirmation for the correct reference or flight number.');
+}
+
+function trackedPublicFlightFromResponse(data){
+  return {fn:data.flightNumber,airline:data.airline,ac:data.aircraft,from:data.from,to:data.to,dep:data.dep,arr:data.arr,dur:data.dur,departureDate:data.departureDate,bookingRef:data.bookingRef,flightLeg:data.flightLeg,updatedAt:data.updatedAt,bookingStatus:data.status,paymentStatus:data.paymentStatus,stopDescription:data.stops,flightType:data.flightType,details:data.details,outboundFlight:data.outboundFlight||null,returnFlight:data.returnFlight||null};
+}
+
+async function switchTrackedLeg(leg){
+  if(!currentFlight||!currentFlight.bookingRef||!['outboundFlight','returnFlight'].includes(leg))return;
+  try{
+    var response=await fetch('/api/track/'+encodeURIComponent(currentFlight.bookingRef)+'?leg='+encodeURIComponent(leg));
+    if(!response.ok)throw new Error('Flight lookup failed: '+response.status);
+    var data=await response.json();
+    if(!data.found)throw new Error('The requested flight leg was not found.');
+    currentFlight=trackedPublicFlightFromResponse(data);
+    initialLeg=leg;
+    renderFull();
+    Globe3D.attach(currentFlight,calcProg);
+    history.replaceState(null,'',window.location.pathname+'?leg='+encodeURIComponent(leg));
+  }catch(error){
+    if(window.FlyWay&&typeof FlyWay.toast==='function')FlyWay.toast('error','Could not load flight leg',error.message);
+    else console.error('Could not load flight leg:',error.message);
+  }
 }
 
 function setupTracking(){
@@ -278,10 +302,11 @@ async function refreshTrackedBooking(){
     if(!response.ok) throw new Error('Flight update request failed: '+response.status);
     var data=await response.json();
     if(!data.found||data.updatedAt===currentFlight.updatedAt)return;
-    var updatedFlight={fn:data.flightNumber,airline:data.airline,ac:data.aircraft,from:data.from,to:data.to,dep:data.dep,arr:data.arr,dur:data.dur,departureDate:data.departureDate,bookingRef:data.bookingRef,flightLeg:data.flightLeg,updatedAt:data.updatedAt,bookingStatus:data.status,paymentStatus:data.paymentStatus,stopDescription:data.stops,flightType:data.flightType,details:data.details};
+    var updatedFlight=trackedPublicFlightFromResponse(data);
     var flightFields=['fn','airline','ac','from','to','dep','arr','dur','departureDate','stopDescription','flightType','details'];
     var flightChanged=flightFields.some(function(field){return String(updatedFlight[field]||'')!==String(currentFlight[field]||'');});
     currentFlight=updatedFlight;
+    renderPublicLegSwitcher();
     if(!flightChanged)return;
     refreshPublicFlightDetails();
     Globe3D.attach(currentFlight,calcProg);
@@ -396,6 +421,7 @@ function renderFull(){
       '<div id="pubStatus" class="flight-status-badge" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3)"><div class="status-dot inflight" id="pubDot"></div><span id="pubStatusTxt">'+r.status+'</span></div>'+
     '</div>'+
     '<div class="pub-flight-content" style="padding:28px">'+
+      '<div id="pubLegSwitcher" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:20px"></div>'+
       '<div class="pub-route-layout" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:8px">'+
         '<div class="airport-card pub-route-airport"><div class="airport-big" id="pubFromCode">'+f.from+'</div><div class="pub-route-city" id="pubFromCity" style="color:var(--muted);font-size:13px">'+(fa.flag||'')+'  '+(fa.city||f.from)+'</div><div class="pub-route-time" id="pubDepTime" style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-top:6px">'+(f.dep||'-')+'</div></div>'+
         '<div class="pub-route-center" style="flex:1;min-width:140px;padding:0 16px">'+
@@ -454,6 +480,7 @@ function renderFull(){
       upcomingNote +
       '<div id="pubLastUpdate" style="text-align:center;font-size:11px;color:rgba(255,255,255,0.25);margin-top:16px">Live · '+new Date().toLocaleTimeString()+'</div>'+
     '</div>';
+  renderPublicLegSwitcher();
   if(f.stopDescription||f.details){
     var flightInfo=document.createElement('div');
     flightInfo.id='pubFlightInfo';
@@ -462,6 +489,27 @@ function renderFull(){
     flightInfo.textContent=[f.departureDate?'Date: '+f.departureDate:'',f.stopDescription?'Stops: '+f.stopDescription:'',f.flightType?'Type: '+f.flightType:'',f.details].filter(Boolean).join(' · ');
     document.getElementById('trackCard').appendChild(flightInfo);
   }
+}
+
+function renderPublicLegSwitcher(){
+  var switcher=document.getElementById('pubLegSwitcher');
+  if(!switcher)return;
+  var returnFlight=currentFlight&&currentFlight.returnFlight;
+  switcher.style.display=returnFlight?'flex':'none';
+  switcher.replaceChildren();
+  if(!returnFlight)return;
+  var outboundFlight=currentFlight.flightLeg==='outboundFlight'?currentFlight:currentFlight.outboundFlight;
+  [
+    {leg:'outboundFlight',label:'GO · '+(outboundFlight.from||'-')+' → '+(outboundFlight.to||'-')},
+    {leg:'returnFlight',label:'COME · '+returnFlight.from+' → '+returnFlight.to+(returnFlight.departureDate?' · '+returnFlight.departureDate:'')}
+  ].forEach(function(item){
+    var button=document.createElement('button');
+    button.type='button';
+    button.textContent=item.label;
+    button.className='btn '+(currentFlight.flightLeg===item.leg?'btn-primary':'btn-ghost');
+    button.onclick=function(){switchTrackedLeg(item.leg);};
+    switcher.appendChild(button);
+  });
 }
 
 function renderLiveUpdate(){
@@ -555,7 +603,7 @@ function launch3dSim(){
   // Use booking ref if available (direct unified lookup), otherwise use from/to params
   var code=(f.bookingRef||f.fn||f.flightNumber||'').trim().toUpperCase();
   if(code){
-    window.open('/flightmap?code='+encodeURIComponent(code),'_blank');
+    window.open('/flightmap?code='+encodeURIComponent(code)+'&leg='+encodeURIComponent(f.flightLeg||'outboundFlight'),'_blank');
   } else if(f.from&&f.to){
     window.open('/flightmap?from='+encodeURIComponent(f.from)+'&to='+encodeURIComponent(f.to),'_blank');
   } else {

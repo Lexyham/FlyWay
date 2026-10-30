@@ -147,9 +147,9 @@ async function loadBookings() {
   } catch(e){ document.getElementById('bookingsList').innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Failed to load bookings</div></div>`; }
 }
 
-// Returns true if arrival time is already past (flight landed)
-function flightHasLanded(b) {
-  var f = b.outboundFlight || {};
+// Returns true if this flight's scheduled arrival time has passed.
+function flightHasLanded(b, leg) {
+  var f = b[leg] || {};
   if (!f.departureDate || !f.depTime) return false;
   try {
     var p = (f.depTime||'00:00').split(':');
@@ -161,7 +161,11 @@ function flightHasLanded(b) {
 }
 function getFlightDisplayStatus(b) {
   if (b.status === 'cancelled') return 'cancelled';
-  if (b.status === 'confirmed' && flightHasLanded(b)) return 'landed';
+  if (b.status === 'confirmed' && flightHasLanded(b, 'outboundFlight')) {
+    return b.returnFlight
+      ? flightHasLanded(b, 'returnFlight') ? 'landed' : 'return_upcoming'
+      : 'landed';
+  }
   return (b.status || 'pending').toLowerCase();
 }
 function filterBookings(status, btn) {
@@ -192,12 +196,22 @@ function renderBookings(bookings) {
     const st  = (b.status || 'pending').toLowerCase();
     const displaySt = getFlightDisplayStatus(b);
     const isLanded = displaySt === 'landed';
+    const isReturnUpcoming = displaySt === 'return_upcoming';
     const isPending   = (b.paymentStatus==='pending' || b.paymentStatus==='proof_submitted') && b.status !== 'cancelled';
     const isCancelled = st === 'cancelled';
 
-    const stColor  = isLanded ? '#a78bfa' : st==='confirmed' ? '#00e396' : st==='cancelled' ? '#ff5757' : '#f5c842';
-    const stBg     = isLanded ? 'rgba(167,139,250,0.1)' : st==='confirmed' ? 'rgba(0,227,150,0.1)' : st==='cancelled' ? 'rgba(255,87,87,0.1)' : 'rgba(245,200,66,0.1)';
-    const stBorder = isLanded ? 'rgba(167,139,250,0.25)' : st==='confirmed' ? 'rgba(0,227,150,0.25)' : st==='cancelled' ? 'rgba(255,87,87,0.25)' : 'rgba(245,200,66,0.25)';
+    const stColor  = isLanded ? '#a78bfa' : isReturnUpcoming ? '#f5c842' : st==='confirmed' ? '#00e396' : st==='cancelled' ? '#ff5757' : '#f5c842';
+    const stBg     = isLanded ? 'rgba(167,139,250,0.1)' : isReturnUpcoming ? 'rgba(245,200,66,0.1)' : st==='confirmed' ? 'rgba(0,227,150,0.1)' : st==='cancelled' ? 'rgba(255,87,87,0.1)' : 'rgba(245,200,66,0.1)';
+    const stBorder = isLanded ? 'rgba(167,139,250,0.25)' : isReturnUpcoming ? 'rgba(245,200,66,0.25)' : st==='confirmed' ? 'rgba(0,227,150,0.25)' : st==='cancelled' ? 'rgba(255,87,87,0.25)' : 'rgba(245,200,66,0.25)';
+    const returnFlight = b.returnFlight;
+    const returnDisplay = returnFlight
+      ? '<div class="fw-bcard-meta" style="margin-top:8px;padding:8px 10px;background:rgba(0,212,255,0.05);border-radius:8px">' +
+        '<span class="fw-bcard-meta-item">↩ Return: ' + escapeBookingText(returnFlight.from||'-') + ' → ' + escapeBookingText(returnFlight.to||'-') + '</span>' +
+        '<span class="fw-bcard-meta-item">✈ ' + escapeBookingText(returnFlight.flightNumber||'-') + '</span>' +
+        '<span class="fw-bcard-meta-item">📅 ' + escapeBookingText(returnFlight.departureDate||'-') + ' · ' + escapeBookingText(returnFlight.depTime||'-') + '</span>' +
+        (b.status === 'confirmed' ? '<a class="fw-bcard-btn fw-bcard-btn-ghost" style="text-decoration:none" href="/track?code=' + encodeURIComponent(b.ref) + '&leg=returnFlight">📡 Track return</a>' : '') +
+        '</div>'
+      : '';
     const payColor = b.paymentStatus==='paid' ? '#00e396' : b.paymentStatus==='proof_submitted' ? '#00d4ff' : b.paymentStatus==='refunded' ? '#a78bfa' : '#f5c842';
     const payBg    = b.paymentStatus==='paid' ? 'rgba(0,227,150,0.08)' : b.paymentStatus==='proof_submitted' ? 'rgba(0,212,255,0.08)' : b.paymentStatus==='refunded' ? 'rgba(167,139,250,0.08)' : 'rgba(245,200,66,0.08)';
 
@@ -221,7 +235,7 @@ function renderBookings(bookings) {
               '<span class="fw-bcard-iata">' + (f.from||'-') + '</span>' +
               '<span class="fw-bcard-arrow">→</span>' +
               '<span class="fw-bcard-iata">' + (f.to||'-') + '</span>' +
-              '<span class="fw-status-badge" style="color:' + stColor + ';background:' + stBg + ';border-color:' + stBorder + ';font-size:9px;padding:3px 10px">' + (isLanded ? '🛬 LANDED' : st.toUpperCase()) + '</span>' +
+              '<span class="fw-status-badge" style="color:' + stColor + ';background:' + stBg + ';border-color:' + stBorder + ';font-size:9px;padding:3px 10px">' + (isLanded ? (returnFlight ? '✅ ROUND TRIP COMPLETE' : '🛬 LANDED') : isReturnUpcoming ? '🛬 GO LANDED · ↩ RETURN UPCOMING' : st.toUpperCase()) + '</span>' +
               '<span class="fw-status-badge" style="color:' + payColor + ';background:' + payBg + ';border-color:' + payColor + '30;font-size:9px;padding:3px 10px">💳 ' + (b.paymentStatus||'pending').replace('_',' ').toUpperCase() + '</span>' +
             '</div>' +
             '<div class="fw-bcard-meta">' +
@@ -245,6 +259,7 @@ function renderBookings(bookings) {
               (f.aircraft ? '<span class="fw-bcard-meta-item">🛩 ' + f.aircraft + '</span>' : '') +
               (f.stops || f.type ? '<span class="fw-bcard-meta-item">🛑 ' + escapeBookingText(f.stops || f.type) + '</span>' : '') +
             '</div>' +
+            returnDisplay +
             (f.details ? '<div class="fw-bcard-meta"><span class="fw-bcard-meta-item">ℹ ' + escapeBookingText(f.details) + '</span></div>' : '') +
             adminNote + payProof +
           '</div>' +
