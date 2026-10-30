@@ -534,7 +534,7 @@ if(urlCode&&urlCode.length>1){
   setTimeout(function(){trackFlight();},600);
 }
 
-var liveInterval=null,bookingRefreshInterval=null,currentFlight=null;
+var liveInterval=null,bookingRefreshInterval=null,currentFlight=null,autoReturnSwitching=false;
 var cachedGate='',cachedTerminal='',cachedWeatherDep='',cachedWeatherArr='';
 var WEATHERS=[{dep:'☀ 22°C Clear',arr:'⛅ 18°C Cloudy'},{dep:'🌤 26°C Sunny',arr:'🌧 14°C Rainy'},{dep:'⛅ 17°C Overcast',arr:'☀ 28°C Clear'},{dep:'🌧 13°C Rainy',arr:'🌤 22°C Sunny'},{dep:'❄ 2°C Cold',arr:'☀ 23°C Clear'},{dep:'🌫 16°C Foggy',arr:'⛅ 19°C Cloudy'}];
 
@@ -637,6 +637,7 @@ async function switchTrackedLeg(leg){
     renderFull(currentFlight);
     Globe3D.attach(currentFlight,calcProg);
     history.replaceState(null,'','?code='+encodeURIComponent(currentFlight.bookingRef)+'&leg='+encodeURIComponent(leg));
+    autoReturnSwitching=false;
   }catch(error){FlyWay.toast('error','Could not load flight leg',error.message);}
 }
 
@@ -709,6 +710,11 @@ function renderFull(f){
 
 function renderLive(f){
   var r=calcProg(f),prog=r.prog,status=r.status;
+  if(prog>=100&&f.flightLeg==='outboundFlight'&&f.bookingRef&&f.returnFlight&&!autoReturnSwitching){
+    autoReturnSwitching=true;
+    FlyWay.toast('success','GO flight landed','Switching tracking to your return flight.');
+    switchTrackedLeg('returnFlight');
+  }
   
   // Check for stops and update status accordingly
   var stopInfo = checkFlightStops(f, prog);

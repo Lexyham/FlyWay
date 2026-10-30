@@ -107,7 +107,7 @@
 })();
 </script>
 <script>
-let allBookings=[], currentProofBookingId=null, currentTicketBookingId=null;
+let allBookings=[], currentProofBookingId=null, currentTicketBookingId=null, activeBookingFilter='all', bookingRefreshInterval=null;
 function escapeBookingText(value){return String(value==null?'':value).replace(/[&<>"']/g,function(char){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]);});}
 document.addEventListener('DOMContentLoaded', async ()=>{
   if(!FlyWay.requireAuth()) return;
@@ -118,6 +118,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(badge && nc.count > 0){badge.textContent=nc.count;badge.style.display='flex';}
   }).catch(function(){});
   await loadBookings();
+  bookingRefreshInterval=setInterval(function(){
+    if(!document.hidden) loadBookings();
+  },30000);
   let proofFile=null;
   FlyWay.setupUploadZone(document.getElementById('modalProofZone'), document.getElementById('modalProofPreview'), f=>proofFile=f);
   document.getElementById('uploadProofBtn').addEventListener('click', async ()=>{
@@ -135,9 +138,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 });
 
 async function loadBookings() {
+  if(loadBookings.pending)return;
+  loadBookings.pending=true;
   try {
     allBookings=await FlyWay.api('GET','/api/bookings');
-    renderBookings(allBookings);
+    renderBookings(getFilteredBookings(activeBookingFilter));
     const ticketModal=document.getElementById('ticketModal');
     if(currentTicketBookingId&&ticketModal&&!ticketModal.classList.contains('hidden')){
       const currentBooking=allBookings.find(booking=>booking.id===currentTicketBookingId);
@@ -145,6 +150,7 @@ async function loadBookings() {
       else FlyWay.hideModal('ticketModal');
     }
   } catch(e){ document.getElementById('bookingsList').innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Failed to load bookings</div></div>`; }
+  finally { loadBookings.pending=false; }
 }
 
 // Returns true if this flight's scheduled arrival time has passed.
@@ -169,17 +175,17 @@ function getFlightDisplayStatus(b) {
   return (b.status || 'pending').toLowerCase();
 }
 function filterBookings(status, btn) {
+  activeBookingFilter=status;
   document.querySelectorAll('.trip-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  var filtered;
+  renderBookings(getFilteredBookings(status));
+}
+function getFilteredBookings(status) {
   if (status === 'all') {
-    filtered = allBookings;
-  } else if (status === 'completed') {
-    filtered = allBookings.filter(function(b){ return getFlightDisplayStatus(b) === 'landed'; });
-  } else {
-    filtered = allBookings.filter(function(b){ return b.status === status && getFlightDisplayStatus(b) !== 'landed'; });
+    return allBookings;
   }
-  renderBookings(filtered);
+  if (status === 'completed') return allBookings.filter(function(b){ return getFlightDisplayStatus(b) === 'landed'; });
+  return allBookings.filter(function(b){ return b.status === status && getFlightDisplayStatus(b) !== 'landed'; });
 }
 
 function renderBookings(bookings) {
