@@ -57,7 +57,36 @@
 <div id="toastContainer"></div>
 <script src="/js/main.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', async ()=>{
+async function loadTransactions() {
+  const txList = document.getElementById('txList');
+  try {
+    const txs = await FlyWay.api('GET', '/api/transactions');
+    const paid = txs.filter(t => t.status === 'paid');
+    const refunded = txs.filter(t => t.status === 'refunded');
+    const totalSpent = paid.reduce((sum, transaction) => sum + transaction.amount, 0);
+    document.getElementById('statTotal').textContent = txs.length;
+    document.getElementById('statPaid').textContent = paid.length;
+    document.getElementById('statSpent').textContent = `$${FlyWay.fmt(totalSpent)}`;
+    document.getElementById('statRefunded').textContent = refunded.length;
+    if (txs.length === 0) {
+      txList.innerHTML = `<div class="empty-state"><div class="empty-icon">💳</div><div class="empty-title">No transactions yet</div></div>`;
+      return;
+    }
+    txList.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Reference</th><th>Route</th><th>Amount</th><th>Method</th><th>Status</th><th>Proof</th><th>Date</th></tr></thead><tbody>${txs.map(t => `<tr>
+      <td><span style="font-family:var(--font-m);color:var(--cyan);font-size:12px">${t.bookingRef}</span></td>
+      <td style="font-weight:600">${t.route || '-'}</td>
+      <td style="font-family:var(--font-h);font-weight:700">$${FlyWay.fmt(t.amount)}</td>
+      <td style="text-transform:capitalize">${t.paymentMethod}</td>
+      <td>${FlyWay.statusBadge(t.status)}</td>
+      <td>${t.proofFile ? `<a href="${t.proofFile}" target="_blank"><img src="${t.proofFile}" class="proof-thumb" onerror="this.outerHTML='<span style=color:var(--cyan);font-size:12px>View</span>'"></a>` : '<span style="color:var(--muted)">-</span>'}</td>
+      <td style="color:var(--muted);font-size:12px">${FlyWay.fmtDateTime(t.createdAt)}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+  } catch (error) {
+    txList.innerHTML = `<div class="empty-state"><div class="empty-title">Failed to load</div></div>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
   if(!FlyWay.requireAuth()) return;
   FlyWay.setupSidebar();
   // Load notification count for badge
@@ -65,30 +94,16 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     var badge = document.getElementById('notifyBadgeSide');
     if(badge && nc.count > 0){badge.textContent=nc.count;badge.style.display='flex';}
   }).catch(function(){});
-  try {
-    const txs=await FlyWay.api('GET','/api/transactions');
-    const paid=txs.filter(t=>t.status==='paid'), refunded=txs.filter(t=>t.status==='refunded');
-    const totalSpent=paid.reduce((s,t)=>s+t.amount,0);
-    document.getElementById('statTotal').textContent=txs.length;
-    document.getElementById('statPaid').textContent=paid.length;
-    document.getElementById('statSpent').textContent=`$${FlyWay.fmt(totalSpent)}`;
-    document.getElementById('statRefunded').textContent=refunded.length;
-    if(txs.length===0){document.getElementById('txList').innerHTML=`<div class="empty-state"><div class="empty-icon">💳</div><div class="empty-title">No transactions yet</div></div>`;return;}
-    document.getElementById('txList').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Reference</th><th>Route</th><th>Amount</th><th>Method</th><th>Status</th><th>Proof</th><th>Date</th></tr></thead><tbody>${txs.map(t=>`<tr>
-      <td><span style="font-family:var(--font-m);color:var(--cyan);font-size:12px">${t.bookingRef}</span></td>
-      <td style="font-weight:600">${t.route||'-'}</td>
-      <td style="font-family:var(--font-h);font-weight:700">$${FlyWay.fmt(t.amount)}</td>
-      <td style="text-transform:capitalize">${t.paymentMethod}</td>
-      <td>${FlyWay.statusBadge(t.status)}</td>
-      <td>${t.proofFile?`<a href="${t.proofFile}" target="_blank"><img src="${t.proofFile}" class="proof-thumb" onerror="this.outerHTML='<span style=color:var(--cyan);font-size:12px>View</span>'"></a>`:'<span style="color:var(--muted)">-</span>'}</td>
-      <td style="color:var(--muted);font-size:12px">${FlyWay.fmtDateTime(t.createdAt)}</td>
-    </tr>`).join('')}</tbody></table></div>`;
-  } catch(e){ document.getElementById('txList').innerHTML=`<div class="empty-state"><div class="empty-title">Failed to load</div></div>`; }
+  await loadTransactions();
 });
 
+window.addEventListener('flyway:user-data-deleted', event => {
+  if (['booking', 'bookings', 'transaction', 'transactions', 'proof'].includes(event.detail.kind)) {
+    loadTransactions();
+  }
+});
 
 </script>
 <script src="/js/sidebar-toggle.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 </body></html>
-

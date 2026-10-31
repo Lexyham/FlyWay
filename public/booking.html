@@ -184,6 +184,7 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
             </select>
           </div>
         </div>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Travel class changes the fare, not flight time. Departure and arrival times are local to each airport; journey duration is elapsed time and includes estimated stop or layover time.</p>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
           <button class="btn btn-primary btn-lg" onclick="searchFlights()">🔍 Search Available Flights</button>
         </div>
@@ -201,15 +202,15 @@ document.addEventListener('contextmenu',function(e){e.preventDefault();return fa
           <div class="ft-guide-grid">
             <div class="ft-card">
               <div class="ft-card-title">Non-stop Flight</div>
-              <div class="ft-card-desc">The fastest option, with no stops. The plane takes off, lands once, and arrives at the destination.</div>
+              <div class="ft-card-desc">The fastest option, with no stops. Its estimated journey time is based on route distance and includes a short ground-time allowance.</div>
             </div>
             <div class="ft-card">
               <div class="ft-card-title">Direct Flight</div>
-              <div class="ft-card-desc">A single flight number that may stop for passengers or refuel, but you usually stay on the same plane.</div>
+              <div class="ft-card-desc">A single flight number that may stop for passengers or refuel, but you usually stay on the same plane. Estimates allow about 45 extra minutes for the stop.</div>
             </div>
             <div class="ft-card">
               <div class="ft-card-title">Connecting Flight</div>
-              <div class="ft-card-desc">At least two separate planes and flight numbers. You change planes during a layover.</div>
+              <div class="ft-card-desc">At least two separate planes and flight numbers. You change planes during a layover; estimates allow about 2.5 extra hours. Cabin class changes price, not travel time.</div>
             </div>
           </div>
         </div>
@@ -793,35 +794,61 @@ function getFlightDistanceKm(fromCode, toCode) {
   return haversineKm(fromA, toA);
 }
 
-function formatDurationFromDistance(distanceKm) {
-  if (!distanceKm || distanceKm <= 0) return '1h 00m';
-  const cruiseKmh = 880;
-  const groundMinutes = 35;
-  const travelHours = distanceKm / cruiseKmh;
-  const minutes = Math.max(60, Math.round((travelHours * 60 + groundMinutes) / 5) * 5);
-  return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
+function getEstimatedDistanceKm(fromCode, toCode) {
+  const knownDistance = getFlightDistanceKm(fromCode, toCode);
+  if (knownDistance) return knownDistance;
+  const routeKey = [String(fromCode || ''), String(toCode || '')].sort().join(':');
+  const hash = Array.from(routeKey).reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, 7);
+  return 450 + (hash % 7551);
+}
+
+function getTypeTimeAllowance(type) {
+  if (type === 'Direct') return 45;
+  if (type === 'Connecting') return 150;
+  return 0;
+}
+
+function estimateDurationMinutes(distanceKm) {
+  const cruiseMinutes = (distanceKm / 850) * 60;
+  const groundMinutes = 40;
+  return Math.max(50, Math.round((cruiseMinutes + groundMinutes) / 5) * 5);
+}
+
+function formatDurationMinutes(minutes) {
+  const safeMinutes = Math.max(0, Math.round(minutes));
+  return `${Math.floor(safeMinutes / 60)}h ${String(safeMinutes % 60).padStart(2, '0')}m`;
+}
+
+function parseDurationMinutes(value) {
+  const match = String(value || '').match(/^\s*(\d+)\s*h(?:\s*(\d+)\s*m)?\s*$/i);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2] || 0);
+}
+
+function estimateVirtualFare(distanceKm, type) {
+  const typeMultiplier = { 'Non-stop': 1.12, Direct: 1.04, Connecting: 0.84 }[type] || 1;
+  const fare = (65 + distanceKm * 0.065) * typeMultiplier;
+  return Math.max(89, Math.round(fare / 5) * 5);
 }
 
 function normalizeFlight(f) {
   const n = { ...f, type: f.type || 'Non-stop' };
   n.duration = n.duration || n.dur;
-  if (!n.duration && n.dep && n.arr) {
-    const computed = computeDurationFromTimes(n.dep, n.arr);
-    if (computed) n.duration = computed;
-  }
-  if (!n.dur && n.duration) n.dur = n.duration;
-  if (n.dep && n.arr && n.duration) {
-    const expected = computeDurationFromTimes(n.dep, n.arr);
-    if (expected && expected !== n.duration) n.duration = expected;
-  }
   const distKm = getFlightDistanceKm(n.from, n.to);
   if (distKm) {
     n.distance = `${Math.round(distKm).toLocaleString()} km`;
   }
-  if (!n.duration && distKm) {
-    n.duration = formatDurationFromDistance(distKm);
-    n.dur = n.duration;
+  if (distKm) {
+    const minDuration = estimateDurationMinutes(distKm) + getTypeTimeAllowance(n.type);
+    const suppliedDuration = parseDurationMinutes(n.duration);
+    if (suppliedDuration === null || suppliedDuration < minDuration) {
+      n.duration = formatDurationMinutes(minDuration);
+    }
   }
+  if (!n.duration && n.dep && n.arr) {
+    n.duration = computeDurationFromTimes(n.dep, n.arr);
+  }
+  if (n.duration) n.dur = n.duration;
   return n;
 }
 
@@ -839,15 +866,17 @@ function getFlightsForRoute(from, to, cls, depDate, flightType='any') {
   }
 
   const normalized = FLIGHTS.map(normalizeFlight);
-  const matches = normalized.filter(f => f.from === from && f.to === to && f.cls.includes(cls));
-  const fallback = normalized.filter(f => f.from === from && f.to === to);
-  let all = matches.length ? matches : fallback;
+  const routeFlights = normalized.filter(f => f.from === from && f.to === to);
+  const classFlights = routeFlights.filter(f => f.cls.includes(cls));
+  if (routeFlights.length && !classFlights.length) {
+    const availableClasses = [...new Set(routeFlights.flatMap(f => f.cls))];
+    return { noFlights: true, reason: 'no_class', depDate, travelClass: cls, availableClasses };
+  }
+  let all = classFlights;
 
-  if (desired !== 'any') {
-    const filtered = all.filter(f => f.type === desired);
-    if (filtered.length) {
-      all = filtered;
-    } else {
+  if (desired !== 'any' && all.length) {
+    all = all.filter(f => f.type === desired);
+    if (!all.length) {
       return { noFlights: true, reason: 'no_match', depDate, flightType: desired };
     }
   }
@@ -867,9 +896,9 @@ function getFlightsForRoute(from, to, cls, depDate, flightType='any') {
     available = all;
   }
 
-  if (available.length === 0) {
+  if (!routeFlights.length) {
     const baseNum = 2000 + Math.abs((from + to).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 900;
-      const distKm = getFlightDistanceKm(from, to);
+      const distKm = getEstimatedDistanceKm(from, to);
       const makeVirtual = (offset) => {
         let baseH, baseM;
         if (isToday) {
@@ -886,39 +915,26 @@ function getFlightsForRoute(from, to, cls, depDate, flightType='any') {
         const type = types[offset % 3];
         
         // Calculate duration based on flight type
-        let baseDurationMins = 0;
-        if (distKm) {
-          // Base duration from distance (approx 800 km/h average speed)
-          baseDurationMins = Math.round((distKm / 800) * 60);
-        } else {
-          baseDurationMins = (2 + Math.floor(Math.random() * 12)) * 60;
-        }
-        
-        let additionalMins = 0;
+        const baseDurationMins = estimateDurationMinutes(distKm);
+        const additionalMins = getTypeTimeAllowance(type);
         let stops = [];
         
-        if (type === 'Non-stop') {
-          // Fastest - no additional time
-          additionalMins = 0;
-        } else if (type === 'Direct') {
-          // May stop for refueling or passengers - add 30-60 minutes
-          additionalMins = 30 + Math.floor(Math.random() * 30);
+        if (type === 'Direct') {
           const stopReasons = ['Refueling', 'Passenger pickup/dropoff', 'Technical check'];
-          const stopAirport = ['ORD', 'ATL', 'DEN', 'DFW', 'PHX'][Math.floor(Math.random() * 5)];
+          const stopAirports = ['ORD', 'ATL', 'DEN', 'DFW', 'PHX'].filter(code => code !== from && code !== to);
+          const stopAirport = stopAirports[offset % stopAirports.length];
           stops = [{
             airport: stopAirport,
-            reason: stopReasons[Math.floor(Math.random() * stopReasons.length)],
+            reason: stopReasons[offset % stopReasons.length],
             duration: additionalMins
           }];
         } else if (type === 'Connecting') {
-          // Layover - add 2-4 hours
-          additionalMins = 120 + Math.floor(Math.random() * 120);
-          const layoverAirports = ['ORD', 'ATL', 'DEN', 'DFW', 'PHX', 'LAX', 'SFO'][Math.floor(Math.random() * 7)];
-          const connectingFlights = ['AA 1234', 'UA 5678', 'DL 9012', 'SW 3456'][Math.floor(Math.random() * 4)];
+          const layoverAirports = ['ORD', 'ATL', 'DEN', 'DFW', 'PHX', 'LAX', 'SFO'].filter(code => code !== from && code !== to);
+          const connectingFlights = ['FW 1234', 'FW 5678', 'FW 9012', 'FW 3456'];
           stops = [{
-            airport: layoverAirports,
+            airport: layoverAirports[offset % layoverAirports.length],
             reason: 'Layover - Connecting flight',
-            connectingFlight: connectingFlights,
+            connectingFlight: connectingFlights[offset % connectingFlights.length],
             duration: additionalMins
           }];
         }
@@ -932,8 +948,9 @@ function getFlightsForRoute(from, to, cls, depDate, flightType='any') {
         const totalMins = baseH * 60 + baseM + (durH2 * 60) + (durM2 || 0);
         const arrH = Math.floor(totalMins / 60) % 24;
         const arrM = totalMins % 60;
-        const price = 150 + Math.floor(Math.random() * 600);
-        const distance = distKm ? `${Math.round(distKm).toLocaleString()} km` : undefined;
+        const price = estimateVirtualFare(distKm, type);
+        const knownDistance = getFlightDistanceKm(from, to);
+        const distance = `${Math.round(distKm).toLocaleString()} km${knownDistance ? '' : ' (est.)'}`;
         return {
           fn: `FW-${baseNum + offset}`,
           airline: 'Fly Way Airlines',
@@ -951,7 +968,11 @@ function getFlightsForRoute(from, to, cls, depDate, flightType='any') {
         };
       };
       available = [makeVirtual(0), makeVirtual(1), makeVirtual(2), makeVirtual(3), makeVirtual(4)].map(normalizeFlight);
+      if (desired !== 'any') available = available.filter(f => f.type === desired);
     }
+  if (!available.length && desired !== 'any') {
+    return { noFlights: true, reason: 'no_match', depDate, flightType: desired };
+  }
   return available;
 }
 
@@ -1466,6 +1487,16 @@ function searchFlights() {
         <div style="margin-top:14px">
           <button class="btn btn-primary" onclick="document.getElementById('flightType').value='any';searchFlights()">Show all available flights</button>
         </div>
+      </div>`;
+    } else if (outResult.reason === 'no_class') {
+      const availableClasses = outResult.availableClasses
+        .map(className => FlyWay.classLabel[className] || className)
+        .join(', ');
+      msg = `<div style="background:rgba(255,141,46,0.08);border:1px solid rgba(255,141,46,0.2);border-radius:12px;padding:18px 20px;text-align:center">
+        <div style="font-size:28px;margin-bottom:10px">💺</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:6px">No flights available in this travel class</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Available classes for ${fromCode} → ${toCode}: ${escapeBookingHtml(availableClasses)}.</div>
+        <button class="btn btn-primary" onclick="document.getElementById('travelClass').value='economy';document.getElementById('flightType').value='any';searchFlights()">Search available Economy flights</button>
       </div>`;
     } else {
       const timeNow = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});

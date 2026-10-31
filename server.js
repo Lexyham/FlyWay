@@ -138,10 +138,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('Missing required environment variable JWT_SECRET');
-}
+const JWT_SECRET = process.env.JWT_SECRET || 'development-secret';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -218,7 +215,13 @@ const sanitize = (u) => { const { password, ...s } = u; return s; };
 const auth = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
-  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
+  try {
+    const tokenUser = jwt.verify(token, JWT_SECRET);
+    const user = readDB(FILES.users).find(item => item.id === tokenUser.id);
+    if (!user) return res.status(401).json({ error: 'Account no longer exists' });
+    req.user = { ...tokenUser, role: user.role };
+    next();
+  }
   catch { res.status(403).json({ error: 'Invalid token' }); }
 };
 
@@ -234,6 +237,118 @@ const logAccess = (userId, action, details = {}, req) => {
   logs.push({ id: uuidv4(), userId, action, details, ip: req?.ip || 'unknown', userAgent: req?.headers?.['user-agent'] || 'unknown', timestamp: new Date().toISOString() });
   if (logs.length > 5000) logs.splice(0, logs.length - 5000);
   writeDB(FILES.accessLog, logs);
+};
+
+const emitUserDataDeleted = (userId, changes) => {
+  if (userId) io.to(`user_${userId}`).emit(`user_data_deleted_${userId}`, changes);
+};
+
+const getBookingUploadUrls = (booking) => [
+  booking.paymentProof,
+  booking.giftcardImage,
+  ...(Array.isArray(booking.giftcardImages) ? booking.giftcardImages : []),
+].filter(url => typeof url === 'string');
+
+const uploadFilenameFromUrl = (url) => {
+  if (typeof url !== 'string' || !url.startsWith('/uploads/')) return null;
+  const filename = url.slice('/uploads/'.length).split(/[?#]/, 1)[0];
+  if (!filename || filename !== path.basename(filename) || filename.includes('\\')) return null;
+  return filename;
+};
+
+const unlinkUploadFiles = (urls) => {
+  const filenames = new Set(urls.map(uploadFilenameFromUrl).filter(Boolean));
+  filenames.forEach(filename => {
+    try {
+      fs.unlinkSync(path.join(uploadsDir, filename));
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  });
+};
+
+const deleteBookingRecords = (bookingIds) => {
+  const ids = new Set(bookingIds);
+  const bookings = readDB(FILES.bookings);
+  const deletedBookings = bookings.filter(booking => ids.has(booking.id));
+  const transactions = readDB(FILES.transactions);
+  const deletedTransactions = transactions.filter(transaction => ids.has(transaction.bookingId));
+  const remainingBookings = bookings.filter(booking => !ids.has(booking.id));
+  const remainingTransactions = transactions.filter(transaction => !ids.has(transaction.bookingId));
+  const bookingUsers = new Map(deletedBookings.map(booking => [booking.id, booking.userId]));
+  const retainedUrls = new Set(remainingBookings.flatMap(getBookingUploadUrls).concat(
+    remainingTransactions.map(transaction => transaction.proofFile).filter(Boolean)
+  ));
+  unlinkUploadFiles(deletedBookings.flatMap(getBookingUploadUrls).concat(
+    deletedTransactions.map(transaction => transaction.proofFile).filter(Boolean)
+  ).filter(url => !retainedUrls.has(url)));
+  writeDB(FILES.bookings, remainingBookings);
+  writeDB(FILES.transactions, remainingTransactions);
+
+  const changesByUser = new Map();
+  const addUserChange = (userId, key, id) => {
+    if (!userId) return;
+    if (!changesByUser.has(userId)) changesByUser.set(userId, { kind:'booking', bookingIds:[], transactionIds:[] });
+    changesByUser.get(userId)[key].push(id);
+  };
+  deletedBookings.forEach(booking => addUserChange(booking.userId, 'bookingIds', booking.id));
+  deletedTransactions.forEach(transaction => addUserChange(
+    transaction.userId || bookingUsers.get(transaction.bookingId),
+    'transactionIds',
+    transaction.id
+  ));
+  changesByUser.forEach((changes, userId) => {
+    emitUserDataDeleted(userId, {
+      ...changes,
+    });
+  });
+  return { bookings: deletedBookings, transactions: deletedTransactions };
+};
+
+const deleteUploadReferences = (filenames) => {
+  const urls = new Set(filenames.map(filename => `/uploads/${filename}`));
+  const bookings = readDB(FILES.bookings);
+  const transactions = readDB(FILES.transactions);
+  const bookingUsers = new Map(bookings.map(booking => [booking.id, booking.userId]));
+  const changedUsers = new Set();
+  let bookingsChanged = false;
+  let transactionsChanged = false;
+
+  const updatedBookings = bookings.map(booking => {
+    const updated = { ...booking };
+    let changed = false;
+    ['paymentProof', 'giftcardImage'].forEach(field => {
+      if (urls.has(updated[field])) {
+        updated[field] = null;
+        changed = true;
+      }
+    });
+    if (Array.isArray(updated.giftcardImages)) {
+      const remainingImages = updated.giftcardImages.filter(url => !urls.has(url));
+      if (remainingImages.length !== updated.giftcardImages.length) {
+        updated.giftcardImages = remainingImages.length ? remainingImages : null;
+        changed = true;
+      }
+    }
+    if (changed) {
+      bookingsChanged = true;
+      if (booking.userId) changedUsers.add(booking.userId);
+      return updated;
+    }
+    return booking;
+  });
+
+  const updatedTransactions = transactions.map(transaction => {
+    if (!urls.has(transaction.proofFile)) return transaction;
+    transactionsChanged = true;
+    const userId = transaction.userId || bookingUsers.get(transaction.bookingId);
+    if (userId) changedUsers.add(userId);
+    return { ...transaction, proofFile: null };
+  });
+
+  if (bookingsChanged) writeDB(FILES.bookings, updatedBookings);
+  if (transactionsChanged) writeDB(FILES.transactions, updatedTransactions);
+  changedUsers.forEach(userId => emitUserDataDeleted(userId, { kind: 'proof' }));
 };
 
 const createNotification = (userId, type, title, message, data = {}) => {
@@ -1530,8 +1645,38 @@ app.put('/api/admin/users/:id', adminAuth, (req, res) => {
 });
 app.delete('/api/admin/users/:id', adminAuth, (req, res) => {
   if(req.params.id==='admin-001') return res.status(403).json({error:'Cannot delete primary admin'});
-  writeDB(FILES.users, readDB(FILES.users).filter(u=>u.id!==req.params.id));
-  res.json({ok:true});
+  const userId = req.params.id;
+  const users = readDB(FILES.users);
+  if (!users.some(user => user.id === userId)) return res.status(404).json({error:'Not found'});
+
+  const bookings = readDB(FILES.bookings);
+  const userBookings = bookings.filter(booking => booking.userId === userId);
+  const bookingIds = new Set(userBookings.map(booking => booking.id));
+  const transactions = readDB(FILES.transactions);
+  const userTransactions = transactions.filter(transaction =>
+    transaction.userId === userId || bookingIds.has(transaction.bookingId)
+  );
+  try {
+    unlinkUploadFiles(userBookings.flatMap(getBookingUploadUrls).concat(
+      userTransactions.map(transaction => transaction.proofFile).filter(Boolean)
+    ));
+    writeDB(FILES.bookings, bookings.filter(booking => booking.userId !== userId));
+    writeDB(FILES.transactions, transactions.filter(transaction =>
+      transaction.userId !== userId && !bookingIds.has(transaction.bookingId)
+    ));
+    writeDB(FILES.messages, readDB(FILES.messages).filter(message => message.userId !== userId));
+    writeDB(FILES.notifications, readDB(FILES.notifications).filter(note => note.userId !== userId));
+    writeDB(FILES.verificationSessions, readDB(FILES.verificationSessions).filter(session => session.userId !== userId));
+    writeDB(FILES.licenses, readDB(FILES.licenses).map(license =>
+      license.usedBy === userId ? { ...license, usedBy: null, usedAt: null } : license
+    ));
+    writeDB(FILES.users, users.filter(user => user.id !== userId));
+    io.to(`user_${userId}`).emit(`user_data_deleted_${userId}`, { kind:'account' });
+    res.json({ok:true});
+  } catch (error) {
+    console.error('Failed to delete user data:', error);
+    res.status(500).json({error:'Could not completely delete this user and their data'});
+  }
 });
 
 app.get('/api/admin/bookings', adminAuth, (req, res) => {
@@ -1602,12 +1747,26 @@ app.patch('/api/admin/bookings/:id', adminAuth, (req, res) => {
   res.json(bookings[idx]);
 });
 app.delete('/api/admin/bookings/:id', adminAuth, (req, res) => {
-  writeDB(FILES.bookings, readDB(FILES.bookings).filter(b=>b.id!==req.params.id));
-  res.json({ok:true});
+  if (!readDB(FILES.bookings).some(booking => booking.id === req.params.id)) {
+    return res.status(404).json({error:'Not found'});
+  }
+  try {
+    deleteBookingRecords([req.params.id]);
+    res.json({ok:true});
+  } catch (error) {
+    console.error('Failed to delete booking:', error);
+    res.status(500).json({error:'Could not completely delete this booking'});
+  }
 });
 
 app.delete('/api/admin/bookings', adminAuth, (req, res) => {
-  writeDB(FILES.bookings, []); res.json({ok:true});
+  try {
+    deleteBookingRecords(readDB(FILES.bookings).map(booking => booking.id));
+    res.json({ok:true});
+  } catch (error) {
+    console.error('Failed to delete bookings:', error);
+    res.status(500).json({error:'Could not completely delete bookings'});
+  }
 });
 
 app.get('/api/admin/transactions', adminAuth, (req, res) => {
@@ -1616,7 +1775,16 @@ app.get('/api/admin/transactions', adminAuth, (req, res) => {
 });
 
 app.get('/api/admin/access-logs', adminAuth, (req, res) => {
-  const logs=[...readDB(FILES.accessLog)].reverse().slice(0,200);
+  const allLogs = readDB(FILES.accessLog);
+  let assignedIds = false;
+  allLogs.forEach(log => {
+    if (!log.id) {
+      log.id = uuidv4();
+      assignedIds = true;
+    }
+  });
+  if (assignedIds) writeDB(FILES.accessLog, allLogs);
+  const logs=[...allLogs].reverse().slice(0,200);
   const users=readDB(FILES.users);
   res.json(logs.map(l=>{const u=users.find(u=>u.id===l.userId);return{...l,userName:u?.username};}));
 });
@@ -1659,35 +1827,117 @@ app.patch('/api/admin/messages/:id', adminAuth, (req, res) => {
   res.json(msgs[idx]);
 });
 app.delete('/api/admin/messages/:id', adminAuth, (req, res) => {
-  writeDB(FILES.messages, readDB(FILES.messages).filter(m=>m.id!==req.params.id));
+  const messages = readDB(FILES.messages);
+  const message = messages.find(item => item.id === req.params.id);
+  if (!message) return res.status(404).json({error:'Not found'});
+  writeDB(FILES.messages, messages.filter(item => item.id !== req.params.id));
+  emitUserDataDeleted(message.userId, {kind:'message', messageIds:[message.id]});
   res.json({ok:true});
 });
 app.delete('/api/admin/messages', adminAuth, (req, res) => {
-  writeDB(FILES.messages,[]);res.json({ok:true});
+  const messages = readDB(FILES.messages);
+  writeDB(FILES.messages,[]);
+  [...new Set(messages.map(message => message.userId).filter(Boolean))].forEach(userId => {
+    emitUserDataDeleted(userId, {kind:'messages', messageIds:messages.filter(message => message.userId === userId).map(message => message.id)});
+  });
+  res.json({ok:true});
+});
+
+app.delete('/api/admin/access-logs/:id', adminAuth, (req, res) => {
+  const logs = readDB(FILES.accessLog);
+  if (!logs.some(log => log.id === req.params.id)) return res.status(404).json({error:'Not found'});
+  writeDB(FILES.accessLog, logs.filter(log => log.id !== req.params.id));
+  res.json({ok:true});
 });
 
 app.delete('/api/admin/access-logs', adminAuth, (req, res) => {
   writeDB(FILES.accessLog, []); res.json({ok:true});
 });
 
+app.delete('/api/admin/payments/:id', adminAuth, (req, res) => {
+  const booking = readDB(FILES.bookings).find(item =>
+    item.id === req.params.id && ['pending', 'proof_submitted'].includes(item.paymentStatus)
+  );
+  if (!booking) return res.status(404).json({error:'Payment review not found'});
+  try {
+    deleteBookingRecords([booking.id]);
+    res.json({ok:true});
+  } catch (error) {
+    console.error('Failed to delete payment review:', error);
+    res.status(500).json({error:'Could not completely delete this payment review'});
+  }
+});
+
 app.delete('/api/admin/payments', adminAuth, (req, res) => {
-  const bookings = readDB(FILES.bookings);
-  const updated = bookings.filter(b => !['pending', 'proof_submitted'].includes(b.paymentStatus));
-  writeDB(FILES.bookings, updated);
+  try {
+    const pendingIds = readDB(FILES.bookings)
+      .filter(booking => ['pending', 'proof_submitted'].includes(booking.paymentStatus))
+      .map(booking => booking.id);
+    deleteBookingRecords(pendingIds);
+    res.json({ok:true});
+  } catch (error) {
+    console.error('Failed to delete payment reviews:', error);
+    res.status(500).json({error:'Could not completely delete payment reviews'});
+  }
+});
+
+app.delete('/api/admin/transactions/:id', adminAuth, (req, res) => {
+  const transactions = readDB(FILES.transactions);
+  const transaction = transactions.find(item => item.id === req.params.id);
+  if (!transaction) return res.status(404).json({error:'Not found'});
+  writeDB(FILES.transactions, transactions.filter(item => item.id !== req.params.id));
+  const booking = readDB(FILES.bookings).find(item => item.id === transaction.bookingId);
+  emitUserDataDeleted(transaction.userId || booking?.userId, {kind:'transaction', transactionIds:[transaction.id]});
   res.json({ok:true});
 });
 
 app.delete('/api/admin/transactions', adminAuth, (req, res) => {
-  writeDB(FILES.transactions, []); res.json({ok:true});
+  const transactions = readDB(FILES.transactions);
+  const bookingUsers = new Map(readDB(FILES.bookings).map(booking => [booking.id, booking.userId]));
+  writeDB(FILES.transactions, []);
+  const transactionsByUser = new Map();
+  transactions.forEach(transaction => {
+    const userId = transaction.userId || bookingUsers.get(transaction.bookingId);
+    if (!userId) return;
+    if (!transactionsByUser.has(userId)) transactionsByUser.set(userId, []);
+    transactionsByUser.get(userId).push(transaction.id);
+  });
+  transactionsByUser.forEach((transactionIds, userId) => {
+    emitUserDataDeleted(userId, {
+      kind:'transactions',
+      transactionIds,
+    });
+  });
+  res.json({ok:true});
+});
+
+app.delete('/api/admin/uploads/:filename', adminAuth, (req, res) => {
+  const filename = req.params.filename;
+  if (!filename || filename !== path.basename(filename) || filename.includes('\\')) {
+    return res.status(400).json({error:'Invalid filename'});
+  }
+  const filePath = path.join(uploadsDir, filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({error:'File not found'});
+  try {
+    unlinkUploadFiles([`/uploads/${filename}`]);
+    deleteUploadReferences([filename]);
+    res.json({ok:true});
+  } catch (error) {
+    console.error('Failed to delete proof file:', error);
+    res.status(500).json({error:'Could not completely delete this proof file'});
+  }
 });
 
 app.delete('/api/admin/uploads', adminAuth, (req, res) => {
   try {
-    fs.readdirSync(uploadsDir).forEach(f => {
-      try { fs.unlinkSync(path.join(uploadsDir, f)); } catch {}
-    });
+    const filenames = fs.readdirSync(uploadsDir);
+    unlinkUploadFiles(filenames.map(filename => `/uploads/${filename}`));
+    deleteUploadReferences(filenames);
     res.json({ok:true});
-  } catch { res.json({ok:false}); }
+  } catch (error) {
+    console.error('Failed to delete proof files:', error);
+    res.status(500).json({error:'Could not completely delete proof files'});
+  }
 });
 
 app.post('/api/admin/reviews', adminAuth, (req, res) => {
@@ -2071,6 +2321,9 @@ io.on('connection', socket => {
 });
 
 async function start() {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('Missing required environment variable JWT_SECRET');
+  }
   if (USE_MONGO) {
     try {
       const { summary } = await mongoStore.initStorage(dataDir);
@@ -2091,8 +2344,9 @@ const shutdown = async () => {
   try { await mongoStore.close(); } catch (e) { console.error('[Storage] flush on shutdown failed:', e.message); }
   process.exit(0);
 };
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
-
-start();
-module.exports = { app, io };
+if (require.main === module) {
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+  start();
+}
+module.exports = { app, io, server, start };

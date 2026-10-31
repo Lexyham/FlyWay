@@ -2,7 +2,24 @@
 
 const AdminController = (() => {
 
-  
+  let bookingFilter = 'all';
+
+  function bookingProofUrls(booking) {
+    if (!booking) return [];
+    return [
+      booking.paymentProof,
+      booking.giftcardImage,
+      ...(Array.isArray(booking.giftcardImages) ? booking.giftcardImages : []),
+    ].filter(url => typeof url === 'string');
+  }
+
+  function removeUploadedFiles(urls) {
+    const filenames = new Set(urls.filter(url => url.startsWith('/uploads/')).map(url => url.slice('/uploads/'.length)));
+    const uploads = (AdminState.get('uploads') || []).filter(file => !filenames.has(file.filename));
+    AdminState.setState({ uploads });
+    if (AdminState.get('currentTab') === 'uploads') AdminUI.renderUploads(uploads);
+  }
+
   async function _run(fn) {
     AdminState.setLoading(true);
     AdminUI.setLoading(true);
@@ -65,6 +82,7 @@ const AdminController = (() => {
   }
 
   function filterBookings(status, btn) {
+    bookingFilter = status;
     document.querySelectorAll('#t_bookings .trip-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const all = AdminState.get('bookings');
@@ -195,6 +213,105 @@ const AdminController = (() => {
     });
   }
 
+  async function deleteBooking(id, ref) {
+    if (!confirm(`Permanently delete booking ${ref}? Its linked transaction and uploaded proof files will also be deleted.`)) return;
+    const booking = (AdminState.get('bookings') || []).find(item => item.id === id);
+    await _run(async () => {
+      await AdminAPI.deleteBooking(id);
+      AdminState.removeItem('bookings', id);
+      AdminState.setState({
+        transactions: (AdminState.get('transactions') || []).filter(transaction => transaction.bookingId !== id),
+      });
+      const bookings = AdminState.get('bookings') || [];
+      AdminUI.renderBookings(bookingFilter === 'all' ? bookings : bookings.filter(booking => booking.status === bookingFilter));
+      AdminUI.renderLiveFeed(bookings.slice(0, 5));
+      AdminUI.renderPayments(bookings.filter(booking =>
+        booking.paymentStatus === 'proof_submitted' || booking.paymentStatus === 'pending'
+      ));
+      AdminUI.updateBadge('payments', bookings.filter(booking =>
+        booking.paymentStatus === 'proof_submitted' || booking.paymentStatus === 'pending'
+      ).length);
+      removeUploadedFiles(bookingProofUrls(booking));
+      AdminUI.toast('success', 'Booking deleted', 'The booking and its linked user records were removed.');
+    });
+  }
+
+  async function deletePaymentReview(id, ref) {
+    if (!confirm(`Permanently delete the payment review for ${ref}? This also deletes the booking and its linked transaction.`)) return;
+    const booking = (AdminState.get('bookings') || []).find(item => item.id === id);
+    await _run(async () => {
+      await AdminAPI.deletePaymentReview(id);
+      AdminState.removeItem('bookings', id);
+      AdminState.setState({
+        transactions: (AdminState.get('transactions') || []).filter(transaction => transaction.bookingId !== id),
+      });
+      const bookings = AdminState.get('bookings') || [];
+      AdminUI.renderPayments(bookings.filter(booking =>
+        booking.paymentStatus === 'proof_submitted' || booking.paymentStatus === 'pending'
+      ));
+      AdminUI.updateBadge('payments', bookings.filter(booking =>
+        booking.paymentStatus === 'proof_submitted' || booking.paymentStatus === 'pending'
+      ).length);
+      removeUploadedFiles(bookingProofUrls(booking));
+      AdminUI.toast('success', 'Payment review deleted', 'The booking and its linked user records were removed.');
+    });
+  }
+
+  async function deleteTransaction(id, ref) {
+    if (!confirm(`Permanently delete transaction ${ref}?`)) return;
+    await _run(async () => {
+      await AdminAPI.deleteTransaction(id);
+      AdminState.removeItem('transactions', id);
+      AdminUI.renderTransactions(AdminState.get('transactions') || []);
+      AdminUI.toast('success', 'Transaction deleted');
+    });
+  }
+
+  async function deleteUpload(filename) {
+    if (!confirm(`Permanently delete proof file "${filename}"?`)) return;
+    await _run(async () => {
+      await AdminAPI.deleteUpload(filename);
+      const url = `/uploads/${filename}`;
+      const uploads = (AdminState.get('uploads') || []).filter(file => file.filename !== filename);
+      const bookings = (AdminState.get('bookings') || []).map(booking => {
+        const updated = { ...booking };
+        ['paymentProof', 'giftcardImage'].forEach(field => {
+          if (updated[field] === url) updated[field] = null;
+        });
+        if (Array.isArray(updated.giftcardImages)) {
+          updated.giftcardImages = updated.giftcardImages.filter(image => image !== url);
+          if (!updated.giftcardImages.length) updated.giftcardImages = null;
+        }
+        return updated;
+      });
+      const transactions = (AdminState.get('transactions') || []).map(transaction =>
+        transaction.proofFile === url ? { ...transaction, proofFile: null } : transaction
+      );
+      AdminState.setState({ uploads, bookings, transactions });
+      AdminUI.renderUploads(uploads);
+      if (AdminState.get('currentTab') === 'bookings') {
+        AdminUI.renderBookings(bookingFilter === 'all' ? bookings : bookings.filter(booking => booking.status === bookingFilter));
+      }
+      if (AdminState.get('currentTab') === 'payments') {
+        AdminUI.renderPayments(bookings.filter(booking =>
+          booking.paymentStatus === 'proof_submitted' || booking.paymentStatus === 'pending'
+        ));
+      }
+      if (AdminState.get('currentTab') === 'transactions') AdminUI.renderTransactions(transactions);
+      AdminUI.toast('success', 'Proof file deleted');
+    });
+  }
+
+  async function deleteLog(id) {
+    if (!confirm('Permanently delete this access log?')) return;
+    await _run(async () => {
+      await AdminAPI.deleteLog(id);
+      AdminState.removeItem('logs', id);
+      AdminUI.renderLogs(AdminState.get('logs') || []);
+      AdminUI.toast('success', 'Access log deleted');
+    });
+  }
+
   
   async function loadUsers() {
     await _run(async () => {
@@ -322,6 +439,7 @@ const AdminController = (() => {
   }
 
   async function deleteMessage(id) {
+    if (!confirm('Permanently delete this message?')) return;
     await _run(async () => {
       await AdminAPI.deleteMessage(id);
       AdminState.removeItem('messages', id);
@@ -333,8 +451,14 @@ const AdminController = (() => {
   async function clearAllBookings() {
     if (!confirm('Delete ALL bookings? This cannot be undone.')) return;
     await _run(async () => {
+      const deletedBookingIds = new Set((AdminState.get('bookings') || []).map(booking => booking.id));
+      const deletedProofUrls = (AdminState.get('bookings') || []).flatMap(bookingProofUrls);
       await AdminAPI.deleteAllBookings();
-      AdminState.setState({ bookings: [] });
+      AdminState.setState({
+        bookings: [],
+        transactions: (AdminState.get('transactions') || []).filter(transaction => !deletedBookingIds.has(transaction.bookingId)),
+      });
+      removeUploadedFiles(deletedProofUrls);
       AdminUI.toast('success', 'All bookings cleared');
       AdminUI.renderBookings([]);
       AdminUI.renderLiveFeed([]);
@@ -346,8 +470,15 @@ const AdminController = (() => {
     if (!confirm('Delete ALL payment review entries? This cannot be undone.')) return;
     await _run(async () => {
       await AdminAPI.deleteAllPayments();
-      const remainingBookings = (AdminState.get('bookings') || []).filter(b => !['pending', 'proof_submitted'].includes(b.paymentStatus));
-      AdminState.setState({ bookings: remainingBookings });
+      const allBookings = AdminState.get('bookings') || [];
+      const deletedBookings = allBookings.filter(booking => ['pending', 'proof_submitted'].includes(booking.paymentStatus));
+      const deletedBookingIds = new Set(deletedBookings.map(booking => booking.id));
+      const remainingBookings = allBookings.filter(booking => !deletedBookingIds.has(booking.id));
+      AdminState.setState({
+        bookings: remainingBookings,
+        transactions: (AdminState.get('transactions') || []).filter(transaction => !deletedBookingIds.has(transaction.bookingId)),
+      });
+      removeUploadedFiles(deletedBookings.flatMap(bookingProofUrls));
       AdminUI.toast('success', 'All payment reviews cleared');
       AdminUI.renderPayments([]);
       AdminUI.updateBadge('payments', 0);
@@ -368,6 +499,7 @@ const AdminController = (() => {
     if (!confirm('Delete ALL uploaded files? This cannot be undone.')) return;
     await _run(async () => {
       await AdminAPI.deleteAllUploads();
+      AdminState.setState({ uploads: [] });
       AdminUI.toast('success', 'All proof files cleared');
       AdminUI.renderUploads([]);
     });
@@ -730,6 +862,7 @@ const AdminController = (() => {
     loadUsers, loadNotify, loadMessages, loadPromos, loadLicenses, loadUploads, loadLogs,
     filterBookings,
     approveBooking, confirmPayment, cancelBooking, openBookingDetail, saveBookingEdits, clearAllBookings,
+    deleteBooking, deletePaymentReview, deleteTransaction, deleteUpload, deleteLog,
     approvePayment, rejectPayment,
     toggleUser, deleteUser,
     sendNotification, broadcastNotification, goToNotifyUser,

@@ -137,6 +137,7 @@ const AdminUI = (() => {
           ${b.status !== 'cancelled' ? `<button class="btn btn-danger btn-sm" onclick="AdminController.cancelBooking('${b.id}')">❌ Cancel</button>` : ''}
           <button class="btn btn-ghost btn-sm" onclick="AdminController.openBookingDetail('${b.id}')">📋 Details</button>
           <button class="btn btn-ghost btn-sm" onclick="AdminController.goToNotifyUser('${b.userId}','${b.ref}')">💬 Notify User</button>
+          <button class="btn btn-danger btn-sm" aria-label="Delete booking ${escapeHtml(b.ref)}" title="Delete booking" onclick="AdminController.deleteBooking('${b.id}','${escapeHtml(b.ref)}')">🗑 Delete</button>
         </div>
       </div>`).join(''));
   }
@@ -235,6 +236,7 @@ const AdminUI = (() => {
           <button class="btn btn-success" onclick="AdminController.approvePayment('${b.id}')">✅ Approve - Confirm Booking</button>
           <button class="btn btn-danger"  onclick="AdminController.rejectPayment('${b.id}')">❌ Reject - Notify User</button>
           <button class="btn btn-ghost btn-sm" onclick="AdminController.openBookingDetail('${b.id}')">📋 Full Details</button>
+          <button class="btn btn-danger btn-sm" aria-label="Delete payment review ${escapeHtml(b.ref)}" title="Delete payment review" onclick="AdminController.deletePaymentReview('${b.id}','${escapeHtml(b.ref)}')">🗑 Delete</button>
         </div>
       </div>`).join(''));
   }
@@ -253,7 +255,7 @@ const AdminUI = (() => {
     }
     panel.innerHTML = header + `<div class="adm-card"><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
       <thead><tr>
-        <th class="adm-th">Ref</th><th class="adm-th">User</th><th class="adm-th">Route</th><th class="adm-th">Amount</th><th class="adm-th">Method</th><th class="adm-th">Status</th><th class="adm-th">Proof</th><th class="adm-th">Date</th>
+        <th class="adm-th">Ref</th><th class="adm-th">User</th><th class="adm-th">Route</th><th class="adm-th">Amount</th><th class="adm-th">Method</th><th class="adm-th">Status</th><th class="adm-th">Proof</th><th class="adm-th">Date</th><th class="adm-th">Action</th>
       </tr></thead>
       <tbody>${list.map(t => `
         <tr class="adm-tr">
@@ -265,6 +267,7 @@ const AdminUI = (() => {
           <td class="adm-td">${FlyWay.statusBadge(t.status)}</td>
           <td class="adm-td">${t.proofFile ? `<img src="${t.proofFile}" class="proof-img" onclick="AdminUI.viewImage('${t.proofFile}')" onerror="this.outerHTML='<a href=${t.proofFile} target=_blank style=color:var(--cyan);font-size:11px>View</a>'">` : '-'}</td>
           <td class="adm-td" style="font-size:11px;color:var(--muted)">${FlyWay.fmtDateTime(t.createdAt)}</td>
+          <td class="adm-td"><button class="btn btn-danger btn-sm" aria-label="Delete transaction ${escapeHtml(t.bookingRef)}" title="Delete transaction" onclick="AdminController.deleteTransaction('${t.id}','${escapeHtml(t.bookingRef)}')">🗑</button></td>
         </tr>`).join('')}</tbody>
     </table></div></div>`;
   }
@@ -344,7 +347,10 @@ const AdminUI = (() => {
               </div>
               <div style="font-size:12px;color:var(--muted)">${m.email} · ${FlyWay.fmtDateTime(m.createdAt)}</div>
             </div>
-            ${m.status === 'unread' ? `<button class="btn btn-ghost btn-sm" onclick="AdminController.markMessageRead('${m.id}')">Mark Read</button>` : ''}
+            <div style="display:flex;gap:6px;align-items:flex-start">
+              ${m.status === 'unread' ? `<button class="btn btn-ghost btn-sm" onclick="AdminController.markMessageRead('${m.id}')">Mark Read</button>` : ''}
+              <button class="btn btn-danger btn-sm" aria-label="Delete message" title="Delete message" onclick="AdminController.deleteMessage('${m.id}')">🗑</button>
+            </div>
           </div>
           <div style="padding:10px 12px;background:var(--navy3);border-radius:8px;font-size:13px;line-height:1.8;margin-bottom:10px;word-wrap:break-word;white-space:pre-wrap;overflow-wrap:break-word">${m.message}</div>
           ${m.reply ? `<div style="padding:10px 12px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:8px;font-size:12px;margin-bottom:10px;word-wrap:break-word;white-space:pre-wrap"><strong style="color:var(--cyan)">Your reply:</strong> ${m.reply}</div>` : ''}
@@ -495,6 +501,7 @@ const AdminUI = (() => {
           <div style="font-size:10px;color:var(--muted);margin-top:2px">${(f.size / 1024).toFixed(0)} KB</div>
           ${f.booking ? `<div style="margin-top:5px"><span class="badge badge-cyan" style="font-size:10px">${f.booking.ref}</span></div>` : ''}
           <a href="${f.url}" target="_blank" onclick="event.stopPropagation()" class="btn btn-ghost btn-sm mt-8 btn-full" style="font-size:11px">Open</a>
+          <button class="btn btn-danger btn-sm mt-8 btn-full" aria-label="Delete proof file ${escapeHtml(f.filename)}" title="Delete proof file" data-filename="${escapeHtml(f.filename)}" onclick="event.stopPropagation();AdminController.deleteUpload(this.dataset.filename)">🗑 Delete file</button>
         </div>`).join('')}
     </div>`);
   }
@@ -513,7 +520,7 @@ const AdminUI = (() => {
       <table style="width:100%;border-collapse:collapse">
         <thead><tr>
           <th class="adm-th">Time</th><th class="adm-th">User</th><th class="adm-th">Action</th>
-          <th class="adm-th">IP</th><th class="adm-th">Details</th>
+          <th class="adm-th">IP</th><th class="adm-th">Details</th><th class="adm-th">Action</th>
         </tr></thead>
         <tbody>
         ${logs.slice(0, 100).map(l => `<tr class="adm-tr">
@@ -522,6 +529,7 @@ const AdminUI = (() => {
           <td class="adm-td"><span class="badge ${l.action.includes('LOGIN') ? 'badge-cyan' : l.action.includes('CANCEL') ? 'badge-red' : l.action.includes('BOOKING') ? 'badge-green' : 'badge-muted'}">${l.action}</span></td>
           <td class="adm-td" style="font-family:var(--font-m);font-size:10px;color:var(--muted)">${l.ip}</td>
           <td class="adm-td" style="font-size:11px;color:var(--muted)">${JSON.stringify(l.details || {}).slice(0, 80)}</td>
+          <td class="adm-td">${l.id ? `<button class="btn btn-danger btn-sm" aria-label="Delete access log" title="Delete access log" onclick="AdminController.deleteLog('${l.id}')">🗑</button>` : '-'}</td>
         </tr>`).join('')}
         </tbody>
       </table>`);

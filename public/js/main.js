@@ -1058,6 +1058,20 @@ FlyWay.initSocket = function() {
         if (typeof loadBookings === 'function') loadBookings();
         if (typeof loadRecent === 'function') loadRecent();
       });
+      this._socket.on('user_data_deleted_' + uid, function(changes) {
+        if (changes && changes.kind === 'account') {
+          FlyWay.toast('warning', 'Account deleted', 'Your account was deleted by an administrator.');
+          FlyWay.logout();
+          return;
+        }
+        window.dispatchEvent(new CustomEvent('flyway:user-data-deleted', { detail: changes || {} }));
+        if (changes && ['booking', 'bookings', 'proof'].includes(changes.kind)) {
+          if (typeof loadBookings === 'function') loadBookings();
+        }
+        if (changes && ['booking', 'bookings', 'proof', 'transaction', 'transactions'].includes(changes.kind)) {
+          if (typeof loadRecent === 'function') loadRecent();
+        }
+      });
     }
   } catch(e) {  }
 };

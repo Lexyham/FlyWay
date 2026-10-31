@@ -16,7 +16,7 @@
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);
   font-family:'Segoe UI',system-ui,sans-serif;color:#e0f0ff;
   user-select:none;touch-action:none}
-canvas{display:block;position:fixed;inset:0;z-index:1}
+canvas{display:block;position:fixed;inset:0;z-index:1;width:100%;height:100%;max-width:none}
 
 
 #hud{position:fixed;inset:0;z-index:10;pointer-events:none}
@@ -87,6 +87,11 @@ canvas{display:block;position:fixed;inset:0;z-index:1}
   cursor:pointer;min-width:52px;text-align:center;
   transition:background .15s,transform .1s;backdrop-filter:blur(12px)}
 .ctrl-btn:active{background:rgba(0,212,255,.22);transform:scale(.9)}
+.ctrl-btn:focus-visible,.pu-btn:focus-visible,#force-back:focus-visible,#startBtn:focus-visible{
+  outline:2px solid var(--cyan);outline-offset:2px
+}
+.dpad{display:flex;align-items:center;gap:7px}
+.action-controls{display:flex;align-items:center;gap:7px}
 
 
 #back-btn{position:absolute;top:52px;left:16px;display:none;
@@ -185,6 +190,83 @@ canvas{display:block;position:fixed;inset:0;z-index:1}
 .ov-btn:hover{opacity:.9;transform:translateY(-2px)}
 .ov-btn.sec{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
 .hi-tag{font-size:11px;color:var(--gold);font-family:monospace;margin-bottom:6px}
+
+@media (max-width:768px) and (orientation:portrait){
+  canvas{
+    inset:auto;left:50%;top:50%;right:auto;bottom:auto;
+    width:100vh;height:100vw;transform:translate(-50%,-50%) rotate(-90deg)
+  }
+  canvas{width:100dvh}
+  #topbar{
+    padding:max(8px,env(safe-area-inset-top)) 10px 6px 78px;
+    align-items:center;flex-wrap:nowrap;gap:5px
+  }
+  .logo{display:none}
+  .score-row{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    flex:1;min-width:0;gap:4px
+  }
+  .sc{padding:4px 5px;font-size:9px;text-align:center;white-space:nowrap;overflow:hidden}
+  #livesEl{font-size:13px;gap:1px}
+  #force-back{
+    top:max(8px,env(safe-area-inset-top));left:9px;
+    padding:8px 9px;font-size:11px
+  }
+  #left-info{top:calc(52px + env(safe-area-inset-top));left:12px;font-size:9px;line-height:1.8}
+  #powerups-bar{
+    top:calc(94px + env(safe-area-inset-top));left:10px;right:10px;
+    flex-direction:row;gap:5px;overflow-x:auto;padding:0 0 4px;
+    scrollbar-width:none;touch-action:pan-x;-webkit-overflow-scrolling:touch
+  }
+  #powerups-bar::-webkit-scrollbar{display:none}
+  .pu-btn{flex:0 0 auto;min-width:78px;min-height:38px;padding:6px 8px;font-size:10px}
+  #combo-meter{top:calc(145px + env(safe-area-inset-top))}
+  #env-ind{top:calc(183px + env(safe-area-inset-top))}
+  #prog-hud{
+    top:calc(145px + env(safe-area-inset-top));bottom:auto;left:10px;
+    min-width:106px;padding:7px 9px;font-size:9px
+  }
+  .ph-rank{font-size:11px}
+  #audio-btn{top:calc(145px + env(safe-area-inset-top));bottom:auto;right:10px;padding:7px 9px}
+  #ctrl-bar{
+    bottom:max(10px,env(safe-area-inset-bottom));left:0;right:0;
+    padding:0 12px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;
+    transform:none
+  }
+  .dpad{
+    display:grid;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(3,42px);gap:4px
+  }
+  .dpad [data-dir="left"]{grid-column:1;grid-row:2}
+  .dpad [data-dir="up"]{grid-column:2;grid-row:1}
+  .dpad [data-dir="down"]{grid-column:2;grid-row:3}
+  .dpad [data-dir="right"]{grid-column:3;grid-row:2}
+  .ctrl-btn{min-width:42px;min-height:42px;padding:8px;font-size:15px;border-radius:12px}
+  .action-controls{flex-direction:column;gap:6px}
+  .action-controls .ctrl-btn{min-width:72px;min-height:46px;padding:8px 10px}
+  #overlay{padding:max(16px,env(safe-area-inset-top)) 18px max(16px,env(safe-area-inset-bottom));overflow-y:auto}
+  .ov-icon{font-size:44px}
+  .ov-title{font-size:28px}
+  .ov-sub{font-size:12px;line-height:1.6;margin-bottom:14px}
+  .ov-btn{padding:12px 26px}
+}
+
+@media (max-height:500px) and (orientation:landscape){
+  #topbar{padding:8px 10px 6px 82px;gap:6px}
+  .score-row{gap:4px}
+  .sc{padding:4px 6px;font-size:9px}
+  #force-back{top:7px;left:8px;padding:7px 9px}
+  #powerups-bar{
+    top:52px;right:8px;flex-direction:row;max-width:calc(100vw - 120px);
+    overflow-x:auto;gap:4px;touch-action:pan-x;-webkit-overflow-scrolling:touch
+  }
+  .pu-btn{min-width:74px;padding:5px 7px;font-size:9px}
+  #left-info{top:52px;left:10px;font-size:9px}
+  #prog-hud{bottom:62px;left:10px;min-width:108px;padding:6px 9px}
+  #audio-btn{bottom:62px;right:10px}
+  #ctrl-bar{bottom:max(6px,env(safe-area-inset-bottom));gap:5px}
+  .dpad,.action-controls{gap:4px}
+  .ctrl-btn{min-width:42px;min-height:40px;padding:7px 9px;font-size:14px}
+}
 </style>
 </head>
 <body>
@@ -245,12 +327,16 @@ canvas{display:block;position:fixed;inset:0;z-index:1}
   <div id="crash-overlay"></div>
 
   <div id="ctrl-bar">
-    <button class="ctrl-btn" data-dir="left">◀</button>
-    <button class="ctrl-btn" data-dir="up">▲</button>
-    <button class="ctrl-btn" data-dir="down">▼</button>
-    <button class="ctrl-btn" data-dir="right">▶</button>
-    <button class="ctrl-btn" id="fireBtn" style="color:#ff6b6b;font-size:12px">🚀FIRE</button>
-    <button class="ctrl-btn" data-pu="boost" style="color:var(--gold);font-size:12px">⚡BOOST</button>
+    <div class="dpad" aria-label="Flight direction controls">
+      <button class="ctrl-btn" data-dir="left" aria-label="Fly left">◀</button>
+      <button class="ctrl-btn" data-dir="up" aria-label="Fly up">▲</button>
+      <button class="ctrl-btn" data-dir="down" aria-label="Fly down">▼</button>
+      <button class="ctrl-btn" data-dir="right" aria-label="Fly right">▶</button>
+    </div>
+    <div class="action-controls" aria-label="Flight actions">
+      <button class="ctrl-btn" id="fireBtn" style="color:#ff6b6b;font-size:12px">🚀 FIRE</button>
+      <button class="ctrl-btn" data-pu="boost" style="color:var(--gold);font-size:12px">⚡ BOOST</button>
+    </div>
   </div>
 
   <div id="unlock-toast">
@@ -264,7 +350,7 @@ canvas{display:block;position:fixed;inset:0;z-index:1}
     <div class="ov-sub" id="ovSub">
       Dodge storm clouds ☁ · collect stars ⭐ fuel ⛽ gems 💎<br>
       Fire missiles 🚀 · use power-ups to survive<br>
-      Arrow keys / WASD · SPACE = fire · tilt phone / D-pad on mobile
+      Arrow keys / WASD · SPACE = fire · use the on-screen controls on mobile
     </div>
     <div class="ov-stats" id="ovStats" style="display:none"></div>
     <div class="hi-tag" id="hiTag"></div>
@@ -297,9 +383,19 @@ window.forceBack = forceBack;
 var cv  = document.getElementById('gc');
 var ctx = cv.getContext('2d');
 var W = 0, H = 0;
-function resize() { W = cv.width = window.innerWidth; H = cv.height = window.innerHeight; }
+function isPortraitMobile() {
+  return window.matchMedia
+    ? window.matchMedia('(max-width: 768px) and (orientation: portrait)').matches
+    : window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
+}
+function resize() {
+  var portrait = isPortraitMobile();
+  W = cv.width = portrait ? window.innerHeight : window.innerWidth;
+  H = cv.height = portrait ? window.innerWidth : window.innerHeight;
+}
 resize();
 window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', resize);
 
 
 var SAVE_KEY = 'fw_skyace_v7';
@@ -447,16 +543,17 @@ var INPUT = (function () {
 
     document.querySelectorAll('[data-dir]').forEach(function(b) {
       var d = b.dataset.dir;
-      b._ts = function(e){ e.preventDefault(); dirs[d] = true; };
-      b._te = function(e){ e.preventDefault(); dirs[d] = false; };
-      b._md = function()  { dirs[d] = true; };
-      b._mu = function()  { dirs[d] = false; };
-      b._ml = function()  { dirs[d] = false; };
-      b.addEventListener('touchstart', b._ts, {passive:false});
-      b.addEventListener('touchend',   b._te, {passive:false});
-      b.addEventListener('mousedown',  b._md);
-      b.addEventListener('mouseup',    b._mu);
-      b.addEventListener('mouseleave', b._ml);
+      b._pd = function(e){
+        e.preventDefault();
+        dirs[d] = true;
+        if (b.setPointerCapture) b.setPointerCapture(e.pointerId);
+      };
+      b._pu = function(){ dirs[d] = false; };
+      b._pc = function(){ dirs[d] = false; };
+      b.addEventListener('pointerdown', b._pd);
+      b.addEventListener('pointerup', b._pu);
+      b.addEventListener('pointercancel', b._pc);
+      b.addEventListener('lostpointercapture', b._pc);
     });
   }
 
@@ -465,20 +562,37 @@ var INPUT = (function () {
     document.removeEventListener('keydown', onKeyDown);
     document.removeEventListener('keyup',   onKeyUp);
     document.querySelectorAll('[data-dir]').forEach(function(b) {
-      if (b._ts) b.removeEventListener('touchstart', b._ts);
-      if (b._te) b.removeEventListener('touchend',   b._te);
-      if (b._md) b.removeEventListener('mousedown',  b._md);
-      if (b._mu) b.removeEventListener('mouseup',    b._mu);
-      if (b._ml) b.removeEventListener('mouseleave', b._ml);
+      if (b._pd) b.removeEventListener('pointerdown', b._pd);
+      if (b._pu) b.removeEventListener('pointerup', b._pu);
+      if (b._pc) {
+        b.removeEventListener('pointercancel', b._pc);
+        b.removeEventListener('lostpointercapture', b._pc);
+      }
     });
     keys = {}; dirs = {up:false, down:false, left:false, right:false};
     disableOrientation();
   }
 
-  function isLeft()  { return !!(keys['ArrowLeft']  || keys['a'] || keys['A'] || dirs.left || getOrientationAxis(orientation.gamma) === -1); }
-  function isRight() { return !!(keys['ArrowRight'] || keys['d'] || keys['D'] || dirs.right || getOrientationAxis(orientation.gamma) === 1); }
-  function isUp()    { return !!(keys['ArrowUp']    || keys['w'] || keys['W'] || dirs.up || getOrientationAxis(orientation.beta) === -1); }
-  function isDown()  { return !!(keys['ArrowDown']  || keys['s'] || keys['S'] || dirs.down || getOrientationAxis(orientation.beta) === 1); }
+  function isLeft()  {
+    return isPortraitMobile()
+      ? !!(keys['ArrowDown'] || keys['s'] || keys['S'] || dirs.down || getOrientationAxis(orientation.beta) === -1)
+      : !!(keys['ArrowLeft'] || keys['a'] || keys['A'] || dirs.left || getOrientationAxis(orientation.gamma) === -1);
+  }
+  function isRight() {
+    return isPortraitMobile()
+      ? !!(keys['ArrowUp'] || keys['w'] || keys['W'] || dirs.up || getOrientationAxis(orientation.beta) === 1)
+      : !!(keys['ArrowRight'] || keys['d'] || keys['D'] || dirs.right || getOrientationAxis(orientation.gamma) === 1);
+  }
+  function isUp() {
+    return isPortraitMobile()
+      ? !!(keys['ArrowLeft'] || keys['a'] || keys['A'] || dirs.left || getOrientationAxis(orientation.gamma) === -1)
+      : !!(keys['ArrowUp'] || keys['w'] || keys['W'] || dirs.up || getOrientationAxis(orientation.beta) === -1);
+  }
+  function isDown() {
+    return isPortraitMobile()
+      ? !!(keys['ArrowRight'] || keys['d'] || keys['D'] || dirs.right || getOrientationAxis(orientation.gamma) === 1)
+      : !!(keys['ArrowDown'] || keys['s'] || keys['S'] || dirs.down || getOrientationAxis(orientation.beta) === 1);
+  }
 
   return { attach:attach, detach:detach, enableOrientation:enableOrientation, isLeft:isLeft, isRight:isRight, isUp:isUp, isDown:isDown };
 })();
@@ -531,7 +645,7 @@ function resetState() {
     combo:1, comboTimer:0, comboDecay:200,
     frame:0, speedMult:1, slowTick:0, xpRun:0, nmCooldown:0
   };
-  PL = {x:W*0.15, y:H*0.5, vx:0, vy:0, r:24, angle:0, shield:false, inv:false, invF:0, trail:[]};
+  PL = {x:W*(isPortraitMobile()?0.36:0.15), y:H*0.5, vx:0, vy:0, r:24, angle:0, shield:false, inv:false, invF:0, trail:[]};
   PU = {
     shield:{cd:0,act:0}, slow:{cd:0,act:0}, magnet:{cd:0,act:0},
     boost:{cd:0,act:0},  fire:{cd:0,act:0}, nuke:{cd:0,act:0}, warp:{cd:0,act:0}
@@ -1149,6 +1263,7 @@ function drawEntities() {
 
 function triggerGameOver() {
   G.state = 'dead';
+  releaseWakeLock();
 
   (function(){
     try {
@@ -1191,6 +1306,50 @@ function triggerGameOver() {
 var _rafId    = null;   // single animation frame ID
 var _lastTime = 0;
 var _paused   = false;
+var _wakeLock = null;
+var _wakeLockRequest = null;
+
+function releaseWakeLock() {
+  var lock = _wakeLock;
+  _wakeLock = null;
+  if (lock) {
+    lock.release().catch(function(error) {
+      console.warn('Could not release screen wake lock:', error);
+    });
+  }
+}
+
+function requestWakeLock() {
+  if (!navigator.wakeLock || typeof navigator.wakeLock.request !== 'function'
+    || G.state !== 'playing' || document.hidden || _wakeLock || _wakeLockRequest) return;
+
+  var request;
+  try {
+    request = navigator.wakeLock.request('screen');
+  } catch(error) {
+    console.warn('Could not keep the screen awake during gameplay:', error);
+    return;
+  }
+  _wakeLockRequest = request;
+  request.then(function(lock) {
+    if (_wakeLockRequest === request) _wakeLockRequest = null;
+    if (G.state !== 'playing' || document.hidden) {
+      lock.release().catch(function(error) {
+        console.warn('Could not release screen wake lock:', error);
+      });
+      return;
+    }
+
+    _wakeLock = lock;
+    lock.addEventListener('release', function() {
+      if (_wakeLock === lock) _wakeLock = null;
+      if (G.state === 'playing' && !document.hidden) requestWakeLock();
+    }, {once:true});
+  }).catch(function(error) {
+    if (_wakeLockRequest === request) _wakeLockRequest = null;
+    console.warn('Could not keep the screen awake during gameplay:', error);
+  });
+}
 
 function loop(timestamp) {
   _rafId = requestAnimationFrame(loop);   // schedule NEXT frame first (cancellable at any time)
@@ -1291,6 +1450,7 @@ function startGame() {
   clearEntities();
 
   G.state = 'playing';
+  requestWakeLock();
 
   var co=document.getElementById('crash-overlay'); if(co) co.style.opacity='0';
   var bb=document.getElementById('back-btn'); if(bb) bb.style.display='none';
@@ -1306,6 +1466,7 @@ function stopGame() {
   if (_rafId) { cancelAnimationFrame(_rafId); _rafId=null; }
   G.state='idle';
   _lastTime=0;
+  releaseWakeLock();
   SND.mute();
 }
 
@@ -1313,6 +1474,7 @@ function pauseGame() {
   if (G.state !== 'playing') return;
   _paused = true;
   G.state = 'paused';
+  releaseWakeLock();
   SND.mute();
 }
 
@@ -1321,6 +1483,7 @@ function resumeGame() {
   _paused = false;
   G.state = 'playing';
   _lastTime = 0;
+  requestWakeLock();
   SND.unmute();
 }
 

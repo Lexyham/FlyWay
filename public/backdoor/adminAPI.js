@@ -34,6 +34,10 @@ const AdminAPI = (() => {
     return _req('GET', '/api/admin/transactions');
   }
 
+  async function deleteTransaction(id) {
+    return _req('DELETE', `/api/admin/transactions/${encodeURIComponent(id)}`);
+  }
+
   async function deleteAllTransactions() {
     return _req('DELETE', '/api/admin/transactions');
   }
@@ -62,6 +66,10 @@ const AdminAPI = (() => {
 
   async function deleteMessage(id) {
     return _req('DELETE', `/api/admin/messages/${id}`);
+  }
+
+  async function deletePaymentReview(id) {
+    return _req('DELETE', `/api/admin/payments/${encodeURIComponent(id)}`);
   }
 
   async function deleteAllMessages() {
@@ -111,8 +119,16 @@ const AdminAPI = (() => {
     return _req('DELETE', '/api/admin/uploads');
   }
 
+  async function deleteUpload(filename) {
+    return _req('DELETE', `/api/admin/uploads/${encodeURIComponent(filename)}`);
+  }
+
   async function fetchLogs() {
     return _req('GET', '/api/admin/access-logs');
+  }
+
+  async function deleteLog(id) {
+    return _req('DELETE', `/api/admin/access-logs/${encodeURIComponent(id)}`);
   }
 
   async function deleteAllLogs() {
@@ -134,11 +150,12 @@ const AdminAPI = (() => {
   
   return {
     fetchStats, fetchBookings, updateBooking, deleteBooking, deleteAllBookings,
-    fetchTransactions, deleteAllTransactions, fetchUsers, toggleUser, deleteUser,
+    fetchTransactions, deleteTransaction, deleteAllTransactions, fetchUsers, toggleUser, deleteUser,
+    deletePaymentReview,
     fetchMessages, updateMessage, deleteMessage, deleteAllMessages,
     fetchPromos, createPromo, updatePromo, deletePromo,
     fetchLicenses, createLicense, updateLicense, deleteLicense,
-    fetchUploads, deleteAllUploads, fetchLogs, deleteAllLogs, deleteAllPayments,
+    fetchUploads, deleteUpload, deleteAllUploads, fetchLogs, deleteLog, deleteAllLogs, deleteAllPayments,
     sendNotification, broadcastNotification,
   };
 })();

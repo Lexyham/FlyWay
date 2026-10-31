@@ -528,13 +528,14 @@ buildSky();
 var trackParams=new URLSearchParams(window.location.search);
 var urlCode=trackParams.get('code')||'';
 var urlLeg=trackParams.get('leg')==='returnFlight'?'returnFlight':'outboundFlight';
+var userSelectedLeg=trackParams.get('leg')==='outboundFlight'||trackParams.get('leg')==='returnFlight';
 if(urlCode&&urlCode.length>1){
   document.getElementById('trackInput').value=urlCode.toUpperCase();
   // Auto-track after a short delay (so page has finished rendering)
   setTimeout(function(){trackFlight();},600);
 }
 
-var liveInterval=null,bookingRefreshInterval=null,currentFlight=null,autoReturnSwitching=false;
+var liveInterval=null,bookingRefreshInterval=null,currentFlight=null,legSwitchInProgress=false;
 var cachedGate='',cachedTerminal='',cachedWeatherDep='',cachedWeatherArr='';
 var WEATHERS=[{dep:'☀ 22°C Clear',arr:'⛅ 18°C Cloudy'},{dep:'🌤 26°C Sunny',arr:'🌧 14°C Rainy'},{dep:'⛅ 17°C Overcast',arr:'☀ 28°C Clear'},{dep:'🌧 13°C Rainy',arr:'🌤 22°C Sunny'},{dep:'❄ 2°C Cold',arr:'☀ 23°C Clear'},{dep:'🌫 16°C Foggy',arr:'⛅ 19°C Cloudy'}];
 
@@ -620,25 +621,27 @@ function renderLegSwitcher(){
     button.type='button';
     button.textContent=item.label;
     button.className='btn '+(currentFlight.flightLeg===item.leg?'btn-primary':'btn-ghost');
-    button.onclick=function(){switchTrackedLeg(item.leg);};
+    button.onclick=function(){switchTrackedLeg(item.leg,true);};
     switcher.appendChild(button);
   });
 }
 
-async function switchTrackedLeg(leg){
+async function switchTrackedLeg(leg,manuallySelected){
   if(!currentFlight||!currentFlight.bookingRef||!['outboundFlight','returnFlight'].includes(leg))return;
+  legSwitchInProgress=true;
   try{
     var response=await fetch('/api/track/'+encodeURIComponent(currentFlight.bookingRef)+'?leg='+encodeURIComponent(leg));
     if(!response.ok)throw new Error('Flight lookup failed: '+response.status);
     var data=await response.json();
     if(!data.found)throw new Error('The requested flight leg was not found.');
     currentFlight=trackedFlightFromResponse(data);
+    if(manuallySelected)userSelectedLeg=true;
     renderLegSwitcher();
     renderFull(currentFlight);
     Globe3D.attach(currentFlight,calcProg);
     history.replaceState(null,'','?code='+encodeURIComponent(currentFlight.bookingRef)+'&leg='+encodeURIComponent(leg));
-    autoReturnSwitching=false;
-  }catch(error){FlyWay.toast('error','Could not load flight leg',error.message);}
+    legSwitchInProgress=false;
+  }catch(error){legSwitchInProgress=false;FlyWay.toast('error','Could not load flight leg',error.message);}
 }
 
 function startTracking(f){
@@ -710,8 +713,8 @@ function renderFull(f){
 
 function renderLive(f){
   var r=calcProg(f),prog=r.prog,status=r.status;
-  if(prog>=100&&f.flightLeg==='outboundFlight'&&f.bookingRef&&f.returnFlight&&!autoReturnSwitching){
-    autoReturnSwitching=true;
+  if(prog>=100&&f.flightLeg==='outboundFlight'&&f.bookingRef&&f.returnFlight&&!userSelectedLeg&&!legSwitchInProgress){
+    legSwitchInProgress=true;
     FlyWay.toast('success','GO flight landed','Switching tracking to your return flight.');
     switchTrackedLeg('returnFlight');
   }
